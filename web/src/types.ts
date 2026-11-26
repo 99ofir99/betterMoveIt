@@ -128,12 +128,37 @@ export interface SearchResult {
   index?: number;
 }
 
+/** Moovit ETA confidence from GPS freshness (Arrival Time Accuracy Guide). */
+export type ArrivalConfidence = 'high' | 'medium' | 'low' | 'off_route' | 'none';
+
+/** Where the displayed minutes come from when live GPS is absent. */
+export type ArrivalSource = 'live' | 'schedule' | 'historical';
+
 export interface DepartureNext {
   minutes: number;
   departure: number;
   tripId: number;
-  /** True when this prediction comes from a real-time feed (SIRI / GTFS-RT). */
+  /**
+   * True when a live vehicle GPS location backs this ETA
+   * (any of green / yellow / red / off-route).
+   */
   live?: boolean;
+  /** Moovit accuracy tier — drives green / yellow / red / black. */
+  confidence?: ArrivalConfidence;
+  /** Disclose schedule vs historical when confidence is none (black). */
+  source?: ArrivalSource;
+  /**
+   * Minutes late (positive) or early (negative) vs AimedArrivalTime,
+   * when both aimed and expected are available from SIRI.
+   */
+  delayMin?: number;
+  /** Seconds since the vehicle GPS signal was last received. */
+  signalAgeSec?: number;
+  /** Epoch ms of last GPS ping (for "Updated Xs ago"). */
+  lastUpdated?: number;
+  vehicleId?: string;
+  /** True when the vehicle has diverted from its GTFS shape. */
+  offRoute?: boolean;
 }
 
 export interface DepartureGroup {
@@ -143,8 +168,9 @@ export interface DepartureGroup {
   /** Boarding platform / bay, when the feed provides one. */
   platform?: string | null;
   next: DepartureNext[];
-  /** True when at least one departure in this group has real-time data. */
+  /** True when at least one departure in this group has GPS-backed live data. */
   siri?: boolean;
+  live?: boolean;
 }
 
 export interface StopDeparturesResponse {

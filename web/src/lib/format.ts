@@ -1,5 +1,11 @@
 /** Formatting and colour helpers shared by the UI. */
 
+/**
+ * Moovit Arrival Time Accuracy Guide: definitive clock when ETA > 1 hour.
+ * (Kept here and re-exported from arrivalAccuracy.ts for shared use.)
+ */
+export const RELATIVE_ETA_MAX_MIN = 60;
+
 export function formatClock(seconds: number): string {
   const h = Math.floor(seconds / 3600) % 24;
   const m = Math.floor((seconds % 3600) / 60);
@@ -68,15 +74,31 @@ export function formatLeaveTimes(
 /**
  * Moovit-style leave label from board minutes (prefer live SIRI / vehicle ETA).
  * Only "now" when the bus is at/past 0 minutes — not for 1–2 min waits.
+ * Beyond {@link RELATIVE_ETA_MAX_MIN}, show a definitive clock (e.g. `15:33`).
  */
 export function formatLeaveMinutes(
   minutes: number,
   opts?: { nextDay?: boolean; departureSec?: number; live?: boolean }
 ): string {
   if (!opts?.nextDay && minutes <= 0) return 'now';
-  if (!opts?.nextDay && minutes <= 90) return `${minutes} min`;
-  if (opts?.departureSec != null) return formatClock12h(opts.departureSec);
+  if (!opts?.nextDay && minutes <= RELATIVE_ETA_MAX_MIN) return `${minutes} min`;
+  if (opts?.departureSec != null) return formatClock(opts.departureSec);
   return `${minutes} min`;
+}
+
+/** Whether an ETA should render as relative minutes vs a clock time. */
+export function shouldShowRelativeEta(minutes: number, nextDay = false): boolean {
+  return !nextDay && minutes <= RELATIVE_ETA_MAX_MIN;
+}
+
+/** Clock label for a board ETA when only minutes-until are known. */
+export function formatArrivalClock(
+  minutes: number,
+  departureSec?: number,
+  nowSec = secondsSinceLocalMidnight()
+): string {
+  if (departureSec != null) return formatClock(departureSec);
+  return formatClock((nowSec + Math.max(0, minutes) * 60) % 86400);
 }
 
 /** Format several board ETAs (e.g. "2 min, 12 min, 28 min"). */
@@ -108,9 +130,15 @@ export function relativeMinutes(seconds: number): string {
 }
 
 /** Format board minutes already provided by the API (live or schedule). */
-export function relativeBoardMinutes(minutes: number): string {
-  if (minutes <= 0) return 'now';
-  if (minutes === 1) return '1 min';
+export function relativeBoardMinutes(
+  minutes: number,
+  opts?: { departureSec?: number; nextDay?: boolean }
+): string {
+  if (!opts?.nextDay && minutes <= 0) return 'now';
+  if (shouldShowRelativeEta(minutes, opts?.nextDay)) {
+    return minutes === 1 ? '1 min' : `${minutes} min`;
+  }
+  if (opts?.departureSec != null) return formatClock(opts.departureSec);
   return `${minutes} min`;
 }
 
