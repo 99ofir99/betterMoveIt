@@ -43,7 +43,7 @@ export function PreferencesSheet({
   return (
     <div className="prefs-sheet" role="dialog" aria-label="Preferences">
       <header className="prefs-sheet__head">
-        <button type="button" className="icon-button" onClick={onClose} aria-label="Back">
+        <button type="button" className="icon-button icon-button--ghost" onClick={onClose} aria-label="Back">
           <Icon name="arrow-back" />
         </button>
         <h1 className="prefs-sheet__title">Preferences</h1>

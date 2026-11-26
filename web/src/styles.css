@@ -262,6 +262,25 @@ select {
   box-shadow: var(--shadow-2);
 }
 
+/* Moovit ghost hit-target — no box, circular hover wash */
+.icon-button--ghost {
+  width: 40px;
+  height: 40px;
+  border-radius: 999px;
+  background: transparent;
+  border-color: transparent;
+  color: var(--text);
+}
+
+.icon-button--ghost:hover {
+  background: var(--surface-2);
+  color: var(--text);
+}
+
+.icon-button--ghost:active {
+  background: var(--surface-3);
+}
+
 /* ------------------------------------------------------------ sheet */
 
 .sheet {
@@ -776,14 +795,21 @@ select {
 }
 
 .lnd-header__back {
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  display: grid;
-  place-items: center;
-  font-size: 18px;
+  width: 40px;
+  height: 40px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   color: var(--text);
   flex-shrink: 0;
+  background: transparent;
+  border: 0;
+  transition: background 0.15s;
+}
+
+.lnd-header__back:hover {
+  background: var(--surface-2);
 }
 
 .lnd-header__badge {
@@ -2140,15 +2166,22 @@ select {
 }
 
 .stp-header__back {
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  display: grid;
-  place-items: center;
-  font-size: 18px;
+  width: 40px;
+  height: 40px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   color: var(--text);
   flex-shrink: 0;
   margin-top: 2px;
+  background: transparent;
+  border: 0;
+  transition: background 0.15s;
+}
+
+.stp-header__back:hover {
+  background: var(--surface-2);
 }
 
 .stp-header__titles {
@@ -3911,21 +3944,28 @@ select {
 .global-search__bar {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 4px;
   padding: max(10px, env(safe-area-inset-top)) 12px 12px;
   border-bottom: 1px solid var(--line);
   background: var(--bg);
 }
 
-.global-search__input {
+.global-search__field {
+  position: relative;
   flex: 1;
-  min-height: 48px;
-  padding: 12px 18px;
+  min-width: 0;
+}
+
+.global-search__input {
+  width: 100%;
+  min-height: 44px;
+  padding: 10px 44px 10px 16px;
   border-radius: 999px;
   border: 1px solid var(--line);
   background: var(--surface);
   outline: none;
   font-size: 16px;
+  color: var(--text);
   transition:
     border-color 0.2s,
     box-shadow 0.2s;
@@ -3933,9 +3973,35 @@ select {
 
 .global-search__input:focus {
   border-color: var(--accent);
-  border-width: 2px;
-  padding: 11px 17px;
-  box-shadow: 0 0 0 3px rgba(26, 101, 229, 0.2);
+  box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.2);
+}
+
+.global-search__clear {
+  position: absolute;
+  right: 6px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 32px;
+  height: 32px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-dim);
+  background: transparent;
+  border: 0;
+  transition:
+    background 0.15s,
+    color 0.15s;
+}
+
+.global-search__clear:hover {
+  background: var(--surface-3);
+  color: var(--text);
+}
+
+.global-search__clear:active {
+  transform: translateY(-50%) scale(0.94);
 }
 
 .global-search__body {
@@ -6823,35 +6889,24 @@ button.ld-option {
 
 .planner__back {
   align-self: flex-start;
-  font-size: 14px;
-  color: var(--accent-dim);
-  padding: 4px 0;
-  margin-bottom: 4px;
-  transition: color 0.15s;
+  margin: 0 0 4px -6px;
 }
 
-.planner__back:hover {
-  color: var(--accent);
+.directions-topbar__back {
+  color: #fff;
+  background: rgba(0, 0, 0, 0.35);
+  backdrop-filter: blur(10px);
+}
+
+.directions-topbar__back:hover {
+  background: rgba(255, 255, 255, 0.16);
+  color: #fff;
 }
 
 /* -- Moovit results header (stacked from/to) ------------------------------- */
 
 .results-header {
   margin: 0 0 4px;
-}
-
-.results-header .icon-button {
-  width: 40px;
-  height: 40px;
-  border-radius: 999px;
-  background: transparent;
-  border-color: transparent;
-  color: var(--text);
-}
-
-.results-header .icon-button:hover {
-  background: var(--surface-2);
-  color: var(--text);
 }
 
 .results-header__top {

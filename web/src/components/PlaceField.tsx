@@ -2,6 +2,7 @@
 
 import type { Place } from '../types';
 import { dedupePlaces, placeDedupeKey } from '../lib/dedupeSearch';
+import { Icon } from './icons/Icon';
 import { PlaceSuggestionRow } from './PlaceField/PlaceSuggestionRow';
 import { usePlaceFavorites } from './PlaceField/usePlaceFavorites';
 import type { PlaceFieldProps } from './PlaceField/types';
@@ -44,7 +45,7 @@ export function PlaceField({
         />
         {value && !open && (
           <button className="place-field__clear" onClick={onClear} aria-label={`Clear ${label}`} type="button">
-            ×
+            <Icon name="close" size={16} />
           </button>
         )}
         {onUseMyLocation && !open && (

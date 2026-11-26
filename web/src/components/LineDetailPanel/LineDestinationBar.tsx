@@ -1,5 +1,6 @@
 /** Moovit "Where do you want to go?" after picking a board stop. */
 
+import { Icon } from '../icons/Icon';
 import type { LineDestinationBarProps } from './types';
 
 export function LineDestinationBar({ boardName, onCancel }: LineDestinationBarProps) {
@@ -12,7 +13,7 @@ export function LineDestinationBar({ boardName, onCancel }: LineDestinationBarPr
         </span>
       </div>
       <button type="button" className="lnd-dest__cancel" aria-label="Cancel" onClick={onCancel}>
-        ✕
+        <Icon name="close" size={18} />
       </button>
     </div>
   );

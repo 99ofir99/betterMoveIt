@@ -4,6 +4,7 @@
  */
 
 import { RouteBadge } from '../common/RouteBadge';
+import { Icon } from '../icons/Icon';
 import { LineDestinationBar } from './LineDestinationBar';
 import { LineDetailActions } from './LineDetailActions';
 import { LineDirectionHeader } from './LineDirectionHeader';
@@ -43,7 +44,7 @@ export function LineDetailPanel({
     <div className="line-detail">
       <div className="lnd-header">
         <button type="button" className="lnd-header__back" onClick={onClose} aria-label="Back">
-          ←
+          <Icon name="arrow-back" size={22} />
         </button>
         {s.line && (
           <RouteBadge

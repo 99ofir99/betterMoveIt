@@ -30,6 +30,7 @@ import { loadSettings, saveSettings, type TransportPrefs } from "./lib/settings"
 import { computeTripInsights } from "./lib/tripInsights";
 import { countDisabledTransport } from "./lib/transportMode";
 import { BestTimeCard } from "./components/results/BestTimeCard";
+import { Icon } from "./components/icons/Icon";
 import { useServiceAlerts } from "./lib/useServiceAlerts";
 import { useVehicles } from "./lib/useVehicles";
 import { useActiveTrip } from "./lib/useActiveTrip";
@@ -745,11 +746,11 @@ export default function App() {
           <header className="directions-topbar">
             <button
               type="button"
-              className="icon-button icon-button--light"
+              className="icon-button icon-button--ghost directions-topbar__back"
               onClick={goBack}
               aria-label="Back"
             >
-              ←
+              <Icon name="arrow-back" />
             </button>
             <h1 className="directions-topbar__title">Directions</h1>
           </header>
@@ -1142,8 +1143,13 @@ function PlanForm({
   return (
     <div className="planner">
       {onBack && (
-        <button type="button" className="planner__back" onClick={onBack} aria-label="Back to home">
-          ← Back
+        <button
+          type="button"
+          className="icon-button icon-button--ghost planner__back"
+          onClick={onBack}
+          aria-label="Back to home"
+        >
+          <Icon name="arrow-back" />
         </button>
       )}
 

@@ -6,6 +6,7 @@
 import { useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { sameCorridorRoute } from '../../lib/corridorLine';
+import { Icon } from '../icons/Icon';
 import { DepartureOptionRow } from './DepartureOptionRow';
 import { LegEndpoints } from './LegEndpoints';
 import type { UpcomingArrivalsModalProps } from './types';
@@ -68,7 +69,7 @@ export function UpcomingArrivalsModal({
             aria-label="Close"
             onClick={onClose}
           >
-            ✕
+            <Icon name="close" size={18} />
           </button>
         </header>
 

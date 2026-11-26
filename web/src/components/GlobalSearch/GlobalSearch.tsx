@@ -4,6 +4,7 @@
  */
 
 import { placeDedupeKey } from '../../lib/dedupeSearch';
+import { Icon } from '../icons/Icon';
 import { RecentPlaceRow } from './RecentPlaceRow';
 import { SearchResultItem } from './SearchResultItem';
 import { useGlobalSearch } from './useGlobalSearch';
@@ -27,24 +28,36 @@ export function GlobalSearch({
   return (
     <div className="global-search" role="dialog" aria-label={title || 'Search'}>
       <div className="global-search__bar">
-        <button type="button" className="icon-button" onClick={onClose} aria-label="Back">
-          ←
+        <button
+          type="button"
+          className="icon-button icon-button--ghost"
+          onClick={onClose}
+          aria-label="Back"
+        >
+          <Icon name="arrow-back" />
         </button>
-        <input
-          className="global-search__input"
-          value={s.q}
-          onChange={(e) => s.setQ(e.target.value)}
-          placeholder={placeholder}
-          autoFocus
-          autoComplete="off"
-          spellCheck={false}
-          inputMode="search"
-        />
-        {s.q && (
-          <button type="button" className="icon-button" onClick={() => s.setQ('')} aria-label="Clear">
-            ×
-          </button>
-        )}
+        <div className="global-search__field">
+          <input
+            className="global-search__input"
+            value={s.q}
+            onChange={(e) => s.setQ(e.target.value)}
+            placeholder={placeholder}
+            autoFocus
+            autoComplete="off"
+            spellCheck={false}
+            inputMode="search"
+          />
+          {s.q && (
+            <button
+              type="button"
+              className="global-search__clear"
+              onClick={() => s.setQ('')}
+              aria-label="Clear"
+            >
+              <Icon name="close" size={18} />
+            </button>
+          )}
+        </div>
       </div>
 
       <div className="global-search__body">

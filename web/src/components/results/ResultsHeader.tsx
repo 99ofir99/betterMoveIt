@@ -21,7 +21,7 @@ export function ResultsHeader({
   return (
     <div className="results-header">
       <div className="results-header__top">
-        <button type="button" className="icon-button" onClick={onBack} aria-label="Back">
+        <button type="button" className="icon-button icon-button--ghost" onClick={onBack} aria-label="Back">
           <Icon name="arrow-back" />
         </button>
         <div className="results-header__fields">
@@ -48,7 +48,7 @@ export function ResultsHeader({
         </div>
         <button
           type="button"
-          className="icon-button results-header__prefs"
+          className="icon-button icon-button--ghost results-header__prefs"
           onClick={onOpenPreferences}
           aria-label={showBadge ? `Preferences, ${prefsBadgeCount} active` : 'Preferences'}
         >

@@ -4,6 +4,7 @@
  * TransitRideCard. Visually matches Moovit's line-picker bottom sheet.
  */
 import { RouteBadge } from '../common/RouteBadge';
+import { Icon } from '../icons/Icon';
 import type { RouteInfo } from '../../types';
 
 export interface LinePickerProps {
@@ -38,7 +39,7 @@ export function LinePicker({ alternatives, onPick, onClose }: LinePickerProps) {
             aria-label="Close line picker"
             onClick={onClose}
           >
-            ✕
+            <Icon name="close" size={18} />
           </button>
         </div>
 

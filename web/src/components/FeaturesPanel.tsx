@@ -6,6 +6,7 @@
  */
 
 import { ALL_FEATURES, type FeatureStatus } from '../lib/features';
+import { Icon } from './icons/Icon';
 
 export function FeaturesPanel({ onClose }: { onClose: () => void }) {
   const grouped = new Map<string, typeof ALL_FEATURES>();
@@ -26,8 +27,13 @@ export function FeaturesPanel({ onClose }: { onClose: () => void }) {
               Essential transit tools. No ads, no AI, no subscriptions.
             </p>
           </div>
-          <button type="button" className="icon-button" onClick={onClose} aria-label="Close">
-            ×
+          <button
+            type="button"
+            className="icon-button icon-button--ghost"
+            onClick={onClose}
+            aria-label="Close"
+          >
+            <Icon name="close" />
           </button>
         </div>
 

@@ -16,6 +16,7 @@ import {
   toggleFavoriteStop,
 } from '../../lib/favorites';
 import { loadHistory } from '../../lib/history';
+import { useStableLatLon } from '../../lib/useStableLatLon';
 import type { LatLon, Line, Place, SearchResult, Stop } from '../../types';
 import type { SearchTarget } from './types';
 
@@ -43,6 +44,8 @@ export function useGlobalSearch(bias: LatLon | null, target: SearchTarget) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [favTick, setFavTick] = useState(0);
+  // Live GPS updates every ~1s; keep bias stable so ranked stops don't jump.
+  const stableBias = useStableLatLon(bias);
 
   useEffect(() => {
     const onChanged = () => setFavTick((x) => x + 1);
@@ -86,9 +89,9 @@ export function useGlobalSearch(bias: LatLon | null, target: SearchTarget) {
       setError(null);
       try {
         const [main, places] = await Promise.all([
-          api.search(trimmed, bias, ctrl.signal),
+          api.search(trimmed, stableBias, ctrl.signal),
           trimmed.length >= 2
-            ? api.geocodeSearch(trimmed, bias, ctrl.signal)
+            ? api.geocodeSearch(trimmed, stableBias, ctrl.signal)
             : Promise.resolve<SearchResult[]>([]),
         ]);
         if (ctrl.signal.aborted) return;
@@ -116,7 +119,7 @@ export function useGlobalSearch(bias: LatLon | null, target: SearchTarget) {
       clearTimeout(t);
       ctrl.abort();
     };
-  }, [q, bias?.lat, bias?.lon, target]);
+  }, [q, stableBias?.lat, stableBias?.lon, target]);
 
   const placeIsFavored = useCallback(
     (place: Place) => isLocationFavored(place),

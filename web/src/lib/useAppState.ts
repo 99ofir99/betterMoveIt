@@ -14,6 +14,7 @@ import { dedupeJourneys, dedupePlaces, dedupeSearchResults } from './dedupeSearc
 import { enrichWalkGeometries } from './enrichWalkGeometries';
 import { fillWalkEndpoints } from './journeyMap';
 import { normalizeJourneys } from './journeyTiming';
+import { useStableLatLon } from './useStableLatLon';
 import { useWatchLocation } from './useWatchLocation';
 import type {
   Journey,
@@ -422,6 +423,8 @@ export type AppState = ReturnType<typeof useAppState>;
 export function useStopSearch(query: string, bias?: { lat: number; lon: number } | null, delayMs = 180) {
   const [results, setResults] = useState<SearchResult[]>([]);
   const [loading, setLoading] = useState(false);
+  // Live GPS updates every ~1s; keep bias stable so results don't reshuffle.
+  const stableBias = useStableLatLon(bias ?? null);
 
   useEffect(() => {
     const trimmed = query.trim();
@@ -434,9 +437,9 @@ export function useStopSearch(query: string, bias?: { lat: number; lon: number }
       setLoading(true);
       try {
         const [stops, places] = await Promise.all([
-          api.searchStops(trimmed, bias, ctrl.signal),
+          api.searchStops(trimmed, stableBias, ctrl.signal),
           trimmed.length >= 2
-            ? api.geocodeSearch(trimmed, bias, ctrl.signal)
+            ? api.geocodeSearch(trimmed, stableBias, ctrl.signal)
             : Promise.resolve<SearchResult[]>([]),
         ]);
         if (!ctrl.signal.aborted) {
@@ -458,7 +461,7 @@ export function useStopSearch(query: string, bias?: { lat: number; lon: number }
       clearTimeout(timer);
       ctrl.abort();
     };
-  }, [query, bias?.lat, bias?.lon, delayMs]);
+  }, [query, stableBias?.lat, stableBias?.lon, delayMs]);
 
   return { results, loading };
 }
