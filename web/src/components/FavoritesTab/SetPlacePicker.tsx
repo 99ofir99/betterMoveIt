@@ -9,6 +9,7 @@ export function SetPlacePicker({
   onClose,
   onPickPlace,
   onPickCurrentLocation,
+  onChooseOnMap,
 }: SetPlacePickerProps) {
   const title = kind === 'home' ? 'Set Home' : 'Set Work';
 
@@ -22,6 +23,7 @@ export function SetPlacePicker({
       onClose={onClose}
       onPickPlace={onPickPlace}
       onPickCurrentLocation={onPickCurrentLocation}
+      onChooseOnMap={onChooseOnMap}
       onPickStop={(stop) =>
         onPickPlace({
           label: stop.name,

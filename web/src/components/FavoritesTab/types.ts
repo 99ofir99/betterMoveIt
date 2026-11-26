@@ -16,6 +16,7 @@ export interface SetPlacePickerProps {
   onClose: () => void;
   onPickPlace: (place: Place) => void;
   onPickCurrentLocation: () => void;
+  onChooseOnMap?: () => void;
 }
 
 export interface PlaceRowProps {

@@ -15,6 +15,8 @@ export interface GlobalSearchProps {
   onPickPlace: (place: Place) => void;
   onPickLine: (line: Line) => void;
   onPickCurrentLocation?: () => void;
+  /** Moovit “Find on Map” / Choose on map — pick any lat/lon, not only stops. */
+  onChooseOnMap?: () => void;
 }
 
 export interface SearchFavButtonProps {

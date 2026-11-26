@@ -632,17 +632,21 @@ export class JourneyPlanner {
     let stop = destStop;
     let guard = 0;
 
-    // Walk to destination — include both endpoints so the map can draw a path.
+    // Walk to destination when needed (Moovit last-mile). Skip ~zero walks
+    // when the destination is the alighting stop itself.
     const egressFrom = s.stopObject(destStop);
-    legs.unshift({
-      mode: 'walk',
-      fromName: egressFrom.name,
-      toName: destPoint.name ?? 'Destination',
-      from: { lat: egressFrom.lat, lon: egressFrom.lon, stopId: egressFrom.id },
-      to: { lat: destPoint.lat, lon: destPoint.lon },
-      distanceM: Math.round(egressWalkSec * 1.35),
-      durationSec: egressWalkSec,
-    });
+    const egressDistanceM = Math.round(egressWalkSec * this.walkSpeedMps);
+    if (egressDistanceM >= 25 || egressWalkSec >= 20) {
+      legs.unshift({
+        mode: 'walk',
+        fromName: egressFrom.name,
+        toName: destPoint.name ?? 'Destination',
+        from: { lat: egressFrom.lat, lon: egressFrom.lon, stopId: egressFrom.id },
+        to: { lat: destPoint.lat, lon: destPoint.lon },
+        distanceM: egressDistanceM,
+        durationSec: egressWalkSec,
+      });
+    }
 
     while (guard++ < 64) {
       const p = parent.get(stop);

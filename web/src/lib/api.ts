@@ -70,20 +70,28 @@ export const api = {
     getJson<StopDetailResponse>(`/api/stop/${encodeURIComponent(stopId)}`, signal),
 
   plan: async (
-    from: LatLon & { stopId?: string },
-    to: LatLon & { stopId?: string },
+    from: LatLon & { stopId?: string; label?: string; name?: string },
+    to: LatLon & { stopId?: string; label?: string; name?: string },
     when?: { date?: string; time?: string; maxWalk?: number },
     signal?: AbortSignal
   ): Promise<PlanResponse> => {
+    const endpoint = (p: LatLon & { stopId?: string; label?: string; name?: string }) => ({
+      lat: p.lat,
+      lon: p.lon,
+      stopId: p.stopId,
+      // Place uses `label`; server reads `name` for walk leg place names.
+      name: p.name ?? p.label,
+    });
     const res = await fetch(`${BASE}/api/plan`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ from, to, ...when }),
+      body: JSON.stringify({ from: endpoint(from), to: endpoint(to), ...when }),
       signal,
     });
     if (!res.ok) throw new Error(`plan failed: ${res.status}`);
     return (await res.json()) as PlanResponse;
   },
+
 
   reverseGeocode: async (lat: number, lon: number, signal?: AbortSignal): Promise<string> => {
     try {

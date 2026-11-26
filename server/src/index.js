@@ -363,12 +363,19 @@ app.post('/api/plan', (req, res) => {
   const { dateInt, seconds, dow } = feedClock(date, time);
 
   const resolve = (p) => {
+    // Door-to-door: address / map-pick places keep their lat/lon so RAPTOR
+    // walks to the nearest stop. Stop picks (stopId set) snap to GTFS coords.
+    if (!p.stopId && Number.isFinite(p.lat) && Number.isFinite(p.lon)) {
+      return { lat: p.lat, lon: p.lon, name: p.name || p.label || 'Point' };
+    }
     if (p.stopId) {
       const i = store.stopIndexByGtfsId.get(p.stopId);
       if (i === undefined) return null;
       return { lat: store.stopLat[i], lon: store.stopLon[i], name: store.stopName[i] };
     }
-    if (Number.isFinite(p.lat) && Number.isFinite(p.lon)) return { lat: p.lat, lon: p.lon, name: p.name || 'Point' };
+    if (Number.isFinite(p.lat) && Number.isFinite(p.lon)) {
+      return { lat: p.lat, lon: p.lon, name: p.name || p.label || 'Point' };
+    }
     return null;
   };
   const a = resolve(from);

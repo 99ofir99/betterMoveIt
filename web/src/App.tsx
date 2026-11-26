@@ -11,6 +11,7 @@ import { NearbyTab } from "./components/NearbyTab";
 import { MoreTab } from "./components/MoreTab";
 import { LineDetailPanel } from "./components/LineDetailPanel";
 import { GlobalSearch, type SearchTarget } from "./components/GlobalSearch";
+import { MapLocationPicker, type MapPickSlot } from "./components/MapLocationPicker";
 import { ServiceAlertsBanner } from "./components/ServiceAlertsBanner";
 import { TripProgressSheet } from "./components/trip/TripProgressSheet";
 import { ActiveTripPip } from "./components/trip/ActiveTripPip";
@@ -68,6 +69,8 @@ export default function App() {
   const [toQuery, setToQuery] = useState("");
   const [showSearch, setShowSearch] = useState(false);
   const [searchTarget, setSearchTarget] = useState<SearchTarget>("to");
+  /** Moovit Choose Location — pick any map point as from/to (not only stops). */
+  const [mapPickSlot, setMapPickSlot] = useState<MapPickSlot | null>(null);
   const [showPreferences, setShowPreferences] = useState(false);
   const [showDepartSheet, setShowDepartSheet] = useState(false);
   const [sortMode, setSortMode] = useState<SortMode>("fastest");
@@ -635,6 +638,30 @@ export default function App() {
     [state],
   );
 
+  /** Confirm a map-picked place (no stopId) and plan door-to-door with egress walk. */
+  const handleMapPickConfirm = useCallback(
+    (place: Place) => {
+      const slot = mapPickSlot ?? "to";
+      setMapPickSlot(null);
+      state.selectPlace(place, slot);
+      if (slot === "from") setFromQuery("");
+      else setToQuery("");
+      setActiveTab("directions");
+      setShowPlanForm(true);
+      if (slot === "to") {
+        if (state.from) void searchRoutes(state.from, place);
+        else {
+          void state.useMyLocationAsOrigin().then((origin) => {
+            if (origin) void searchRoutes(origin, place);
+          });
+        }
+      } else if (state.to) {
+        void searchRoutes(place, state.to);
+      }
+    },
+    [mapPickSlot, searchRoutes, state],
+  );
+
   /**
    * Tap a destination from the home screen: set it, acquire GPS as origin,
    * then immediately plan the trip. Falls back to PlanForm if no location.
@@ -1124,11 +1151,24 @@ export default function App() {
         />
       )}
 
+      {mapPickSlot && (
+        <MapLocationPicker
+          initialCenter={searchBias ?? state.center}
+          slot={mapPickSlot}
+          onCancel={() => setMapPickSlot(null)}
+          onConfirm={handleMapPickConfirm}
+        />
+      )}
+
       {showSearch && (
         <GlobalSearch
           bias={searchBias}
           target={searchTarget}
           onClose={() => setShowSearch(false)}
+          onChooseOnMap={() => {
+            setMapPickSlot(searchTarget === "from" ? "from" : "to");
+            setShowSearch(false);
+          }}
           onPickCurrentLocation={() => {
             void state.useMyLocationAsOrigin().then((origin) => {
               if (origin && state.to) void searchRoutes(origin, state.to);

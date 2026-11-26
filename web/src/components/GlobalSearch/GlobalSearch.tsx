@@ -21,6 +21,7 @@ export function GlobalSearch({
   onPickPlace,
   onPickLine,
   onPickCurrentLocation,
+  onChooseOnMap,
 }: GlobalSearchProps) {
   const s = useGlobalSearch(bias, target);
   const placeholder = placeholderProp ?? s.placeholder;
@@ -58,6 +59,20 @@ export function GlobalSearch({
             </button>
           )}
         </div>
+        {onChooseOnMap && (
+          <button
+            type="button"
+            className="icon-button icon-button--ghost"
+            onClick={() => {
+              onChooseOnMap();
+              onClose();
+            }}
+            aria-label="Choose on map"
+            title="Choose on map"
+          >
+            <Icon name="map" />
+          </button>
+        )}
       </div>
 
       <div className="global-search__body">
@@ -197,6 +212,23 @@ export function GlobalSearch({
             );
           })}
         </ul>
+
+        {onChooseOnMap && (
+          <div className="global-search__find-map">
+            <p className="global-search__find-map-hint">Didn&apos;t find what you&apos;re looking for?</p>
+            <button
+              type="button"
+              className="global-search__find-map-btn"
+              onClick={() => {
+                onChooseOnMap();
+                onClose();
+              }}
+            >
+              <Icon name="map" size={18} />
+              Find on Map
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );
