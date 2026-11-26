@@ -430,7 +430,10 @@ if (fs.existsSync(webDist)) {
       }
     },
   }));
-  app.get(/^\/(?!api\/).*/, (_req, res) => {
+  // SPA fallback for client routes only — never mask missing static assets
+  // (Chrome rejects PWA install if /icon-*.png returns HTML).
+  app.get(/^\/(?!api\/).*/, (req, res, next) => {
+    if (path.extname(req.path)) return next();
     res.setHeader('Cache-Control', 'no-store');
     res.sendFile(path.join(webDist, 'index.html'));
   });

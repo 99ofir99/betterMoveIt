@@ -17,6 +17,7 @@ oldApp.*
 base_temp.zip
 _tmp_*
 *.png
+!web/public/icon-*.png
 *.rgb
 *.xml
 
