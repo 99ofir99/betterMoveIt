@@ -1,0 +1,190 @@
+/**
+ * Moovit-style search overlay — stops, places, lines + Current location.
+ * Composition only; state lives in useGlobalSearch.
+ */
+
+import { placeDedupeKey } from '../../lib/dedupeSearch';
+import { RecentPlaceRow } from './RecentPlaceRow';
+import { SearchResultItem } from './SearchResultItem';
+import { useGlobalSearch } from './useGlobalSearch';
+import type { GlobalSearchProps } from './types';
+
+export function GlobalSearch({
+  bias,
+  target = 'any',
+  title,
+  placeholder: placeholderProp,
+  currentLocationLabel = 'Current location',
+  onClose,
+  onPickStop,
+  onPickPlace,
+  onPickLine,
+  onPickCurrentLocation,
+}: GlobalSearchProps) {
+  const s = useGlobalSearch(bias, target);
+  const placeholder = placeholderProp ?? s.placeholder;
+
+  return (
+    <div className="global-search" role="dialog" aria-label={title || 'Search'}>
+      <div className="global-search__bar">
+        <button type="button" className="icon-button" onClick={onClose} aria-label="Back">
+          ←
+        </button>
+        <input
+          className="global-search__input"
+          value={s.q}
+          onChange={(e) => s.setQ(e.target.value)}
+          placeholder={placeholder}
+          autoFocus
+          autoComplete="off"
+          spellCheck={false}
+          inputMode="search"
+        />
+        {s.q && (
+          <button type="button" className="icon-button" onClick={() => s.setQ('')} aria-label="Clear">
+            ×
+          </button>
+        )}
+      </div>
+
+      <div className="global-search__body">
+        {!s.q.trim() && (
+          <>
+            {(target === 'from' || target === 'any') && onPickCurrentLocation && (
+              <button
+                type="button"
+                className="suggestions__row suggestions__row--current"
+                onClick={() => {
+                  onPickCurrentLocation();
+                  onClose();
+                }}
+              >
+                <span className="suggestions__icon suggestions__icon--locate" aria-hidden="true">
+                  ◎
+                </span>
+                <span className="suggestions__text">
+                  <span className="suggestions__name">{currentLocationLabel}</span>
+                  <span className="suggestions__meta">Use GPS</span>
+                </span>
+              </button>
+            )}
+
+            {(s.favs.places.length > 0 || s.favs.stops.length > 0) && (
+              <section className="global-search__section">
+                <h3>Favorites</h3>
+                {s.favs.places.map((p) => {
+                  const slotName =
+                    p.kind === 'home' ? 'Home' : p.kind === 'work' ? 'Work' : p.label;
+                  const address = p.place.label?.trim();
+                  return (
+                    <button
+                      key={p.id}
+                      type="button"
+                      className="suggestions__row"
+                      onClick={() => {
+                        onPickPlace(p.place);
+                        onClose();
+                      }}
+                    >
+                      <span className="suggestions__icon">
+                        {p.kind === 'home' ? '🏠' : p.kind === 'work' ? '🏢' : '★'}
+                      </span>
+                      <span className="suggestions__text">
+                        <span className="suggestions__name">{slotName}</span>
+                        {address && (
+                          <span className="suggestions__meta">{address}</span>
+                        )}
+                      </span>
+                    </button>
+                  );
+                })}
+                {s.favs.stops.slice(0, 4).map((item) => (
+                  <button
+                    key={item.id}
+                    type="button"
+                    className="suggestions__row"
+                    onClick={() => {
+                      onPickStop(item.stop);
+                      onClose();
+                    }}
+                  >
+                    <span className="suggestions__icon">🚏</span>
+                    <span className="suggestions__text">
+                      <span className="suggestions__name">{item.stop.name}</span>
+                    </span>
+                  </button>
+                ))}
+              </section>
+            )}
+
+            {s.recentPlaces.length > 0 && (
+              <section className="global-search__section">
+                <h3>Recent</h3>
+                {s.recentPlaces.map((place) => (
+                  <RecentPlaceRow
+                    key={placeDedupeKey(place)}
+                    place={place}
+                    favored={s.placeIsFavored(place)}
+                    onPick={() => {
+                      onPickPlace(place);
+                      onClose();
+                    }}
+                    onToggleFavorite={() => s.togglePlace(place)}
+                  />
+                ))}
+              </section>
+            )}
+          </>
+        )}
+
+        {s.q.trim() && s.loading && <p className="global-search__status">Searching…</p>}
+        {s.error && <p className="global-search__status global-search__status--err">{s.error}</p>}
+        {s.q.trim() && !s.loading && !s.error && s.results.length === 0 && (
+          <p className="global-search__status">No results</p>
+        )}
+
+        <ul className="global-search__results">
+          {s.results.map((r, i) => {
+            const place =
+              r.kind === 'place' && r.lat != null && r.lon != null
+                ? { label: r.name, lat: r.lat, lon: r.lon }
+                : null;
+            const lineId =
+              r.kind === 'line' ? String(r.id ?? r.index ?? i) : '';
+            return (
+              <SearchResultItem
+                key={
+                  r.kind === 'line'
+                    ? `line-${lineId}-${i}`
+                    : r.kind === 'place'
+                      ? `place-${r.name}-${i}`
+                      : `stop-${r.id}-${i}`
+                }
+                result={r}
+                index={i}
+                placeFavored={place ? s.placeIsFavored(place) : false}
+                stopFavored={r.kind === 'stop' && r.id ? s.stopIsFavored(r.id) : false}
+                lineFavored={r.kind === 'line' && lineId ? s.lineIsFavored(lineId) : false}
+                onPickLine={(line) => {
+                  onPickLine(line);
+                  onClose();
+                }}
+                onPickPlace={(p) => {
+                  onPickPlace(p);
+                  onClose();
+                }}
+                onPickStop={(stop) => {
+                  onPickStop(stop);
+                  onClose();
+                }}
+                onTogglePlace={s.togglePlace}
+                onToggleStop={s.toggleStop}
+                onToggleLine={s.toggleLine}
+              />
+            );
+          })}
+        </ul>
+      </div>
+    </div>
+  );
+}

@@ -1,0 +1,33 @@
+{
+  "name": "bettermoveit",
+  "private": true,
+  "version": "1.0.0",
+  "description": "A clean, ad-free multimodal transit app with every premium feature unlocked.",
+  "type": "module",
+  "workspaces": [
+    "server",
+    "web"
+  ],
+  "scripts": {
+    "ingest": "node tools/ingest/ingest.mjs",
+    "dev": "concurrently -n server,web -c blue,magenta \"npm:dev:server\" \"npm:dev:web\"",
+    "dev:tunnel": "concurrently -n server,web -c blue,magenta \"npm:dev:server\" \"npm:dev:web:tunnel\"",
+    "dev:server": "npm --workspace server run dev",
+    "dev:web": "npm --workspace web run dev",
+    "dev:web:tunnel": "npm --workspace web run dev:tunnel",
+
+    "build": "npm --workspace web run build",
+    "prepare:data": "node tools/prepare-data.mjs",
+    "build:render": "npm run build && npm run prepare:data",
+    "start": "npm --workspace server run start",
+    "start:tunnel": "npm run build && concurrently -n server,ngrok -c blue,green \"npm:start\" \"ngrok http 8787\"",
+    "check": "npm --workspace web exec tsc -- --noEmit",
+    "bench": "node tools/bench.mjs"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.0"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

@@ -1,0 +1,57 @@
+/**
+ * Shared boarding ETA helpers — prefer live board minutes (SIRI / vehicle),
+ * fall back to scheduled clock. Moovit-style: green live countdown, not "Now" for 1–2 min.
+ */
+
+import type { DepartureGroup, RouteInfo, TransitLeg } from '../types';
+
+export interface LeaveEtaEntry {
+  minutes: number;
+  departure: number;
+  live: boolean;
+  nextDay?: boolean;
+}
+
+/** Match a departure group to planned / alternative routes. */
+export function groupMatchesRoutes(group: DepartureGroup, routes: RouteInfo[]): boolean {
+  const names = new Set(routes.flatMap((r) => [r.shortName, r.displayName].filter(Boolean)));
+  const indices = new Set(routes.map((r) => r.index).filter((i) => i != null));
+  return (
+    names.has(group.route.shortName) ||
+    names.has(group.route.displayName ?? '') ||
+    (group.route.index != null && indices.has(group.route.index))
+  );
+}
+
+/** Collect soonest leave ETAs for matching lines from a stop board. */
+export function leaveEtasFromBoard(
+  groups: DepartureGroup[],
+  routes: RouteInfo[],
+  limit = 3
+): LeaveEtaEntry[] {
+  const matched = groups.filter((g) => groupMatchesRoutes(g, routes));
+  const entries: LeaveEtaEntry[] = [];
+  for (const g of matched) {
+    const liveGroup = Boolean(g.siri || (g as { live?: boolean }).live);
+    for (const n of g.next) {
+      entries.push({
+        minutes: n.minutes,
+        departure: n.departure,
+        live: Boolean(n.live || liveGroup),
+      });
+    }
+  }
+  entries.sort((a, b) => a.minutes - b.minutes || a.departure - b.departure);
+  return entries.slice(0, limit);
+}
+
+/** Best boarding minutes for a transit leg from board, or null if board empty. */
+export function bestBoardingMinutes(
+  groups: DepartureGroup[],
+  leg: TransitLeg,
+  altRoutes?: RouteInfo[]
+): LeaveEtaEntry | null {
+  const routes = altRoutes?.length ? altRoutes : [leg.route];
+  const etas = leaveEtasFromBoard(groups, routes, 1);
+  return etas[0] ?? null;
+}

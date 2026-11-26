@@ -1,0 +1,29 @@
+node_modules/
+dist/
+*.log
+.DS_Store
+
+# Large generated transit artifacts — rebuild with `npm run ingest` / prepare:data
+data/
+*.apks
+*.apk
+*.zip
+
+# Local reverse-engineering / reference dumps
+oldApp*/
+oldApp.*
+base_temp.zip
+_tmp_*
+*.png
+*.rgb
+*.xml
+
+# Editor / OS
+.idea/
+.vscode/
+
+# Env / local Vite PWA output
+.env
+.env.*
+!.env.example
+web/dev-dist/

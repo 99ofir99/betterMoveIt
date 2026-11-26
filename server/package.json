@@ -1,0 +1,15 @@
+{
+  "name": "@bettermoveit/server",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "main": "src/index.js",
+  "scripts": {
+    "dev": "node --watch src/index.js",
+    "start": "node src/index.js"
+  },
+  "dependencies": {
+    "compression": "^1.7.4",
+    "express": "^4.21.2"
+  }
+}
