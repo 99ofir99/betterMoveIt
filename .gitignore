@@ -5,9 +5,11 @@ dist/
 
 # Large generated transit artifacts — rebuild with `npm run ingest` / prepare:data
 data/
+!deploy/
 *.apks
 *.apk
 *.zip
+!deploy/*.tgz
 
 # Local reverse-engineering / reference dumps
 oldApp*/

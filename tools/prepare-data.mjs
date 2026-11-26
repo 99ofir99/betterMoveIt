@@ -21,10 +21,17 @@ const feedUrl =
   process.env.GTFS_ZIP_URL ||
   'https://gtfs.mot.gov.il/gtfsfiles/israel-public-transportation.zip';
 const distUrl = process.env.GTFS_DIST_URL || '';
+const bundledArchive = path.join(root, 'deploy', 'gtfs-dist.tgz');
 
 async function download(url, dest) {
   console.log(`[prepare-data] downloading ${url}`);
-  const res = await fetch(url);
+  const headers = {};
+  const token = process.env.GITHUB_TOKEN || process.env.GH_TOKEN || '';
+  if (token && /github\.com/i.test(url)) {
+    headers.Authorization = `Bearer ${token}`;
+    headers.Accept = 'application/octet-stream';
+  }
+  const res = await fetch(url, { headers, redirect: 'follow' });
   if (!res.ok || !res.body) {
     throw new Error(`download failed: ${res.status} ${res.statusText}`);
   }
@@ -41,17 +48,26 @@ if (fs.existsSync(path.join(outDir, 'meta.json'))) {
 
 fs.mkdirSync(dataDir, { recursive: true });
 
-if (distUrl) {
-  await download(distUrl, archivePath);
+async function extractArchive(src) {
   fs.rmSync(outDir, { recursive: true, force: true });
   fs.mkdirSync(outDir, { recursive: true });
-  execFileSync('tar', ['-xzf', archivePath, '-C', outDir], { stdio: 'inherit' });
-  fs.rmSync(archivePath, { force: true });
+  execFileSync('tar', ['-xzf', src, '-C', outDir], { stdio: 'inherit' });
   if (!fs.existsSync(path.join(outDir, 'meta.json'))) {
-    console.error('[prepare-data] archive extracted but meta.json is missing');
-    process.exit(1);
+    throw new Error(`archive extracted but meta.json is missing (${src})`);
   }
   console.log('[prepare-data] prebuilt store ready');
+}
+
+if (fs.existsSync(bundledArchive)) {
+  console.log(`[prepare-data] using bundled ${bundledArchive}`);
+  await extractArchive(bundledArchive);
+  process.exit(0);
+}
+
+if (distUrl) {
+  await download(distUrl, archivePath);
+  await extractArchive(archivePath);
+  fs.rmSync(archivePath, { force: true });
   process.exit(0);
 }
 
