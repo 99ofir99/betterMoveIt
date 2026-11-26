@@ -74,6 +74,30 @@ describe('prioritizeVehicles', () => {
     expect(out.map((v) => v.vehicleId)).toEqual(['fav-near', 'fav-far']);
   });
 
+  it('matches display-name favourite keys against a short vehicle lineName', () => {
+    const vehicles = [
+      bus('noise', 32.071, 34.781, '99'),
+      bus('both-ways-a', 32.072, 34.782, '5'),
+      bus('both-ways-b', 32.073, 34.783, '5'),
+    ];
+    const out = prioritizeVehicles(vehicles, {
+      near: NEAR,
+      preferredKeys: ['5 dan'],
+      preferredOnly: true,
+      limit: 10,
+    });
+    expect(out.map((v) => v.vehicleId)).toEqual(['both-ways-a', 'both-ways-b']);
+  });
+
+  it('does not treat line 5 as a match for line 55', () => {
+    const out = prioritizeVehicles([bus('fifty-five', 32.07, 34.78, '55')], {
+      near: NEAR,
+      preferredKeys: ['5'],
+      preferredOnly: true,
+    });
+    expect(out).toEqual([]);
+  });
+
   it('preferredOnly returns nothing without preferred keys', () => {
     const out = prioritizeVehicles([bus('a', 32.07, 34.78, '1')], {
       near: NEAR,

@@ -4,6 +4,9 @@ import { useEffect, useState } from 'react';
 import { api } from './api';
 import type { VehiclePosition } from '../types';
 
+/** Client poll — server cache is ~8s; keep UI a bit faster than that. */
+const POLL_MS = 5_000;
+
 export function useVehicles(enabled: boolean, bbox?: [number, number, number, number] | null, routeId?: string | null) {
   const [vehicles, setVehicles] = useState<VehiclePosition[]>([]);
   const [configured, setConfigured] = useState(false);
@@ -29,7 +32,7 @@ export function useVehicles(enabled: boolean, bbox?: [number, number, number, nu
       }
     };
     void load();
-    const t = setInterval(() => void load(), 15_000);
+    const t = setInterval(() => void load(), POLL_MS);
     return () => {
       cancelled = true;
       clearInterval(t);

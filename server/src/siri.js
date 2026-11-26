@@ -11,26 +11,27 @@ const MOT_SIRI_URL =
   process.env.MOT_SIRI_URL ||
   'https://moran.mot.gov.il/Channels/HTTPChannel/SmQuery/2.8/json';
 
+const MOT_CACHE_TTL_MS = Number(process.env.MOT_VEHICLE_CACHE_MS || 8_000);
+
 let cache = { at: 0, vehicles: [], error: null };
+/** @type {Promise<void> | null} */
+let motInflight = null;
 
 export function siriConfigured() {
   return Boolean(MOT_KEY) || hasadnaConfigured();
 }
 
-/**
- * AllActiveTripsFilter — vehicle positions for the whole country.
- * Cached ~15s to match MOT refresh cadence.
- */
-export async function fetchActiveVehicles({ bbox, routeId } = {}) {
-  if (!MOT_KEY) {
-    return fetchHasadnaVehicles({ bbox, routeId });
-  }
+function motResponse(bbox, routeId) {
+  return {
+    configured: true,
+    vehicles: filterVehicles(cache.vehicles, bbox, routeId),
+    updatedAt: cache.at || null,
+    error: cache.error,
+  };
+}
 
+async function refreshMotVehicles() {
   const now = Date.now();
-  if (now - cache.at < 14_000 && !routeId) {
-    return { configured: true, vehicles: filterVehicles(cache.vehicles, bbox, routeId), updatedAt: cache.at, error: cache.error };
-  }
-
   const url = new URL(MOT_SIRI_URL);
   url.searchParams.set('Key', MOT_KEY);
   url.searchParams.set('MonitoringRef', 'AllActiveTripsFilter');
@@ -64,22 +65,44 @@ export async function fetchActiveVehicles({ bbox, routeId } = {}) {
         stopCode: j.MonitoredCall?.StopPointRef ? String(j.MonitoredCall.StopPointRef) : undefined,
       });
     }
-    cache = { at: now, vehicles, error: null };
-    return {
-      configured: true,
-      vehicles: filterVehicles(vehicles, bbox, routeId),
-      updatedAt: now,
-      error: null,
-    };
+    cache = { at: Date.now(), vehicles, error: null };
   } catch (e) {
     cache = { ...cache, error: String(e.message ?? e) };
-    return {
-      configured: true,
-      vehicles: filterVehicles(cache.vehicles, bbox, routeId),
-      updatedAt: cache.at || null,
-      error: String(e.message ?? e),
-    };
   }
+}
+
+function ensureMotRefresh() {
+  if (motInflight) return motInflight;
+  motInflight = refreshMotVehicles().finally(() => {
+    motInflight = null;
+  });
+  return motInflight;
+}
+
+/**
+ * AllActiveTripsFilter — vehicle positions for the whole country.
+ * Warm cache + stale-while-revalidate so map polls stay snappy.
+ */
+export async function fetchActiveVehicles({ bbox, routeId } = {}) {
+  if (!MOT_KEY) {
+    return fetchHasadnaVehicles({ bbox, routeId });
+  }
+
+  const now = Date.now();
+  const age = cache.at ? now - cache.at : Number.POSITIVE_INFINITY;
+  const hasData = cache.vehicles.length > 0;
+
+  if (hasData && age < MOT_CACHE_TTL_MS) {
+    return motResponse(bbox, routeId);
+  }
+
+  if (hasData) {
+    void ensureMotRefresh();
+    return motResponse(bbox, routeId);
+  }
+
+  await ensureMotRefresh();
+  return motResponse(bbox, routeId);
 }
 
 /**
@@ -110,6 +133,12 @@ export async function fetchStopMonitoring(stopCodes, previewMinutes = 90) {
     const visits = raw.map((v) => {
       const j = v.MonitoredVehicleJourney;
       const call = j?.MonitoredCall;
+      const lat = j?.VehicleLocation?.Latitude != null ? Number(j.VehicleLocation.Latitude) : NaN;
+      const lon = j?.VehicleLocation?.Longitude != null ? Number(j.VehicleLocation.Longitude) : NaN;
+      // Moovit G/Y/R colors require a vehicle GPS signal behind the ETA.
+      const hasVehicleLocation = Number.isFinite(lat) && Number.isFinite(lon);
+      const hasExpected = Boolean(call?.ExpectedArrivalTime);
+      const recordedAt = Date.parse(v.RecordedAtTime || '') || null;
       return {
         stopCode: String(v.MonitoringRef ?? call?.StopPointRef ?? ''),
         lineName: String(j?.PublishedLineName ?? ''),
@@ -117,7 +146,12 @@ export async function fetchStopMonitoring(stopCodes, previewMinutes = 90) {
         vehicleId: j?.VehicleRef ? String(j.VehicleRef) : undefined,
         aimed: call?.AimedArrivalTime || null,
         expected: call?.ExpectedArrivalTime || call?.AimedArrivalTime || null,
-        live: Boolean(call?.ExpectedArrivalTime),
+        hasVehicleLocation,
+        lat: hasVehicleLocation ? lat : undefined,
+        lon: hasVehicleLocation ? lon : undefined,
+        recordedAt: Number.isFinite(recordedAt) ? recordedAt : null,
+        /** GPS-backed prediction (confidence tiers applied by arrivalAccuracy). */
+        live: hasExpected && hasVehicleLocation,
       };
     });
     return { configured: true, visits, error: null };

@@ -18,6 +18,8 @@ export interface AppSettings {
 }
 
 const KEY = 'bmi.settings.v1';
+/** Dispatched after settings are written — App syncs live-buses / walk prefs. */
+export const SETTINGS_CHANGED_EVENT = 'bmi:settings-changed';
 
 const DEFAULTS: AppSettings = {
   wheelchair: false,
@@ -45,5 +47,6 @@ export function loadSettings(): AppSettings {
 export function saveSettings(patch: Partial<AppSettings>): AppSettings {
   const next = { ...loadSettings(), ...patch };
   localStorage.setItem(KEY, JSON.stringify(next));
+  window.dispatchEvent(new CustomEvent(SETTINGS_CHANGED_EVENT, { detail: next }));
   return next;
 }

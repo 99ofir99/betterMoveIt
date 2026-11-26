@@ -13,6 +13,7 @@ import { api } from './api';
 import { normalizeJourneyTiming } from './journeyTiming';
 import { sortJourneys } from './sort';
 import { bestBoardingMinutes } from './boardingEta';
+import { minutesUntilDepart } from './format';
 import type { Journey, LatLon, Place, TransitLeg } from '../types';
 import type { FrequentDestResult } from '../components/home/types';
 
@@ -34,26 +35,68 @@ function fmtArrival(secs: number): string {
   return `${h12}:${String(m).padStart(2, '0')} ${period}`;
 }
 
+type BoardLeave = {
+  minutes: number;
+  departure: number;
+  live: boolean;
+  confidence?: import('../types').ArrivalConfidence;
+  source?: import('../types').ArrivalSource;
+} | null;
+
 /** Derive display values from a planned journey (schedule fallback). */
 function deriveDisplay(
   journey: Journey,
-  liveMinutes: number | null = null
-): Pick<FrequentDestResult, 'leavesInMin' | 'arriveLabel' | 'durationMin' | 'boardingStop'> {
+  boardLeave: BoardLeave = null
+): Pick<
+  FrequentDestResult,
+  | 'leavesInMin'
+  | 'leavesDepartureSec'
+  | 'leavesLive'
+  | 'leavesConfidence'
+  | 'leavesSource'
+  | 'arriveLabel'
+  | 'durationMin'
+  | 'boardingStop'
+> {
   const now = nowSeconds();
-  let waitSec = journey.departSeconds - now;
-  if (waitSec < -12 * 3600) waitSec += 86400;
-  const rawMin = Math.round(waitSec / 60);
-  const scheduleMin = rawMin >= 0 ? rawMin : null;
+  const scheduled = minutesUntilDepart(journey.departSeconds, now);
+  const scheduleMin = scheduled.minutes;
   // Prefer live board / vehicle ETA when available (Moovit).
-  const leavesInMin = liveMinutes != null && liveMinutes >= 0 ? liveMinutes : scheduleMin;
+  const leavesInMin =
+    boardLeave != null && boardLeave.minutes >= 0 ? boardLeave.minutes : scheduleMin;
+  const leavesDepartureSec = boardLeave?.departure ?? journey.departSeconds;
+  const leavesLive = Boolean(boardLeave?.live);
+  const leavesConfidence =
+    boardLeave?.confidence ?? (leavesLive ? 'high' : 'none');
+  const leavesSource = boardLeave?.source ?? (leavesLive ? 'live' : 'schedule');
   const arriveLabel = fmtArrival(journey.arrivalSeconds);
   const durationMin = Math.round(journey.durationSec / 60);
 
   const firstTransit = journey.legs.find((l): l is TransitLeg => l.mode === 'transit');
   const boardingStop = firstTransit?.fromName ?? null;
 
-  return { leavesInMin, arriveLabel, durationMin, boardingStop };
+  return {
+    leavesInMin,
+    leavesDepartureSec,
+    leavesLive,
+    leavesConfidence,
+    leavesSource,
+    arriveLabel,
+    durationMin,
+    boardingStop,
+  };
 }
+
+const emptyDerived = {
+  leavesInMin: null,
+  leavesDepartureSec: null,
+  leavesLive: false,
+  leavesConfidence: 'none' as const,
+  leavesSource: 'schedule' as const,
+  arriveLabel: null,
+  durationMin: null,
+  boardingStop: null,
+};
 
 function samePlace(a: Place, b: Place): boolean {
   return a.lat === b.lat && a.lon === b.lon && a.label === b.label;
@@ -119,10 +162,7 @@ export function useFrequentDestination(
         place: destSnap,
         journey: null,
         loading: false,
-        leavesInMin: null,
-        arriveLabel: null,
-        durationMin: null,
-        boardingStop: null,
+        ...emptyDerived,
       });
       return;
     }
@@ -143,10 +183,7 @@ export function useFrequentDestination(
             place: destSnap,
             journey: null,
             loading: true,
-            leavesInMin: null,
-            arriveLabel: null,
-            durationMin: null,
-            boardingStop: null,
+            ...emptyDerived,
           };
     });
 
@@ -159,14 +196,14 @@ export function useFrequentDestination(
         const journey: Journey | null = ranked[0] ?? null;
         journeyRef.current = journey;
 
-        let liveMinutes: number | null = null;
+        let boardLeave: BoardLeave = null;
         const firstTransit = journey?.legs.find((l): l is TransitLeg => l.mode === 'transit');
         if (firstTransit?.from.stopId) {
           try {
             const board = await api.stopDepartures(firstTransit.from.stopId, ctrl.signal);
             if (!ctrl.signal.aborted) {
               const best = bestBoardingMinutes(board.departures, firstTransit);
-              if (best) liveMinutes = best.minutes;
+              if (best) boardLeave = best;
             }
           } catch {
             /* schedule fallback */
@@ -174,14 +211,7 @@ export function useFrequentDestination(
         }
 
         if (ctrl.signal.aborted) return;
-        const derived = journey
-          ? deriveDisplay(journey, liveMinutes)
-          : {
-              leavesInMin: null,
-              arriveLabel: null,
-              durationMin: null,
-              boardingStop: null,
-            };
+        const derived = journey ? deriveDisplay(journey, boardLeave) : { ...emptyDerived };
         setResult({ place: destSnap, journey, loading: false, ...derived });
       })
       .catch(() => {
@@ -202,7 +232,7 @@ export function useFrequentDestination(
           if (best == null) return;
           setResult((prev) =>
             prev && prev.journey
-              ? { ...prev, ...deriveDisplay(prev.journey, best.minutes) }
+              ? { ...prev, ...deriveDisplay(prev.journey, best) }
               : prev
           );
         })

@@ -26,7 +26,12 @@ import { DraggableSheet } from "./components/sheet/DraggableSheet";
 import type { SheetSnap } from "./components/sheet/types";
 import { useFrequentDestination } from "./lib/useFrequentDestination";
 import { api } from "./lib/api";
-import { loadSettings, saveSettings, type TransportPrefs } from "./lib/settings";
+import {
+  loadSettings,
+  saveSettings,
+  SETTINGS_CHANGED_EVENT,
+  type TransportPrefs,
+} from "./lib/settings";
 import { computeTripInsights } from "./lib/tripInsights";
 import { countDisabledTransport } from "./lib/transportMode";
 import { BestTimeCard } from "./components/results/BestTimeCard";
@@ -70,6 +75,12 @@ export default function App() {
   // Directions detail (Moovit trip sheet) — separate from the results list.
   const [showJourneyDetail, setShowJourneyDetail] = useState(false);
   const [resultsSnap, setResultsSnap] = useState<SheetSnap>("half");
+  /** Directions detail sheet snap — peek keeps the route path visible above Start. */
+  const [detailSnap, setDetailSnap] = useState<SheetSnap>("peek");
+  /** Stations sheet snap — peek reveals map markers; half/full shows the nearby list. */
+  const [nearbySnap, setNearbySnap] = useState<SheetSnap>("half");
+  /** Bumped when opening / selecting a trip so the map re-fits the path before Start. */
+  const [journeyFitKey, setJourneyFitKey] = useState(0);
   const [maxWalk, setMaxWalkState] = useState(() => loadSettings().maxWalkM);
   const setMaxWalk = useCallback((v: number) => {
     setMaxWalkState(v);
@@ -176,15 +187,9 @@ export default function App() {
     }
   }, []);
 
-  const onMapClick = useCallback(
-    async (point: LatLon) => {
-      if (activeTab !== "directions") return;
-      const label = await api.reverseGeocode(point.lat, point.lon);
-      state.selectPlace({ label, lat: point.lat, lon: point.lon }, "to");
-      setToQuery("");
-    },
-    [state, activeTab],
-  );
+  // Map taps must not overwrite From/To — destination is only set via search,
+  // favorites, or home shortcuts. Accidental map clicks were wiping the To field.
+  const onMapClick = useCallback((_point: LatLon) => {}, []);
 
   const rankedJourneys = useMemo(
     () => rankJourneys(state.plan.journeys, sortMode, transportPrefs),
@@ -260,6 +265,17 @@ export default function App() {
     const onFavoritesChanged = () => setFavTick((x) => x + 1);
     window.addEventListener(FAVORITES_CHANGED_EVENT, onFavoritesChanged);
     return () => window.removeEventListener(FAVORITES_CHANGED_EVENT, onFavoritesChanged);
+  }, []);
+
+  // More tab writes settings to localStorage — keep live-buses / walk in sync.
+  useEffect(() => {
+    const onSettingsChanged = () => {
+      const s = loadSettings();
+      setLiveBuses(s.showLiveBuses);
+      setMaxWalk(s.maxWalkM);
+    };
+    window.addEventListener(SETTINGS_CHANGED_EVENT, onSettingsChanged);
+    return () => window.removeEventListener(SETTINGS_CHANGED_EVENT, onSettingsChanged);
   }, []);
 
   const fromIsCurrentLocation = useMemo(() => {
@@ -632,6 +648,7 @@ export default function App() {
           onMapClick={onMapClick}
           onLocate={() => void handleLocate()}
           fitToJourney={state.panel === "journeys" && activeTab === "directions" && !tripLive}
+          fitKey={journeyFitKey}
           lineGeometry={lineGeometry}
           ghostJourneyPolylines={tripLive ? [] : journeyGhosts}
           vehicles={vehicles}
@@ -760,7 +777,9 @@ export default function App() {
             withNav
             overlay
             behavior="free"
-            initialSnap="half"
+            initialSnap="peek"
+            snap={detailSnap}
+            onSnapChange={setDetailSnap}
           >
             <DirectionsSheet
               journey={activeJourney}
@@ -843,6 +862,8 @@ export default function App() {
                 departNow={state.when === "now"}
                 onSelect={(i) => {
                   state.setSelectedJourney(i);
+                  setDetailSnap("peek");
+                  setJourneyFitKey((k) => k + 1);
                   setShowJourneyDetail(true);
                 }}
               />
@@ -910,18 +931,35 @@ export default function App() {
       ) : null}
 
       {activeTab === "nearby" && state.panel !== "stop" && (
-        <section className="sheet sheet--with-nav" aria-label="Nearby stops">
+        <DraggableSheet
+          ariaLabel="Nearby stations"
+          className="sheet--stations"
+          withNav
+          overlay
+          behavior="free"
+          initialSnap="half"
+          snap={nearbySnap}
+          onSnapChange={setNearbySnap}
+        >
           <NearbyTab
             center={state.userLocation ?? state.center}
             onOpenStop={openStop}
             onLocate={() => void handleLocate()}
             locating={state.locating}
+            mapPeek={nearbySnap === "peek"}
+            onToggleMapView={() =>
+              setNearbySnap((s) => (s === "peek" ? "half" : "peek"))
+            }
           />
-        </section>
+        </DraggableSheet>
       )}
 
       {activeTab === "nearby" && state.panel === "stop" && state.selectedStop && (
-        <section className="sheet sheet--with-nav sheet--stop-detail" aria-label="Stop">
+        <section
+          className="sheet sheet--overlay sheet--with-nav sheet--stop-detail"
+          aria-label="Stop"
+        >
+          <div className="sheet__grabber" aria-hidden="true" />
           <StopPanel
             stopId={state.selectedStop.id}
             stopName={state.selectedStop.name}
@@ -1000,9 +1038,8 @@ export default function App() {
             if (tab !== "directions" && tab !== "nearby") {
               state.clearStop();
             }
-            if (tab === "more") {
-              setLiveBuses(loadSettings().showLiveBuses);
-              setMaxWalk(loadSettings().maxWalkM);
+            if (tab === "nearby") {
+              setNearbySnap("half");
             }
             // Return to home screen when tapping Directions from another tab
             if (tab === "directions") {

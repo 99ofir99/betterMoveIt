@@ -128,6 +128,14 @@ export const ALL_FEATURES: Feature[] = [
     status: "partial",
   },
   {
+    id: "arrival_accuracy",
+    group: "Core",
+    name: "Arrival time accuracy",
+    description:
+      "Moovit-style green/yellow/red/black ETAs from GPS freshness, off-route warnings, delay labels, and tap-for-next-arrival accuracy.",
+    status: "live",
+  },
+  {
     id: "trip_notifications",
     group: "Enhancements",
     name: "Trip alerts",

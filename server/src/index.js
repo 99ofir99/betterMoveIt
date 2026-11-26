@@ -8,6 +8,13 @@ import { JourneyPlanner } from './raptor.js';
 import { departuresAtStop, nextForRouteAtStop } from './departures.js';
 import { fetchActiveVehicles, fetchStopMonitoring, siriConfigured } from './siri.js';
 import { applyVehicleEtas } from './vehicleEta.js';
+import {
+  buildAccuracyFields,
+  distanceToPolyline,
+  GPS_MEDIUM_SEC,
+  OFF_ROUTE_M,
+  signalAgeSec,
+} from './arrivalAccuracy.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PORT = process.env.PORT || 8787;
@@ -130,9 +137,21 @@ app.get('/api/stop/:id/departures', async (req, res) => {
   const board = departuresAtStop(store, stopIdx, clock, horizon, 40);
 
   // Overlay SIRI expected times when a key is configured; else estimate from live vehicles.
+  // Moovit accuracy: green/yellow/red from GPS freshness; black = schedule.
   let live = null;
   const stop = store.stopObject(stopIdx);
   const nowMs = Date.now();
+
+  // Default every prediction to schedule (black) until a GPS-backed signal lands.
+  for (const g of board.departures) {
+    if (!g.next?.length) continue;
+    g.next = g.next.map((n) =>
+      n.confidence
+        ? n
+        : { ...n, ...buildAccuracyFields({ source: 'schedule' }) }
+    );
+  }
+
   if (siriConfigured() && stop.code) {
     live = await fetchStopMonitoring(stop.code);
     if (live.visits?.length) {
@@ -151,21 +170,61 @@ app.get('/api/stop/:id/departures', async (req, res) => {
           const exp = Date.parse(match.expected);
           if (Number.isFinite(exp)) {
             const minutes = Math.max(0, Math.round((exp - nowMs) / 60_000));
+            const expDate = new Date(exp);
+            const departureSec =
+              expDate.getHours() * 3600 + expDate.getMinutes() * 60 + expDate.getSeconds();
+            const aimedMs = match.aimed ? Date.parse(match.aimed) : NaN;
+            const delayMin = Number.isFinite(aimedMs)
+              ? Math.round((exp - aimedMs) / 60_000)
+              : undefined;
+
+            let offRoute = false;
+            if (match.hasVehicleLocation && match.lat != null && match.lon != null) {
+              try {
+                const detail = store.routeDetail(g.route.index, g.direction);
+                if (detail?.geometry?.length) {
+                  const dist = distanceToPolyline(match.lat, match.lon, detail.geometry);
+                  offRoute = Number.isFinite(dist) && dist > OFF_ROUTE_M;
+                }
+              } catch {
+                /* shape optional */
+              }
+            }
+
+            const age = match.hasVehicleLocation
+              ? signalAgeSec(match.recordedAt, nowMs)
+              : null;
+            // Without GPS, keep the agency ETA minutes but stay black (schedule-style).
+            // Location without a timestamp → treat as "less frequent" (yellow), not green.
+            const accuracy = match.hasVehicleLocation
+              ? buildAccuracyFields({
+                  signalAgeSec: age ?? GPS_MEDIUM_SEC,
+                  offRoute,
+                  delayMin,
+                  vehicleId: match.vehicleId,
+                  lastUpdated: match.recordedAt ?? nowMs,
+                  source: 'live',
+                })
+              : buildAccuracyFields({
+                  delayMin,
+                  source: 'schedule',
+                });
+
             g.next[0] = {
               ...g.next[0],
               minutes,
-              live: true,
+              departure: departureSec,
+              ...accuracy,
             };
-            g.live = true;
-            g.siri = true;
+            g.live = accuracy.live;
+            g.siri = accuracy.live;
           }
         }
       }
     }
   }
 
-  // Hasadna / MOT vehicle positions → ETA when Stop Monitoring didn't cover a line.
-  // Race a short timeout so a slow vehicle feed never blocks the board.
+  // Hasadna / MOT vehicle positions → ETA + confidence when SM didn't GPS-confirm.
   try {
     const d = 0.08; // ~9 km bbox around the stop
     const vehiclesRes = await Promise.race([
@@ -179,7 +238,9 @@ app.get('/api/stop/:id/departures', async (req, res) => {
         board,
         stop,
         vehiclesRes.vehicles,
-        (ref) => store.shortNameForLineRef(ref)
+        (ref) => store.shortNameForLineRef(ref),
+        store,
+        nowMs
       );
     }
   } catch {

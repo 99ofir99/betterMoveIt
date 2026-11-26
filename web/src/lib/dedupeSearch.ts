@@ -39,10 +39,9 @@ export function dedupePlaces(places: Place[]): Place[] {
 export function searchResultDedupeKey(r: SearchResult): string {
   if (r.kind === 'line') {
     const name = (r.shortName || r.displayName || '').trim();
+    // Keep A↔B and B↔A distinct — opposite directions are separate lines.
     const ends = formatLineLongName(r.longName || '');
-    const [a, b] = ends.split(/\s*↔\s*/);
-    const pair = [a?.trim() || '', b?.trim() || ''].sort().join('|');
-    return `line:${name}|${pair}`;
+    return `line:${name}|${ends}|${r.agency || ''}`;
   }
   if (r.kind === 'stop' && r.id) {
     // Parent/child platforms often share a code + name near the same spot.
@@ -64,15 +63,17 @@ export function dedupeSearchResults(results: SearchResult[]): SearchResult[] {
   return out;
 }
 
-/** Lines tab: one row per shortName + corridor (directions collapse). */
+/**
+ * Lines tab: one row per shortName + ordered corridor + agency.
+ * Opposite directions (A↔B vs B↔A) stay as separate rows; same-direction
+ * GTFS variants (-10 / -11) still collapse via formatLineLongName.
+ */
 export function dedupeLines(lines: Line[]): Line[] {
   const seen = new Set<string>();
   const out: Line[] = [];
   for (const line of lines) {
     const ends = formatLineLongName(line.longName);
-    const [a, b] = ends.split(/\s*↔\s*/);
-    const pair = [a?.trim() || '', b?.trim() || ''].sort().join('|');
-    const key = `${(line.shortName || line.displayName).trim()}|${pair}|${line.agency || ''}`;
+    const key = `${(line.shortName || line.displayName).trim()}|${ends}|${line.agency || ''}`;
     if (seen.has(key)) continue;
     seen.add(key);
     out.push(line);

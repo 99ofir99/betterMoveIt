@@ -54,6 +54,22 @@ export function journeyPolylineCoords(journey: Journey): [number, number][] {
   return all;
 }
 
+/** Origin / destination pins for pre-start route preview on the map. */
+export function journeyEndpoints(journey: Journey): { start: LatLon; end: LatLon } | null {
+  let start: LatLon | null = null;
+  let end: LatLon | null = null;
+  for (const leg of journey.legs) {
+    if (!start && leg.from && Number.isFinite(leg.from.lat) && Number.isFinite(leg.from.lon)) {
+      start = { lat: leg.from.lat, lon: leg.from.lon };
+    }
+    if (leg.to && Number.isFinite(leg.to.lat) && Number.isFinite(leg.to.lon)) {
+      end = { lat: leg.to.lat, lon: leg.to.lon };
+    }
+  }
+  if (!start || !end) return null;
+  return { start, end };
+}
+
 /** Polylines for journeys that are not the selected list index. */
 export function ghostJourneyPolylines(
   journeys: Journey[],

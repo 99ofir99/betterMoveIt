@@ -5,6 +5,8 @@ import { formatClock12h, formatDistance, formatDuration } from '../../lib/format
 import { BundledLineBadge } from '../common/BundledLineBadge';
 import { SwipeRail } from '../common/SwipeRail';
 import { ItineraryRow } from './ItineraryRow';
+import { TransitLegEtaBadge } from './TransitLegEtaBadge';
+import { useTransitLegEta } from './useTransitLegEta';
 import type {
   ItineraryTimelineProps,
   ItineraryTransitRowProps,
@@ -71,12 +73,17 @@ function WalkRow({ leg }: ItineraryWalkRowProps) {
 function TransitRow({ leg, hideBoardStop, onStopClick, alternatives }: ItineraryTransitRowProps) {
   const middle = leg.intermediateStops.slice(1, -1);
   const routes = alternatives && alternatives.length > 0 ? alternatives : [leg.route];
+  const eta = useTransitLegEta(leg, alternatives);
+
   return (
     <>
-      <SwipeRail className="itin__line">
-        <BundledLineBadge routes={routes} />
-        <span className="itin__headsign">{leg.headsign}</span>
-      </SwipeRail>
+      <div className="itin__line-row">
+        <SwipeRail className="itin__line">
+          <BundledLineBadge routes={routes} />
+          <span className="itin__headsign">{leg.headsign}</span>
+        </SwipeRail>
+        <TransitLegEtaBadge eta={eta} />
+      </div>
 
       {!hideBoardStop && (
         <button
@@ -85,7 +92,9 @@ function TransitRow({ leg, hideBoardStop, onStopClick, alternatives }: Itinerary
           onClick={() => leg.from.stopId && onStopClick(leg.from.stopId)}
         >
           <span>{leg.fromName}</span>
-          <span>{formatClock12h(leg.departure)}</span>
+          <span className={`itin__stop-eta ${eta.confidence ? `is-acc-${eta.confidence}` : eta.live ? 'is-acc-high' : 'is-acc-none'}`}>
+            {formatClock12h(eta.departure)}
+          </span>
         </button>
       )}
 

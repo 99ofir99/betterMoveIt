@@ -155,12 +155,30 @@ function JourneyCardFooter({
           }
           // Schedule fallback from plan clock.
           const { minutes, nextDay } = minutesUntilDepart(journey.departSeconds);
-          setEtas([{ minutes, departure: journey.departSeconds, live: false, nextDay }]);
+          setEtas([
+            {
+              minutes,
+              departure: journey.departSeconds,
+              live: false,
+              confidence: 'none',
+              source: 'schedule',
+              nextDay,
+            },
+          ]);
         })
         .catch(() => {
           if (ctrl.signal.aborted) return;
           const { minutes, nextDay } = minutesUntilDepart(journey.departSeconds);
-          setEtas([{ minutes, departure: journey.departSeconds, live: false, nextDay }]);
+          setEtas([
+            {
+              minutes,
+              departure: journey.departSeconds,
+              live: false,
+              confidence: 'none',
+              source: 'schedule',
+              nextDay,
+            },
+          ]);
         });
     };
     poll();
@@ -196,21 +214,37 @@ function JourneyCardFooter({
       : [
           (() => {
             const { minutes, nextDay } = minutesUntilDepart(journey.departSeconds);
-            return { minutes, departure: journey.departSeconds, live: false, nextDay };
+            return {
+              minutes,
+              departure: journey.departSeconds,
+              live: false,
+              confidence: 'none' as const,
+              source: 'schedule' as const,
+              nextDay,
+            };
           })(),
         ];
   const leaveLabel = formatLeaveEntries(entries);
   const nextDay = Boolean(entries[0]?.nextDay);
-  const isLive = entries.some((e) => e.live);
+  const best = entries.find((e) => e.live) ?? entries[0];
+  const confidence = best?.confidence ?? (best?.live ? 'high' : 'none');
+  const isLive = Boolean(best?.live);
 
   return (
     <p className="journey-card__footer">
       Leaves{' '}
-      <strong className={`journey-card__footer-live${isLive ? ' is-live' : ''}`}>
+      <strong
+        className={`journey-card__footer-live is-acc-${confidence}${isLive ? ' is-live' : ''}`}
+      >
         {leaveLabel}
-        {isLive && (
+        {isLive && confidence !== 'off_route' && (
           <span className="journey-card__live-icon" aria-hidden="true">
             ◉
+          </span>
+        )}
+        {confidence === 'off_route' && (
+          <span className="journey-card__off-route" aria-label="Off route">
+            !
           </span>
         )}
       </strong>

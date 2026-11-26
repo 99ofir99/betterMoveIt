@@ -3,18 +3,19 @@
  * passes plain data in.
  */
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import maplibregl, { type LngLatBoundsLike } from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import type { Journey, LatLon, Stop, VehiclePosition } from '../types';
 import { routeColor } from '../lib/format';
+import { journeyEndpoints } from '../lib/journeyMap';
 import {
   applyMoovitNightPalette,
   applyUprightLabels,
   buildRasterStyle,
   DEFAULT_MAP_STYLE_URL,
 } from '../lib/mapStyle';
-import { visibleTargetOffset } from '../lib/mapOverlayPadding';
+import { getOverlayCameraPadding, visibleTargetOffset } from '../lib/mapOverlayPadding';
 
 interface MapCanvasProps {
   center: LatLon;
@@ -26,6 +27,11 @@ interface MapCanvasProps {
   onStopClick: (stop: Stop) => void;
   onMapClick: (point: LatLon) => void;
   fitToJourney: boolean;
+  /**
+   * Bump to force another fitBounds even when the same journey object is still
+   * selected (e.g. opening Directions detail for the already-highlighted card).
+   */
+  fitKey?: number;
   /** Recenters map on the user when tapped (location FAB). */
   onLocate?: () => void;
   /** Optional polyline for a selected line ([lat, lon][]). */
@@ -174,6 +180,7 @@ export function MapCanvas({
   onStopClick,
   onMapClick,
   fitToJourney,
+  fitKey = 0,
   onLocate,
   lineGeometry = null,
   ghostJourneyPolylines = [],
@@ -188,6 +195,7 @@ export function MapCanvas({
   const markersRef = useRef<maplibregl.Marker[]>([]);
   const vehicleMarkersRef = useRef<maplibregl.Marker[]>([]);
   const tripMarkersRef = useRef<maplibregl.Marker[]>([]);
+  const previewMarkersRef = useRef<maplibregl.Marker[]>([]);
   const youMarkerRef = useRef<maplibregl.Marker | null>(null);
   const onStopClickRef = useRef(onStopClick);
   const onMapClickRef = useRef(onMapClick);
@@ -195,6 +203,8 @@ export function MapCanvas({
   const onUserPanRef = useRef(onUserPan);
   const locateControlRef = useRef<LocateFabControl | null>(null);
   const headingRef = useRef(headingDeg);
+  /** Increments on basemap style reload so journey/ghost layers are redrawn. */
+  const [styleEpoch, setStyleEpoch] = useState(0);
 
   // Keep callbacks fresh without re-creating the map.
   onStopClickRef.current = onStopClick;
@@ -245,6 +255,8 @@ export function MapCanvas({
     const onStyleReady = () => {
       applyMoovitNightPalette(map);
       applyUprightLabels(map);
+      // setStyle() wipes custom sources — bump epoch so journey effects redraw.
+      setStyleEpoch((n) => n + 1);
     };
     map.on('style.load', onStyleReady);
     if (map.isStyleLoaded()) onStyleReady();
@@ -312,15 +324,16 @@ export function MapCanvas({
   }, [onLocate]);
 
   // Recenter when the app asks for it (respect bottom sheet / chrome).
+  // Skip while fitting a planned route — otherwise destination center fights the path.
   useEffect(() => {
     const map = mapRef.current;
-    if (!map) return;
+    if (!map || fitToJourney || followUser) return;
     map.easeTo({
       center: [center.lon, center.lat],
       offset: visibleTargetOffset(map.getContainer()),
       duration: 500,
     });
-  }, [center.lat, center.lon]);
+  }, [center.lat, center.lon, fitToJourney, followUser]);
 
   // Stop markers - limit to prevent lag
   useEffect(() => {
@@ -428,7 +441,17 @@ export function MapCanvas({
       const ageSec = Number.isFinite(v.timestamp)
         ? Math.max(0, Math.round((now - v.timestamp) / 1000))
         : null;
-      const fresh = ageSec != null && ageSec <= 90;
+      // Moovit Live Location: green / yellow / red from GPS freshness.
+      const acc =
+        ageSec == null
+          ? 'none'
+          : ageSec <= 45
+            ? 'high'
+            : ageSec <= 120
+              ? 'medium'
+              : ageSec <= 240
+                ? 'low'
+                : 'none';
       const ageText =
         ageSec == null
           ? 'no signal'
@@ -437,7 +460,7 @@ export function MapCanvas({
             : ageSec < 60
               ? `${ageSec}s ago`
               : `${Math.floor(ageSec / 60)}m ago`;
-      el.className = `bus-marker${fresh ? ' is-fresh' : ' is-stale'}`;
+      el.className = `bus-marker is-acc-${acc}${acc === 'high' ? ' is-fresh' : acc === 'none' ? ' is-stale' : ''}`;
       el.title = `Line ${label} · updated ${ageText}`;
       el.innerHTML = `<span class="bus-marker__label">${label}</span><span class="bus-marker__age">${ageText}</span>`;
       const marker = new maplibregl.Marker({ element: el, anchor: 'center' })
@@ -524,7 +547,7 @@ export function MapCanvas({
 
     if (map.isStyleLoaded()) draw();
     else map.once('load', draw);
-  }, [ghostJourneyPolylines]);
+  }, [ghostJourneyPolylines, styleEpoch]);
 
   // Journey geometry: one line per transit leg, dashed for walking.
   useEffect(() => {
@@ -645,10 +668,20 @@ export function MapCanvas({
             [minLon, minLat],
             [maxLon, maxLat],
           ];
-          map.fitBounds(bounds, {
-            padding: { top: 96, bottom: 320, left: 40, right: 40 },
-            maxZoom: 15,
-            duration: 700,
+          // Defer one frame so a newly opened peek/half sheet is in the DOM for padding.
+          requestAnimationFrame(() => {
+            if (!mapRef.current) return;
+            const pad = getOverlayCameraPadding(map.getContainer());
+            map.fitBounds(bounds, {
+              padding: {
+                top: Math.max(pad.top, 72),
+                bottom: Math.max(pad.bottom, 160),
+                left: Math.max(pad.left, 36),
+                right: Math.max(pad.right, 36),
+              },
+              maxZoom: 15,
+              duration: 700,
+            });
           });
         }
       }
@@ -656,7 +689,36 @@ export function MapCanvas({
 
     if (map.isStyleLoaded()) draw();
     else map.once('load', draw);
-  }, [journey, fitToJourney]);
+  }, [journey, fitToJourney, fitKey, styleEpoch]);
+
+  // Pre-start route preview: origin + destination pins (board/alight take over after Start).
+  useEffect(() => {
+    const map = mapRef.current;
+    for (const m of previewMarkersRef.current) m.remove();
+    previewMarkersRef.current = [];
+    if (!map || !journey || activeLegIndex != null) return;
+
+    const ends = journeyEndpoints(journey);
+    if (!ends) return;
+
+    const startEl = document.createElement('div');
+    startEl.className = 'journey-end-pin journey-end-pin--start';
+    startEl.setAttribute('aria-label', 'Trip start');
+    previewMarkersRef.current.push(
+      new maplibregl.Marker({ element: startEl, anchor: 'center' })
+        .setLngLat([ends.start.lon, ends.start.lat])
+        .addTo(map)
+    );
+
+    const endEl = document.createElement('div');
+    endEl.className = 'journey-end-pin journey-end-pin--end';
+    endEl.setAttribute('aria-label', 'Trip end');
+    previewMarkersRef.current.push(
+      new maplibregl.Marker({ element: endEl, anchor: 'bottom' })
+        .setLngLat([ends.end.lon, ends.end.lat])
+        .addTo(map)
+    );
+  }, [journey, activeLegIndex, styleEpoch]);
 
   // Follow user: in trip mode, smoothly pan to GPS position on every update.
   useEffect(() => {

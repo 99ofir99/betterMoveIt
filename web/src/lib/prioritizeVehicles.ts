@@ -53,13 +53,35 @@ export function lineKeysFromFavoriteLines(favorites: Iterable<FavoriteLine>): st
   return keys;
 }
 
+/** True when `label` equals `key`, or starts with `key` + a delimiter. */
+function labelMatchesKey(label: string, key: string): boolean {
+  if (!label || !key) return false;
+  if (label === key) return true;
+  // Avoid "5" matching "55" — require a separator after the key.
+  return (
+    label.startsWith(`${key} `) ||
+    label.startsWith(`${key}-`) ||
+    label.startsWith(`${key}/`) ||
+    key.startsWith(`${label} `) ||
+    key.startsWith(`${label}-`)
+  );
+}
+
 export function vehicleMatchesPreferred(
   vehicle: VehiclePosition,
   preferred: Set<string>
 ): boolean {
   if (!preferred.size) return false;
-  if (vehicle.lineName && preferred.has(normalizeLineKey(vehicle.lineName))) return true;
-  if (vehicle.routeId && preferred.has(normalizeLineKey(vehicle.routeId))) return true;
+  const line = vehicle.lineName ? normalizeLineKey(vehicle.lineName) : '';
+  const route = vehicle.routeId ? normalizeLineKey(vehicle.routeId) : '';
+  if (line && preferred.has(line)) return true;
+  if (route && preferred.has(route)) return true;
+  // Favourite display names like "184 dan" vs vehicle "184".
+  if (line) {
+    for (const key of preferred) {
+      if (labelMatchesKey(line, key)) return true;
+    }
+  }
   return false;
 }
 

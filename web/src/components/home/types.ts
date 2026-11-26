@@ -11,6 +11,14 @@ export interface FrequentDestResult {
   loading: boolean;
   /** Rounded minutes until departure (null if unavailable or past). */
   leavesInMin: number | null;
+  /** Seconds-from-midnight for the next boarding, for clock labels when far out. */
+  leavesDepartureSec: number | null;
+  /** True when boarding ETA is backed by live vehicle GPS. */
+  leavesLive: boolean;
+  /** Moovit accuracy tier for the boarding ETA color. */
+  leavesConfidence: import('../../types').ArrivalConfidence;
+  /** Schedule vs historical disclosure when not live. */
+  leavesSource: import('../../types').ArrivalSource;
   /** Human-readable arrival time, e.g. "11:19 PM". */
   arriveLabel: string | null;
   /** Duration in minutes. */

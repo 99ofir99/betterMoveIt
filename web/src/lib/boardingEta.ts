@@ -3,12 +3,20 @@
  * fall back to scheduled clock. Moovit-style: green live countdown, not "Now" for 1–2 min.
  */
 
-import type { DepartureGroup, RouteInfo, TransitLeg } from '../types';
+import type {
+  ArrivalConfidence,
+  ArrivalSource,
+  DepartureGroup,
+  RouteInfo,
+  TransitLeg,
+} from '../types';
 
 export interface LeaveEtaEntry {
   minutes: number;
   departure: number;
   live: boolean;
+  confidence?: ArrivalConfidence;
+  source?: ArrivalSource;
   nextDay?: boolean;
 }
 
@@ -32,12 +40,14 @@ export function leaveEtasFromBoard(
   const matched = groups.filter((g) => groupMatchesRoutes(g, routes));
   const entries: LeaveEtaEntry[] = [];
   for (const g of matched) {
-    const liveGroup = Boolean(g.siri || (g as { live?: boolean }).live);
     for (const n of g.next) {
+      // Live (colored) only when GPS-backed confidence is present (Moovit).
       entries.push({
         minutes: n.minutes,
         departure: n.departure,
-        live: Boolean(n.live || liveGroup),
+        live: Boolean(n.live),
+        confidence: n.confidence,
+        source: n.source,
       });
     }
   }

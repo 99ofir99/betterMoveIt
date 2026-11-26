@@ -1,4 +1,5 @@
 import type { Journey, Leg, RouteInfo, TransitLeg, WalkLeg } from '../../types';
+import type { LeaveEtaEntry } from '../../lib/boardingEta';
 
 export interface DirectionsSheetProps {
   journey: Journey;
@@ -74,4 +75,8 @@ export interface ItineraryTransitRowProps {
 
 export interface ItineraryWalkRowProps {
   leg: WalkLeg;
+}
+
+export interface TransitLegEtaBadgeProps {
+  eta: LeaveEtaEntry;
 }

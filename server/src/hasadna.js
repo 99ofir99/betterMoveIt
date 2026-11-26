@@ -1,6 +1,9 @@
 /**
  * Hasadna Open Bus Stride — public SIRI vehicle locations (no API key).
  * LineRef is GTFS route_id; short names come from the transit store sidecar.
+ *
+ * Strategy: keep a warm in-memory snapshot and serve bbox filters from it.
+ * Stale-while-revalidate so map clients never wait on Hasadna after the first fill.
  */
 
 import { getStore } from './store.js';
@@ -11,8 +14,14 @@ const HASADNA_LIST_URL =
 
 const FRESH_MS = Number(process.env.HASADNA_FRESH_MINUTES || 10) * 60_000;
 const FETCH_LIMIT = Number(process.env.HASADNA_VEHICLE_LIMIT || 2000);
+/** Serve cache without waiting on upstream when younger than this. */
+const CACHE_TTL_MS = Number(process.env.HASADNA_CACHE_MS || 8_000);
+/** Soft ceiling for a refresh; clients should not block this long. */
+const FETCH_TIMEOUT_MS = Number(process.env.HASADNA_TIMEOUT_MS || 10_000);
 
 let cache = { at: 0, vehicles: [], error: null };
+/** @type {Promise<void> | null} */
+let inflight = null;
 
 export function hasadnaConfigured() {
   return true;
@@ -73,38 +82,29 @@ function filterVehicles(vehicles, bbox, routeId) {
   return out;
 }
 
-/**
- * Recent vehicle positions from Hasadna (cached ~15s).
- */
-export async function fetchHasadnaVehicles({ bbox, routeId } = {}) {
-  const now = Date.now();
-  if (now - cache.at < 14_000 && !routeId && !(bbox && bbox.length === 4)) {
-    return {
-      configured: true,
-      vehicles: filterVehicles(cache.vehicles, bbox, routeId),
-      updatedAt: cache.at,
-      error: cache.error,
-      source: 'hasadna',
-    };
-  }
+function response(bbox, routeId) {
+  return {
+    configured: true,
+    vehicles: filterVehicles(cache.vehicles, bbox, routeId),
+    updatedAt: cache.at || null,
+    error: cache.error,
+    source: 'hasadna',
+  };
+}
 
+/**
+ * Pull a fresh national-ish snapshot into cache (no bbox — filter locally).
+ */
+async function refreshHasadna() {
+  const now = Date.now();
   const url = new URL(HASADNA_LIST_URL);
   url.searchParams.set('limit', String(FETCH_LIMIT));
   url.searchParams.set('order_by', 'siri_snapshot_id desc');
-  if (bbox && bbox.length === 4) {
-    const [south, west, north, east] = bbox.map(Number);
-    // OpenAPI param names: lat__greater_or_equal / lat__lower_or_equal, etc.
-    url.searchParams.set('lat__greater_or_equal', String(south));
-    url.searchParams.set('lat__lower_or_equal', String(north));
-    url.searchParams.set('lon__greater_or_equal', String(west));
-    url.searchParams.set('lon__lower_or_equal', String(east));
-  }
-  if (routeId) url.searchParams.set('siri_routes__line_ref', String(routeId));
 
   try {
     const res = await fetch(url, {
       headers: { Accept: 'application/json', 'User-Agent': 'BetterMoovit/1.0' },
-      signal: AbortSignal.timeout(15_000),
+      signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
     });
     if (!res.ok) throw new Error(`Hasadna HTTP ${res.status}`);
     const rows = await res.json();
@@ -119,23 +119,40 @@ export async function fetchHasadnaVehicles({ bbox, routeId } = {}) {
       const prev = seen.get(v.vehicleId);
       if (!prev || v.timestamp > prev.timestamp) seen.set(v.vehicleId, v);
     }
-    const vehicles = [...seen.values()];
-    cache = { at: now, vehicles, error: null };
-    return {
-      configured: true,
-      vehicles: filterVehicles(vehicles, bbox, routeId),
-      updatedAt: now,
-      error: null,
-      source: 'hasadna',
-    };
+    cache = { at: Date.now(), vehicles: [...seen.values()], error: null };
   } catch (e) {
     cache = { ...cache, error: String(e.message ?? e) };
-    return {
-      configured: true,
-      vehicles: filterVehicles(cache.vehicles, bbox, routeId),
-      updatedAt: cache.at || null,
-      error: String(e.message ?? e),
-      source: 'hasadna',
-    };
   }
+}
+
+function ensureRefresh() {
+  if (inflight) return inflight;
+  inflight = refreshHasadna().finally(() => {
+    inflight = null;
+  });
+  return inflight;
+}
+
+/**
+ * Recent vehicle positions from Hasadna.
+ * Fast path: filter the warm cache. Refresh in the background when stale.
+ */
+export async function fetchHasadnaVehicles({ bbox, routeId } = {}) {
+  const now = Date.now();
+  const age = cache.at ? now - cache.at : Number.POSITIVE_INFINITY;
+  const hasData = cache.vehicles.length > 0;
+
+  if (hasData && age < CACHE_TTL_MS) {
+    return response(bbox, routeId);
+  }
+
+  if (hasData) {
+    // Stale-while-revalidate: paint immediately, refresh off-request.
+    void ensureRefresh();
+    return response(bbox, routeId);
+  }
+
+  // Cold start — must wait once.
+  await ensureRefresh();
+  return response(bbox, routeId);
 }
