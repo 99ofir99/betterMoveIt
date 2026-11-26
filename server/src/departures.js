@@ -15,7 +15,7 @@ function collectDepartures(store, stopIdx, dateInt, dow, seconds, horizon, dayOf
   const start = store.stopTripStart[stopIdx];
   const end = store.stopTripStart[stopIdx + 1];
   for (let idx = start; idx < end; idx++) {
-    const dep = store.stopTripDep[idx];
+    const dep = store.stopTripDepAt(idx);
     const absDep = dep + dayOffsetSec;
     const absNow = seconds;
     if (absDep < absNow || absDep > absNow + horizon) continue;
@@ -87,7 +87,7 @@ export function nextForRouteAtStop(store, stopIdx, routeIdx, clock, limit = 5, d
       const trip = store.stopTripTrip[idx];
       if (store.tripRoute[trip] !== routeIdx) continue;
       if (dirFilter !== null && store.tripDirection[trip] !== dirFilter) continue;
-      const dep = store.stopTripDep[idx];
+      const dep = store.stopTripDepAt(idx);
       if (dep < fromSec) continue;
       const svc = store.tripService[trip];
       if (!store.serviceActive(svc, dInt, dDow)) continue;

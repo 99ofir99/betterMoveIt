@@ -153,13 +153,20 @@ export class TransitStore {
     this.serviceIndexById = new Map(svc.order.map((id, i) => [id, i]));
 
     // ---- stop_times
+    // Keep the file Buffer alive and view into it — Buffer#slice / ArrayBuffer#slice
+    // would double ~175MB of timetable data and blow past free-tier RAM.
     const stBuf = fs.readFileSync(path.join(dir, 'stop_times.bin'));
+    this._stopTimesBuf = stBuf;
     const stTripCount = stBuf.readUInt32LE(0);
     const stRows = stBuf.readUInt32LE(4);
     let off = 16;
     const take = (Ctor, count) => {
       const bytes = count * Ctor.BYTES_PER_ELEMENT;
-      const arr = new Ctor(stBuf.buffer.slice(stBuf.byteOffset + off, stBuf.byteOffset + off + bytes));
+      const byteOffset = stBuf.byteOffset + off;
+      if (byteOffset % Ctor.BYTES_PER_ELEMENT !== 0) {
+        throw new Error(`unaligned ${Ctor.name} view at ${byteOffset}`);
+      }
+      const arr = new Ctor(stBuf.buffer, byteOffset, count);
       off += bytes;
       return arr;
     };
@@ -170,13 +177,22 @@ export class TransitStore {
     this.stSeq = take(Uint16Array, stRows);
     this.stDist = take(Float32Array, stRows);
 
-    // ---- shapes
-    const shBuf = fs.readFileSync(path.join(dir, 'shapes.bin'));
-    this.shapeCount = shBuf.readUInt32LE(0);
-    const shapePoints = shBuf.readUInt32LE(4);
-    this.shapeMeta = new DataView(shBuf.buffer, shBuf.byteOffset + 8, this.shapeCount * 12);
-    const ptsStart = shBuf.byteOffset + 8 + this.shapeCount * 12;
-    this.shapePoints = new Float32Array(shBuf.buffer.slice(ptsStart, ptsStart + shapePoints * 8));
+    // ---- shapes: keep only the small per-shape index in RAM; read point
+    // ranges from disk on demand so the national feed fits free-tier memory.
+    const shapesPath = path.join(dir, 'shapes.bin');
+    const shHeader = Buffer.alloc(8);
+    const shFd = fs.openSync(shapesPath, 'r');
+    fs.readSync(shFd, shHeader, 0, 8, 0);
+    this.shapeCount = shHeader.readUInt32LE(0);
+    this._shapePointCount = shHeader.readUInt32LE(4);
+    const metaBytes = this.shapeCount * 12;
+    const metaBuf = Buffer.alloc(metaBytes);
+    fs.readSync(shFd, metaBuf, 0, metaBytes, 8);
+    this._shapesFd = shFd;
+    this._shapesPtsFileOff = 8 + metaBytes;
+    this.shapeMeta = new DataView(metaBuf.buffer, metaBuf.byteOffset, metaBytes);
+    this._shapeMetaBuf = metaBuf;
+    this.shapePoints = null;
 
     // ---- precomputed adjacency (stop -> trips serving it, sorted by departure)
     this.buildStopTripIndex();
@@ -205,11 +221,12 @@ export class TransitStore {
     for (let i = 0; i < this.stopCount; i++) start[i + 1] = start[i] + counts[i];
     const total = start[this.stopCount];
 
-    // Entries encode (trip, rowIndex-relative-to-trip-start, departure seconds)
+    // Entries encode (trip, stop_times row). Departure is read from stDeparture
+    // via stopTripRow so we don't keep a third 9.6M Int32 copy (~38MB).
     const entryTrip = new Int32Array(total);
     const entryRow = new Int32Array(total);
-    const entryDep = new Int32Array(total);
-    const cursor = start.slice(0, this.stopCount);
+    const cursor = Int32Array.from(start.subarray(0, this.stopCount));
+    const depAt = (idx) => this.stDeparture[entryRow[idx]];
 
     for (let t = 0; t < this.tripCount; t++) {
       const s = this.tripStopStart[t];
@@ -219,7 +236,6 @@ export class TransitStore {
         const c = cursor[stop]++;
         entryTrip[c] = t;
         entryRow[c] = r;
-        entryDep[c] = this.stDeparture[r];
       }
     }
 
@@ -231,25 +247,26 @@ export class TransitStore {
       if (n < 2) continue;
       const order = new Array(n);
       for (let k = 0; k < n; k++) order[k] = k;
-      order.sort((x, y) => entryDep[a + x] - entryDep[a + y]);
+      order.sort((x, y) => depAt(a + x) - depAt(a + y));
       const t2 = new Int32Array(n);
       const r2 = new Int32Array(n);
-      const d2 = new Int32Array(n);
       for (let k = 0; k < n; k++) {
         t2[k] = entryTrip[a + order[k]];
         r2[k] = entryRow[a + order[k]];
-        d2[k] = entryDep[a + order[k]];
       }
       entryTrip.set(t2, a);
       entryRow.set(r2, a);
-      entryDep.set(d2, a);
     }
 
     this.stopTripStart = start;
     this.stopTripTrip = entryTrip;
     this.stopTripRow = entryRow;
-    this.stopTripDep = entryDep;
     this.buildMs = Date.now() - t0;
+  }
+
+  /** Departure seconds for an entry in the stop→trip index. */
+  stopTripDepAt(idx) {
+    return this.stDeparture[this.stopTripRow[idx]];
   }
 
   /**
@@ -261,7 +278,7 @@ export class TransitStore {
     let hi = this.stopTripStart[stop + 1];
     while (lo < hi) {
       const mid = (lo + hi) >> 1;
-      if (this.stopTripDep[mid] < timeSec) lo = mid + 1;
+      if (this.stopTripDepAt(mid) < timeSec) lo = mid + 1;
       else hi = mid;
     }
     return lo;
@@ -550,9 +567,23 @@ export class TransitStore {
     const o = shapeIdx * 12;
     const offset = this.shapeMeta.getInt32(o, true);
     const count = this.shapeMeta.getInt32(o + 4, true);
+    if (count <= 0) return [];
+    // Prefer in-memory points when a host loaded the full buffer; else read
+    // just this shape's range from the open shapes.bin fd.
+    if (this.shapePoints) {
+      const out = new Array(count);
+      for (let k = 0; k < count; k++) {
+        out[k] = [this.shapePoints[(offset + k) * 2], this.shapePoints[(offset + k) * 2 + 1]];
+      }
+      return out;
+    }
+    const bytes = count * 8;
+    const buf = Buffer.allocUnsafe(bytes);
+    fs.readSync(this._shapesFd, buf, 0, bytes, this._shapesPtsFileOff + offset * 8);
+    const view = new Float32Array(buf.buffer, buf.byteOffset, count * 2);
     const out = new Array(count);
     for (let k = 0; k < count; k++) {
-      out[k] = [this.shapePoints[(offset + k) * 2], this.shapePoints[(offset + k) * 2 + 1]];
+      out[k] = [view[k * 2], view[k * 2 + 1]];
     }
     return out;
   }

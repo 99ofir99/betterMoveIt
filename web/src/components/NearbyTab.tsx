@@ -5,7 +5,13 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { api } from '../lib/api';
-import { contrastText, relativeBoardMinutes, routeColor } from '../lib/format';
+import {
+  confidenceClass,
+  formatEtaLabel,
+  isLiveConfidence,
+  resolveConfidence,
+} from '../lib/arrivalAccuracy';
+import { contrastText, routeColor } from '../lib/format';
 import type { LatLon, NearbyStopBoard, Stop } from '../types';
 
 /** ~100m — ignore GPS jitter so watchPosition doesn't refetch every tick. */
@@ -133,7 +139,7 @@ export function NearbyTab({ center, onOpenStop, onLocate, locating }: NearbyTabP
       {!loading && !error && stops.length === 0 && (
         <p className="muted">
           {outOfCoverage
-            ? 'Your location is outside the covered area (greater Tel Aviv / Gush Dan).'
+            ? 'Your location is outside the covered transit area.'
             : 'No stops found nearby. Try a different location.'}
         </p>
       )}
@@ -185,11 +191,12 @@ function NearbyStopCard({
             const bg = routeColor(dep.route.color, dep.route.typeName);
             const next = dep.next[0];
             const eta = next?.minutes;
-            const live = next?.live === true;
+            const confidence = resolveConfidence(next);
+            const live = isLiveConfidence(confidence);
             const etaLabel =
               eta == null
                 ? '—'
-                : relativeBoardMinutes(eta, { departureSec: next?.departure });
+                : formatEtaLabel(eta, { departureSec: next?.departure });
             return (
               <li key={`${dep.route.index}-${dep.headsign}-${i}`} className="nearby-board__dep">
                 <span
@@ -199,7 +206,11 @@ function NearbyStopCard({
                   {dep.route.displayName}
                 </span>
                 <span className="nearby-board__headsign">{dep.headsign}</span>
-                <span className={`nearby-board__eta${live ? ' is-live' : ''}`}>
+                <span
+                  className={`nearby-board__eta ${confidenceClass(confidence)}${
+                    live ? ' is-live' : ''
+                  }`}
+                >
                   {etaLabel}
                 </span>
               </li>

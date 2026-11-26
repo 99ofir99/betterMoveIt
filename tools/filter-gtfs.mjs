@@ -3,7 +3,8 @@
  * Streams large files so peak memory stays reasonable.
  *
  * Usage: node tools/filter-gtfs.mjs <raw-dir> <out-dir> [minLat minLon maxLat maxLon]
- * Default bbox: Gush Dan metro — sized for Render free (512MB RAM).
+ * Default bbox: greater Tel Aviv — only for free-tier / low-RAM hosts.
+ * Production on ≥2GB should ship the full national feed (skip this filter).
  */
 import fs from 'node:fs';
 import path from 'node:path';

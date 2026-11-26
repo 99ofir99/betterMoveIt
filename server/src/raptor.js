@@ -535,7 +535,7 @@ export class JourneyPlanner {
         const end = s.stopTripStart[stop + 1];
 
         for (let idx = start; idx < end; idx++) {
-          const dep = s.stopTripDep[idx];
+          const dep = s.stopTripDepAt(idx);
           if (dep >= boardDepCap) break;
           const trip = s.stopTripTrip[idx];
           if (banned && banned.has(s.tripRoute[trip])) continue;
@@ -827,7 +827,7 @@ export class JourneyPlanner {
       const start = s.lowerBoundStopTrip(stop, readySec);
       const end = s.stopTripStart[stop + 1];
       for (let idx = start; idx < end; idx++) {
-        const dep = s.stopTripDep[idx];
+        const dep = s.stopTripDepAt(idx);
         if (dep > depCap) break; // sorted by dep
         const trip = s.stopTripTrip[idx];
         if (!activeService[s.tripService[trip]]) continue;
