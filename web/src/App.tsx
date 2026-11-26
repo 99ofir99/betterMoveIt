@@ -45,7 +45,11 @@ import { clampJourneys } from "./lib/clampJourneys";
 import { requestCompassPermission, useCompassHeading } from "./lib/useCompassHeading";
 import { FAVORITES_CHANGED_EVENT, loadFavorites } from "./lib/favorites";
 import { ghostJourneyPolylines } from "./lib/journeyMap";
-import { lineKeysFromFavoriteLines, prioritizeVehicles } from "./lib/prioritizeVehicles";
+import {
+  lineKeysFromFavoriteLines,
+  lineKeysFromJourneys,
+  prioritizeVehicles,
+} from "./lib/prioritizeVehicles";
 
 export default function App() {
   const state = useAppState({ watchLocation: true });
@@ -88,6 +92,8 @@ export default function App() {
   }, []);
   const [nearbyStops, setNearbyStops] = useState<Stop[]>([]);
   const [selectedLineId, setSelectedLineId] = useState<string | null>(null);
+  /** Match tokens for the line currently open in Line Detail (shown even before favourite). */
+  const [focusedLineKeys, setFocusedLineKeys] = useState<string[]>([]);
   const [lineGeometry, setLineGeometry] = useState<[number, number][] | null>(null);
   const [favTick, setFavTick] = useState(0);
   const [liveBuses, setLiveBuses] = useState(() => loadSettings().showLiveBuses);
@@ -127,6 +133,7 @@ export default function App() {
     setShowJourneyDetail(ret.showJourneyDetail);
     if (ret.tab === "lines") {
       setSelectedLineId(ret.selectedLineId);
+      setFocusedLineKeys(ret.selectedLineId ? [ret.selectedLineId] : []);
       if (!ret.selectedLineId) setLineGeometry(null);
     }
     return true;
@@ -163,19 +170,16 @@ export default function App() {
     !isHomeScreenVisible &&
     (activeTab === "directions" || activeTab === "nearby" || !!selectedLineId);
 
-  // Live buses only for favourited lines (no nearby / history noise).
   const favoriteLineKeys = useMemo(
     () => lineKeysFromFavoriteLines(loadFavorites().lines),
     [favTick],
   );
-  const showVehicles = liveBuses && showMap && favoriteLineKeys.length > 0;
 
   const vehicleBbox = useMemo((): [number, number, number, number] | null => {
     const c = state.userLocation ?? state.center;
     const d = 0.25;
     return [c.lat - d, c.lon - d, c.lat + d, c.lon + d];
   }, [state.userLocation?.lat, state.userLocation?.lon, state.center.lat, state.center.lon]);
-  const { vehicles: rawVehicles } = useVehicles(showVehicles, vehicleBbox);
   const headingDeg = useCompassHeading(showMap);
 
   const loadNearby = useCallback(async (center: LatLon) => {
@@ -203,17 +207,35 @@ export default function App() {
   const activeJourney: Journey | null =
     journeys[state.selectedJourney]?.journey ?? journeys[0]?.journey ?? null;
 
+  // Live buses: favourites + trip lines + the line currently open on the map.
+  const journeyLineKeys = useMemo(
+    () =>
+      lineKeysFromJourneys([
+        activeTab === "directions" ? activeJourney : null,
+        activeTrip?.journey,
+      ]),
+    [activeTab, activeJourney, activeTrip?.journey],
+  );
+  const preferredLineKeys = useMemo(() => {
+    const keys = [...favoriteLineKeys, ...journeyLineKeys, ...focusedLineKeys];
+    return [...new Set(keys.map((k) => k.trim()).filter(Boolean))];
+  }, [favoriteLineKeys, journeyLineKeys, focusedLineKeys]);
+
+  // Prefetch whenever we have lines to track — markers appear as soon as any map shows.
+  const showVehicles = liveBuses && preferredLineKeys.length > 0;
+  const { vehicles: rawVehicles } = useVehicles(showVehicles, vehicleBbox);
+
   const vehicles = useMemo(
     () =>
       prioritizeVehicles(rawVehicles, {
         near: state.userLocation ?? state.center,
-        preferredKeys: favoriteLineKeys,
+        preferredKeys: preferredLineKeys,
         preferredOnly: true,
         limit: 100,
       }),
     [
       rawVehicles,
-      favoriteLineKeys,
+      preferredLineKeys,
       state.userLocation?.lat,
       state.userLocation?.lon,
       state.center.lat,
@@ -261,8 +283,15 @@ export default function App() {
   }, [state.panel]);
 
   // Re-read favourite lines when any tab toggles a favourite (live buses filter).
+  // Favouriting a line turns Live Location on so buses appear right away on the map.
   useEffect(() => {
-    const onFavoritesChanged = () => setFavTick((x) => x + 1);
+    const onFavoritesChanged = () => {
+      setFavTick((x) => x + 1);
+      if (loadFavorites().lines.length > 0) {
+        setLiveBuses(true);
+        saveSettings({ showLiveBuses: true });
+      }
+    };
     window.addEventListener(FAVORITES_CHANGED_EVENT, onFavoritesChanged);
     return () => window.removeEventListener(FAVORITES_CHANGED_EVENT, onFavoritesChanged);
   }, []);
@@ -390,6 +419,7 @@ export default function App() {
       startTrip(pendingLineRide);
       setPendingLineRide(null);
       setSelectedLineId(null);
+      setFocusedLineKeys([]);
       setLineGeometry(null);
       setActiveTab("directions");
       setTripMinimized(false);
@@ -560,6 +590,7 @@ export default function App() {
       state.openStop(stop);
       setActiveTab(activeTab === "nearby" ? "nearby" : "directions");
       setSelectedLineId(null);
+      setFocusedLineKeys([]);
       setLineGeometry(null);
       setShowSearch(false);
     },
@@ -568,12 +599,27 @@ export default function App() {
 
   const openLine = useCallback(async (line: Line | string) => {
     const id = typeof line === "string" ? line : line.id;
+    const keys =
+      typeof line === "string"
+        ? [line]
+        : [line.id, line.shortName, line.displayName].filter(Boolean);
     setSelectedLineId(id);
+    setFocusedLineKeys(keys);
     setActiveTab("lines");
     setShowSearch(false);
+    // Ensure live buses are on while inspecting a line on the map.
+    setLiveBuses(true);
+    saveSettings({ showLiveBuses: true });
     try {
       const detail = await api.lineDetail(id);
       setLineGeometry(detail.geometry ?? null);
+      const short = detail.line?.shortName;
+      const display = detail.line?.displayName;
+      if (short || display) {
+        setFocusedLineKeys((prev) =>
+          [...new Set([...prev, short, display].filter(Boolean) as string[])],
+        );
+      }
     } catch {
       setLineGeometry(null);
     }
@@ -1002,6 +1048,7 @@ export default function App() {
             lineId={selectedLineId}
             onClose={() => {
               setSelectedLineId(null);
+              setFocusedLineKeys([]);
               setLineGeometry(null);
             }}
             onOpenStop={openStop}
@@ -1015,6 +1062,7 @@ export default function App() {
               captureLiveReturn();
               startTrip(journey);
               setSelectedLineId(null);
+              setFocusedLineKeys([]);
               setLineGeometry(null);
               setActiveTab("directions");
               setTripMinimized(false);
@@ -1033,6 +1081,7 @@ export default function App() {
             setActiveTab(tab);
             if (tab !== "lines") {
               setSelectedLineId(null);
+              setFocusedLineKeys([]);
               setLineGeometry(null);
             }
             if (tab !== "directions" && tab !== "nearby") {

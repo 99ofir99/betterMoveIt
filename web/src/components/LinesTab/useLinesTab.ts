@@ -74,10 +74,16 @@ export function useLinesTab(onOpenLine: (line: Line) => void) {
     [onOpenLine]
   );
 
-  const toggleFavourite = useCallback((line: Line) => {
-    toggleFavoriteLine(line);
-    setFavTick((t) => t + 1);
-  }, []);
+  const toggleFavourite = useCallback(
+    (line: Line) => {
+      const wasFav = favouriteIds.has(line.id);
+      toggleFavoriteLine(line);
+      setFavTick((t) => t + 1);
+      // Newly favourited → open line detail so live buses show on the map immediately.
+      if (!wasFav) onOpenLine(line);
+    },
+    [favouriteIds, onOpenLine],
+  );
 
   const clearRecent = useCallback(() => {
     clearRecentLines();
