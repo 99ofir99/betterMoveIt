@@ -135,11 +135,10 @@ export default defineConfig({
       '.loca.lt',
       'loca.lt',
     ],
-    // Always use ngrok-friendly HMR (wss:443). Desktop: use the Network URL or hard-refresh.
-    hmr: {
-      protocol: 'wss',
-      clientPort: 443,
-    },
+    // Tunnel mode needs WSS on 443; plain localhost keeps Vite's default HMR.
+    ...(process.env.DEV_TUNNEL === '1'
+      ? { hmr: { protocol: 'wss' as const, clientPort: 443 } }
+      : {}),
     proxy: {
       '/api': { target: 'http://127.0.0.1:8787', changeOrigin: true },
     },
