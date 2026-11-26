@@ -3,7 +3,7 @@
  * Streams large files so peak memory stays reasonable.
  *
  * Usage: node tools/filter-gtfs.mjs <raw-dir> <out-dir> [minLat minLon maxLat maxLon]
- * Default bbox: central Tel Aviv — sized for Render free (512MB RAM).
+ * Default bbox: Gush Dan metro — sized for Render free (512MB RAM).
  */
 import fs from 'node:fs';
 import path from 'node:path';
@@ -11,10 +11,10 @@ import readline from 'node:readline';
 
 const RAW = process.argv[2];
 const OUT = process.argv[3];
-const minLat = Number(process.argv[4] ?? 32.04);
-const minLon = Number(process.argv[5] ?? 34.75);
-const maxLat = Number(process.argv[6] ?? 32.12);
-const maxLon = Number(process.argv[7] ?? 34.85);
+const minLat = Number(process.argv[4] ?? 31.96);
+const minLon = Number(process.argv[5] ?? 34.72);
+const maxLat = Number(process.argv[6] ?? 32.22);
+const maxLon = Number(process.argv[7] ?? 34.95);
 
 if (!RAW || !OUT) {
   console.error(

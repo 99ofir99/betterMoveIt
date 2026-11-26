@@ -5,11 +5,24 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { api } from '../lib/api';
-import { routeColor, contrastText } from '../lib/format';
+import { contrastText, relativeBoardMinutes, routeColor } from '../lib/format';
 import type { LatLon, NearbyStopBoard, Stop } from '../types';
 
 /** ~100m — ignore GPS jitter so watchPosition doesn't refetch every tick. */
 const FETCH_DELTA = 0.0009;
+
+function outsideCoverage(
+  point: LatLon,
+  bbox: { minLat: number; maxLat: number; minLon: number; maxLon: number } | undefined
+): boolean {
+  if (!bbox) return false;
+  return (
+    point.lat < bbox.minLat ||
+    point.lat > bbox.maxLat ||
+    point.lon < bbox.minLon ||
+    point.lon > bbox.maxLon
+  );
+}
 
 // ── Props ────────────────────────────────────────────────────────────────────
 
@@ -26,6 +39,7 @@ export function NearbyTab({ center, onOpenStop, onLocate, locating }: NearbyTabP
   const [stops, setStops] = useState<NearbyStopBoard[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [outOfCoverage, setOutOfCoverage] = useState(false);
   /** Stable origin for board fetch — advances on ~100m move or explicit Locate. */
   const [fetchCenter, setFetchCenter] = useState<LatLon>(center);
   const [locateTick, setLocateTick] = useState(0);
@@ -38,6 +52,18 @@ export function NearbyTab({ center, onOpenStop, onLocate, locating }: NearbyTabP
       try {
         const r = await api.nearbyBoard(lat, lon, 1200, signal);
         setStops(r.stops);
+        if (r.stops.length === 0) {
+          try {
+            const health = await api.health(signal);
+            const bbox =
+              health.bbox && !Array.isArray(health.bbox) ? health.bbox : undefined;
+            setOutOfCoverage(outsideCoverage({ lat, lon }, bbox));
+          } catch {
+            setOutOfCoverage(false);
+          }
+        } else {
+          setOutOfCoverage(false);
+        }
       } catch (e) {
         if (!(e instanceof DOMException && e.name === 'AbortError')) {
           setError((e as Error).message ?? 'Failed to load nearby stops');
@@ -105,7 +131,11 @@ export function NearbyTab({ center, onOpenStop, onLocate, locating }: NearbyTabP
       {error && <p className="error-text">{error}</p>}
       {loading && <p className="muted">Finding nearby stops…</p>}
       {!loading && !error && stops.length === 0 && (
-        <p className="muted">No stops found nearby. Try a different location.</p>
+        <p className="muted">
+          {outOfCoverage
+            ? 'Your location is outside the covered area (metro Tel Aviv / Gush Dan).'
+            : 'No stops found nearby. Try a different location.'}
+        </p>
       )}
 
       <ul className="nearby-board">
@@ -153,7 +183,13 @@ function NearbyStopCard({
         <ul className="nearby-board__deps">
           {deps.slice(0, 4).map((dep, i) => {
             const bg = routeColor(dep.route.color, dep.route.typeName);
-            const eta = dep.next[0]?.minutes;
+            const next = dep.next[0];
+            const eta = next?.minutes;
+            const live = next?.live === true;
+            const etaLabel =
+              eta == null
+                ? '—'
+                : relativeBoardMinutes(eta, { departureSec: next?.departure });
             return (
               <li key={`${dep.route.index}-${dep.headsign}-${i}`} className="nearby-board__dep">
                 <span
@@ -163,8 +199,8 @@ function NearbyStopCard({
                   {dep.route.displayName}
                 </span>
                 <span className="nearby-board__headsign">{dep.headsign}</span>
-                <span className="nearby-board__eta">
-                  {eta == null ? '—' : eta === 0 ? 'now' : `${eta} min`}
+                <span className={`nearby-board__eta${live ? ' is-live' : ''}`}>
+                  {etaLabel}
                 </span>
               </li>
             );
