@@ -133,7 +133,7 @@ export function NearbyTab({ center, onOpenStop, onLocate, locating }: NearbyTabP
       {!loading && !error && stops.length === 0 && (
         <p className="muted">
           {outOfCoverage
-            ? 'Your location is outside the covered area (metro Tel Aviv / Gush Dan).'
+            ? 'Your location is outside the covered area (greater Tel Aviv / Gush Dan).'
             : 'No stops found nearby. Try a different location.'}
         </p>
       )}

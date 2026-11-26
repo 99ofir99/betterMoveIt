@@ -113,10 +113,20 @@ export default defineConfig({
             },
           },
           {
-            // Static timetable data: serve fast, refresh in the background.
-            urlPattern: /\/api\/(health|stop|nearby|search).*/i,
+            // Stop detail / search can be briefly stale; nearby must stay fresh
+            // (location-keyed empty results would otherwise stick for an hour).
+            urlPattern: /\/api\/(health|stop|search).*/i,
             handler: 'StaleWhileRevalidate',
             options: { cacheName: 'transit-api', expiration: { maxEntries: 300, maxAgeSeconds: 3600 } },
+          },
+          {
+            urlPattern: /\/api\/nearby.*/i,
+            handler: 'NetworkFirst',
+            options: {
+              cacheName: 'transit-nearby',
+              networkTimeoutSeconds: 8,
+              expiration: { maxEntries: 60, maxAgeSeconds: 120 },
+            },
           },
         ],
       },
