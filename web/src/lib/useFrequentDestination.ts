@@ -18,7 +18,7 @@ import { journeyHasDeparted, markNextDay, plannedRideMinMinutes } from './journe
 import type { Journey, LatLon, Place, TransitLeg } from '../types';
 import type { FrequentDestResult } from '../components/home/types';
 import { getLocale } from './i18n';
-import { isAtDestination, isNearDestination } from './atDestination';
+import { isAtDestination, pickFrequentDestination } from './atDestination';
 
 /** ~50m — ignore GPS jitter so we don't abort / re-plan on every watch tick. */
 const REPLAN_DELTA = 0.00045;
@@ -150,17 +150,14 @@ export function useFrequentDestination(
   }, [userLocation?.lat, userLocation?.lon]);
 
   useEffect(() => {
-    // Pick the best destination from saved places or recent history.
+    // Candidates: saved places in order, then recent trips. Skip any place the
+    // user is already at, so at home the card shows work (the next saved place).
     const favs = loadFavorites();
-    let dest: Place | null = null;
-
-    if (favs.places.length > 0) {
-      const f = favs.places[0];
-      dest = { label: f.label, lat: f.place.lat, lon: f.place.lon };
-    } else {
-      const hist = loadHistory();
-      if (hist.length > 0) dest = hist[0].to;
-    }
+    const candidates: Place[] = [
+      ...favs.places.map((f) => ({ label: f.label, lat: f.place.lat, lon: f.place.lon })),
+      ...loadHistory().map((h) => h.to),
+    ];
+    const dest: Place | null = pickFrequentDestination(candidates, planOrigin);
 
     if (!dest) {
       setResult(null);
@@ -178,14 +175,6 @@ export function useFrequentDestination(
         loading: false,
         ...emptyDerived,
       });
-      return;
-    }
-
-    // Already at the destination: no card ("0 min, leaves now" is noise).
-    if (isNearDestination(planOrigin, destSnap)) {
-      abortRef.current?.abort();
-      journeyRef.current = null;
-      setResult(null);
       return;
     }
 
