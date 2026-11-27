@@ -17,6 +17,46 @@ const TRANSFER_PENALTY_SEC = 12 * 60;
 /** Drop / demote options that need more buses but arrive within this of a simpler trip. */
 const TRANSFER_SLACK_SEC = 12 * 60;
 
+/**
+ * "Fastest": a light-rail (tram) option wins over a non-light-rail one with the
+ * same number of transfers when it is at most this much slower.
+ */
+export const LIGHT_RAIL_PREFERENCE_SEC = 4 * 60;
+
+function journeyUsesLightRail(journey: Journey): boolean {
+  return journey.legs.some(
+    (leg) => leg.mode === 'transit' && modeFamilyForRoute(leg.route) === 'tram'
+  );
+}
+
+/**
+ * Sort by duration, then lift each light-rail journey above the non-light-rail
+ * journeys just ahead of it that have the same transfer count and are at most
+ * LIGHT_RAIL_PREFERENCE_SEC faster. Done as a pass over a stable sort (not a
+ * comparator) because a tolerance comparator is not transitive.
+ */
+function sortFastest(journeys: Journey[]): Journey[] {
+  const sorted = journeys.sort(
+    (a, b) => a.durationSec - b.durationSec || a.arrivalSeconds - b.arrivalSeconds
+  );
+  for (let i = 1; i < sorted.length; i++) {
+    const tram = sorted[i]!;
+    if (!journeyUsesLightRail(tram)) continue;
+    let target = i;
+    for (let k = i - 1; k >= 0; k--) {
+      const other = sorted[k]!;
+      if (journeyUsesLightRail(other)) break;
+      if (tram.durationSec - other.durationSec > LIGHT_RAIL_PREFERENCE_SEC) break;
+      if (other.transfers === tram.transfers) target = k;
+    }
+    if (target < i) {
+      sorted.splice(i, 1);
+      sorted.splice(target, 0, tram);
+    }
+  }
+  return sorted;
+}
+
 function bestScore(j: Journey): number {
   return j.arrivalSeconds + j.transfers * TRANSFER_PENALTY_SEC;
 }
@@ -46,9 +86,7 @@ export function sortJourneys(journeys: Journey[], mode: SortMode): Journey[] {
   const copy = [...journeys];
   switch (mode) {
     case 'fastest':
-      return copy.sort(
-        (a, b) => a.durationSec - b.durationSec || a.arrivalSeconds - b.arrivalSeconds
-      );
+      return sortFastest(copy);
     case 'fewest-transfers':
       return copy.sort(
         (a, b) =>

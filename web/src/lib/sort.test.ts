@@ -100,3 +100,49 @@ describe('sortJourneys best — Moovit transfer preference', () => {
     expect(ranked[0]!.transfers).toBe(2);
   });
 });
+
+function withTram(j: Journey, legIndex = 0): Journey {
+  const legs = j.legs.map((leg, i) =>
+    i === legIndex && leg.mode === 'transit'
+      ? { ...leg, route: { ...leg.route, type: 0, typeName: 'tram' } }
+      : leg
+  );
+  return { ...j, legs };
+}
+
+describe('sortJourneys fastest — light-rail preference', () => {
+  it('prefers light rail over a slightly faster bus with the same transfers', () => {
+    const bus = journey({ transfers: 1, arrival: 36000, duration: 40 * 60, routes: ['1', '66'] });
+    const tram = withTram(
+      journey({ transfers: 1, arrival: 36000 + 3 * 60, duration: 43 * 60, routes: ['R1', '66'] })
+    );
+    const ranked = sortJourneys([bus, tram], 'fastest');
+    expect(ranked[0]).toBe(tram);
+    expect(ranked[1]).toBe(bus);
+  });
+
+  it('keeps the bus first when light rail is clearly slower', () => {
+    const bus = journey({ transfers: 1, arrival: 36000, duration: 40 * 60, routes: ['1', '66'] });
+    const tram = withTram(
+      journey({ transfers: 1, arrival: 36000 + 6 * 60, duration: 46 * 60, routes: ['R1', '66'] })
+    );
+    expect(sortJourneys([tram, bus], 'fastest')[0]).toBe(bus);
+  });
+
+  it('does not lift light rail over a faster trip with fewer transfers', () => {
+    const direct = journey({ transfers: 0, arrival: 36000, duration: 40 * 60, routes: ['1'] });
+    const tram = withTram(
+      journey({ transfers: 1, arrival: 36000 + 2 * 60, duration: 42 * 60, routes: ['R1', '66'] })
+    );
+    expect(sortJourneys([tram, direct], 'fastest')[0]).toBe(direct);
+  });
+
+  it('jumps over an in-between option with other transfers when a same-transfer bus is ahead', () => {
+    const bus = journey({ transfers: 1, arrival: 36000, duration: 40 * 60, routes: ['1', '66'] });
+    const direct = journey({ transfers: 0, arrival: 36060, duration: 41 * 60, routes: ['5'] });
+    const tram = withTram(
+      journey({ transfers: 1, arrival: 36180, duration: 43 * 60, routes: ['R1', '66'] })
+    );
+    expect(sortJourneys([direct, bus, tram], 'fastest')).toEqual([tram, bus, direct]);
+  });
+});
