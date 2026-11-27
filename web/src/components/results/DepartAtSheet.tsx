@@ -3,6 +3,7 @@
  */
 
 import { useState } from 'react';
+import { useDragToDismiss } from '../../lib/useDragToDismiss';
 import { DepartTimeForm } from './DepartTimeForm';
 import type { DepartAtAction, DepartAtSheetProps, DepartSheetMode } from './types';
 import { t } from '../../lib/i18n';
@@ -25,6 +26,7 @@ const MENU_ITEMS: MenuItem[] = [
 
 export function DepartAtSheet({ onClose, onSelect, startMode }: DepartAtSheetProps) {
   const [mode, setMode] = useState<DepartSheetMode>(startMode ?? 'menu');
+  const drag = useDragToDismiss(onClose);
 
   const handleItem = (item: MenuItem) => {
     if ('open' in item.action) {
@@ -42,8 +44,11 @@ export function DepartAtSheet({ onClose, onSelect, startMode }: DepartAtSheetPro
       aria-label={mode === 'menu' ? t('Departure options') : t('Set time')}
     >
       <div className="depart-sheet__backdrop" onClick={onClose} aria-hidden="true" />
-      <div className="depart-sheet__panel">
-        <div className="depart-sheet__grabber" aria-hidden="true" />
+      <div className="depart-sheet__panel" style={drag.panelStyle}>
+        {/* Drag the handle area down to close, like the app's other sheets. */}
+        <div className="depart-sheet__drag" {...drag.handleProps}>
+          <div className="depart-sheet__grabber" aria-hidden="true" />
+        </div>
         {mode === 'menu' ? (
           <>
             <ul className="depart-sheet__list">

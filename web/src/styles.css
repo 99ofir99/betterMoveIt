@@ -10204,3 +10204,13 @@ button.home-card-dots__dot {
 .depart-sheet__switch {
   margin: 0 16px 12px;
 }
+
+/* Grab area of the depart/time sheet: tall enough to catch a thumb. */
+.depart-sheet__drag {
+  padding: 10px 0 6px;
+  margin-top: -10px;
+  cursor: grab;
+}
+.depart-sheet__drag .depart-sheet__grabber {
+  margin-bottom: 8px;
+}
