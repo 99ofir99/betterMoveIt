@@ -683,6 +683,28 @@ export default function App() {
     [state],
   );
 
+  /** Stop sheet "Route from here / to here": fill that end and open the planner or results. */
+  const planFromStop = useCallback(
+    (slot: "from" | "to") => {
+      const stop = state.selectedStop;
+      if (!stop) return;
+      const place: Place = { label: stop.name, lat: stop.lat, lon: stop.lon, stopId: stop.id };
+      state.selectPlace(place, slot);
+      state.clearStop();
+      setActiveTab("directions");
+      setShowPlanForm(true);
+      const other = slot === "from" ? state.to : state.from;
+      if (other) {
+        void (slot === "from" ? searchRoutes(place, other) : searchRoutes(other, place));
+      } else if (slot === "to") {
+        void state.useMyLocationAsOrigin().then((origin) => {
+          if (origin) void searchRoutes(origin, place);
+        });
+      }
+    },
+    [searchRoutes, state],
+  );
+
   /** Confirm a map-picked place (no stopId) and plan door-to-door with egress walk. */
   const handleMapPickConfirm = useCallback(
     (place: Place) => {
@@ -1028,30 +1050,8 @@ export default function App() {
                 stop={state.selectedStop}
                 onClose={state.clearStop}
                 onOpenLine={(id) => void openLine(id)}
-                onSetOrigin={() => {
-                  state.selectPlace(
-                    {
-                      label: state.selectedStop!.name,
-                      lat: state.selectedStop!.lat,
-                      lon: state.selectedStop!.lon,
-                      stopId: state.selectedStop!.id,
-                    },
-                    "from",
-                  );
-                  state.clearStop();
-                }}
-                onSetDestination={() => {
-                  state.selectPlace(
-                    {
-                      label: state.selectedStop!.name,
-                      lat: state.selectedStop!.lat,
-                      lon: state.selectedStop!.lon,
-                      stopId: state.selectedStop!.id,
-                    },
-                    "to",
-                  );
-                  state.clearStop();
-                }}
+                onSetOrigin={() => planFromStop("from")}
+                onSetDestination={() => planFromStop("to")}
               />
             </div>
           ) : state.panel === "plan" && showPlanForm ? (
@@ -1117,32 +1117,8 @@ export default function App() {
             stop={state.selectedStop}
             onClose={state.clearStop}
             onOpenLine={(id) => void openLine(id)}
-            onSetOrigin={() => {
-              state.selectPlace(
-                {
-                  label: state.selectedStop!.name,
-                  lat: state.selectedStop!.lat,
-                  lon: state.selectedStop!.lon,
-                  stopId: state.selectedStop!.id,
-                },
-                "from",
-              );
-              state.clearStop();
-              setActiveTab("directions");
-            }}
-            onSetDestination={() => {
-              state.selectPlace(
-                {
-                  label: state.selectedStop!.name,
-                  lat: state.selectedStop!.lat,
-                  lon: state.selectedStop!.lon,
-                  stopId: state.selectedStop!.id,
-                },
-                "to",
-              );
-              state.clearStop();
-              setActiveTab("directions");
-            }}
+            onSetOrigin={() => planFromStop("from")}
+            onSetDestination={() => planFromStop("to")}
           />
         </section>
       )}
