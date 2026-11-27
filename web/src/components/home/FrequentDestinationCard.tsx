@@ -111,17 +111,24 @@ export function FrequentDestinationCard({ dest, onTap, onPickTime, onLiveBoardin
     // A div, not a <button>: the header chips are buttons of their own.
     <div
       role="button"
-      tabIndex={0}
-      className="fdcard"
-      onClick={onTap}
+      tabIndex={skeleton ? -1 : 0}
+      className={`fdcard${skeleton ? ' is-loading' : ''}`}
+      aria-disabled={skeleton || undefined}
+      // Not tappable until the destination is known: a tap would plan to a guess.
+      onClick={skeleton ? undefined : onTap}
       onKeyDown={(e) => {
-        if (e.target !== e.currentTarget) return;
+        if (skeleton || e.target !== e.currentTarget) return;
         if (e.key === 'Enter' || e.key === ' ') {
           e.preventDefault();
           onTap();
         }
       }}
-      aria-label={t('Quick trip to {name}', { name: displayPlaceLabel(place.label) })}
+      aria-label={
+        skeleton
+          ? t('Planning route…')
+          : t('Quick trip to {name}', { name: displayPlaceLabel(place.label) })
+      }
+      aria-busy={skeleton || undefined}
     >
       <div className="fdcard__header">
         <span className="fdcard__label">{t("My Frequent Destination")}</span>
