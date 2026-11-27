@@ -76,7 +76,7 @@ function LegChips({ journey }: { journey: Journey }) {
 
 // ── Main card ────────────────────────────────────────────────────────────────
 
-export function FrequentDestinationCard({ dest, onTap }: FrequentDestinationCardProps) {
+export function FrequentDestinationCard({ dest, onTap, onPickTime, onLiveBoarding }: FrequentDestinationCardProps) {
   const {
     place,
     journey,
@@ -104,18 +104,48 @@ export function FrequentDestinationCard({ dest, onTap }: FrequentDestinationCard
   const accClass = confidenceClass(leavesConfidence);
 
   return (
-    <button type="button" className="fdcard" onClick={onTap} aria-label={t('Quick trip to {name}', { name: place.label })}>
+    // A div, not a <button>: the header chips are buttons of their own.
+    <div
+      role="button"
+      tabIndex={0}
+      className="fdcard"
+      onClick={onTap}
+      onKeyDown={(e) => {
+        if (e.target !== e.currentTarget) return;
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          onTap();
+        }
+      }}
+      aria-label={t('Quick trip to {name}', { name: place.label })}
+    >
       <div className="fdcard__header">
         <span className="fdcard__label">{t("My Frequent Destination")}</span>
-        <span className="fdcard__chips" aria-hidden="true">
-          <span className="fdcard__chip">
+        <span className="fdcard__chips">
+          <button
+            type="button"
+            className="fdcard__chip"
+            aria-label={t('Choose departure time')}
+            onClick={(e) => {
+              e.stopPropagation();
+              (onPickTime ?? onTap)();
+            }}
+          >
             <ClockIcon size={16} />
             <ChevronDownIcon size={12} />
-          </span>
-          <span className="fdcard__chip">
+          </button>
+          <button
+            type="button"
+            className="fdcard__chip"
+            aria-label={t('Live arrivals at boarding stop')}
+            onClick={(e) => {
+              e.stopPropagation();
+              (onLiveBoarding ?? onTap)();
+            }}
+          >
             <LiveSignalIcon size={14} />
             <BusIcon size={16} />
-          </span>
+          </button>
         </span>
       </div>
 
@@ -185,6 +215,6 @@ export function FrequentDestinationCard({ dest, onTap }: FrequentDestinationCard
           <p className="fdcard__tap-hint muted">{t("Tap to plan a trip")}</p>
         )}
       </div>
-    </button>
+    </div>
   );
 }

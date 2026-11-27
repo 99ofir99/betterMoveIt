@@ -2,7 +2,7 @@
  * Types local to the home/ folder.
  * Global types (Journey, Place, etc.) live in src/types.ts.
  */
-import type { FavoritePlace, Journey, Place } from '../../types';
+import type { FavoritePlace, Journey, Place, Stop } from '../../types';
 
 /** Result returned by useFrequentDestination. */
 export interface FrequentDestResult {
@@ -35,6 +35,10 @@ export interface HomeScreenProps {
   favorites: FavoritePlace[];
   onOpenSearch: () => void;
   onPlanTo: (place: Place) => void;
+  /** Plan to a place with the "Depart at" time picker open. */
+  onPlanAtTime?: (place: Place) => void;
+  /** Open a stop's live departures board. */
+  onOpenStop?: (stop: Stop) => void;
   onOpenMore: () => void;
   onAddFavorite: () => void;
   onPlanManually: () => void;
@@ -44,6 +48,10 @@ export interface HomeScreenProps {
 export interface FrequentDestinationCardProps {
   dest: FrequentDestResult;
   onTap: () => void;
+  /** Clock chip: plan to this destination with a chosen departure time. */
+  onPickTime?: () => void;
+  /** Live-bus chip: live arrivals at the trip's boarding stop. */
+  onLiveBoarding?: () => void;
 }
 
 /** Props for a single Favourites row. */

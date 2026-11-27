@@ -5,6 +5,7 @@
  */
 
 import type { HomeScreenProps } from './types';
+import type { Journey, Stop, TransitLeg } from '../../types';
 import { FrequentDestinationCard } from './FrequentDestinationCard';
 import { FavoriteItem } from './FavoriteItem';
 import { HeroArt } from './HeroArt';
@@ -16,6 +17,8 @@ export function HomeScreen({
   favorites,
   onOpenSearch,
   onPlanTo,
+  onPlanAtTime,
+  onOpenStop,
   onOpenMore,
   onAddFavorite,
   onPlanManually,
@@ -59,6 +62,11 @@ export function HomeScreen({
           <FrequentDestinationCard
             dest={frequentDest}
             onTap={() => onPlanTo(frequentDest.place)}
+            onPickTime={onPlanAtTime ? () => onPlanAtTime(frequentDest.place) : undefined}
+            onLiveBoarding={(() => {
+              const stop = boardingStopOf(frequentDest.journey);
+              return stop && onOpenStop ? () => onOpenStop(stop) : undefined;
+            })()}
           />
           <div className="home-card-dots" aria-hidden="true">
             <span className="home-card-dots__dot is-active" />
@@ -106,4 +114,12 @@ export function HomeScreen({
       </div>
     </div>
   );
+}
+
+/** The stop where the trip's first ride is boarded, as a Stop for the stop panel. */
+function boardingStopOf(journey: Journey | null): Stop | null {
+  const leg = journey?.legs.find((l): l is TransitLeg => l.mode === 'transit');
+  const id = leg?.from?.stopId;
+  if (!leg || !id || !leg.from) return null;
+  return { id, name: leg.fromName ?? '', lat: leg.from.lat, lon: leg.from.lon };
 }
