@@ -866,17 +866,10 @@ export default function App() {
             onClick={() => openSearch("any")}
             aria-label={t("Search")}
           >
+            <Icon name="search" size={22} className="topbar__search-icon" />
             <span className="topbar__search-text">{t("Search stops, lines, places…")}</span>
-            <span aria-hidden="true">🔍</span>
           </button>
-          <button
-            type="button"
-            className="icon-button icon-button--light"
-            onClick={() => void handleLocate()}
-            aria-label={t("Recenter on my location")}
-          >
-            {state.locating ? "…" : "◎"}
-          </button>
+          {/* Recenter lives on the map's own locate button (top end corner). */}
         </header>
       )}
 
@@ -1374,7 +1367,7 @@ function PlanForm({
 
       <button type="button" className="planner__hero-search" onClick={onOpenSearch}>
         <span>{t("Where to?")}</span>
-        <span aria-hidden="true">🔍</span>
+        <Icon name="search" size={22} />
       </button>
 
       <div className="planner__fields">

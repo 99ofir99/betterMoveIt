@@ -1,30 +1,19 @@
-/** Moovit bottom quick actions: From here · To here · Favorite. */
+/** Plan a trip from / to this stop — compact row right under the header. */
 
+import { Icon } from '../icons/Icon';
 import type { StopActionsProps } from './types';
 import { t } from '../../lib/i18n';
 
-export function StopActions({
-  favored,
-  onFromHere,
-  onToHere,
-  onToggleFavourite,
-}: StopActionsProps) {
+export function StopActions({ onFromHere, onToHere }: StopActionsProps) {
   return (
     <div className="stp-actions">
-      <button type="button" className="stp-actions__primary" onClick={onFromHere}>
-        {t("From here")}
+      <button type="button" className="stp-actions__btn stp-actions__btn--from" onClick={onFromHere}>
+        <Icon name="trip-origin" size={16} />
+        {t("Route from here")}
       </button>
-      <button type="button" className="stp-actions__secondary" onClick={onToHere}>
-        {t("To here")}
-      </button>
-      <button
-        type="button"
-        className={`stp-actions__fav${favored ? ' is-on' : ''}`}
-        onClick={onToggleFavourite}
-        aria-label={favored ? t('Unfavorite') : t('Favorite')}
-      >
-        <span aria-hidden>{favored ? '★' : '☆'}</span>
-        {t("Favorite")}
+      <button type="button" className="stp-actions__btn stp-actions__btn--to" onClick={onToHere}>
+        <Icon name="place" size={18} />
+        {t("Route to here")}
       </button>
     </div>
   );

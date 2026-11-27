@@ -57,7 +57,7 @@ export function PlaceField({
             aria-label={t("Use my location")}
             disabled={locating}
           >
-            {locating ? '…' : '◎'}
+            {locating ? '…' : <Icon name="my-location" size={20} />}
           </button>
         )}
 

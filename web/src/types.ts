@@ -186,6 +186,14 @@ export interface StopDeparturesResponse {
   time: { dateInt: number; seconds: number; dow: number };
   departures: DepartureGroup[];
   rawCount: number;
+  /** Only when `departures` is empty: the first scheduled departure in the next week. */
+  nextDeparture?: {
+    dayOffset: number;
+    departure: number;
+    minutes: number;
+    headsign: string;
+    route: RouteInfo;
+  } | null;
 }
 
 export interface StopDetailResponse {

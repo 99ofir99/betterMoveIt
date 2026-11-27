@@ -119,3 +119,42 @@ export function nextForRouteAtStop(store, stopIdx, routeIdx, clock, limit = 5, d
   out.sort((a, b) => a.minutes - b.minutes);
   return out.slice(0, limit);
 }
+
+/**
+ * First scheduled departure at a stop from "now", up to `maxDays` ahead — used when the
+ * board is empty (late night, Shabbat) so the UI can say when service resumes.
+ * Scans the stop's own trip slice (sorted by departure) instead of building day indexes,
+ * so it never evicts the planner's cached days.
+ */
+export function nextDepartureAtStop(store, stopIdx, { dateInt, seconds, dow }, maxDays = 7) {
+  const a = store.stopTripStart[stopIdx];
+  const b = store.stopTripStart[stopIdx + 1];
+  if (!(b > a)) return null;
+  for (let d = 0; d <= maxDays; d++) {
+    const date = addDaysDateInt(dateInt, d);
+    const dDow = (dow + d) % 7;
+    const fromSec = d === 0 ? seconds : 0;
+    const active = new Map();
+    for (let idx = a; idx < b; idx++) {
+      const dep = store.stDeparture[store.stopTripRow[idx]];
+      if (dep < fromSec) continue;
+      const trip = store.stopTripTrip[idx];
+      const svc = store.tripService[trip];
+      let on = active.get(svc);
+      if (on === undefined) {
+        on = Boolean(store.serviceActive(svc, date, dDow));
+        active.set(svc, on);
+      }
+      if (!on) continue;
+      return {
+        // A 25:10 trip of today's service runs tomorrow at 01:10.
+        dayOffset: d + Math.floor(dep / DAY_SEC),
+        departure: dep % DAY_SEC,
+        minutes: Math.round((d * DAY_SEC + dep - seconds) / 60),
+        headsign: store.tripHeadsign[trip],
+        route: store.routeObject(store.tripRoute[trip]),
+      };
+    }
+  }
+  return null;
+}

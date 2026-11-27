@@ -7,6 +7,11 @@ export interface IconProps {
 /** Glyph keys for the data-driven `<Icon name="…" />` component. */
 export type IconName =
   | 'arrow-back'
+  | 'search'
+  | 'star'
+  | 'star-outline'
+  | 'trip-origin'
+  | 'place'
   | 'sliders'
   | 'swap-vert'
   | 'swap-horiz'

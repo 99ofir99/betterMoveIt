@@ -6,7 +6,7 @@ import fs from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { getStore, haversine } from './store.js';
 import { JourneyPlanner } from './raptor.js';
-import { departuresAtStop, nextForRouteAtStop } from './departures.js';
+import { departuresAtStop, nextDepartureAtStop, nextForRouteAtStop } from './departures.js';
 import { fetchActiveVehicles, fetchStopMonitoring, siriConfigured } from './siri.js';
 import { applyVehicleEtas } from './vehicleEta.js';
 import { isLightRailOperator } from './lightRailBrand.js';
@@ -286,6 +286,8 @@ app.get('/api/stop/:id/departures', async (req, res) => {
     time: clock,
     departures: board.departures,
     rawCount: board.rawCount,
+    // Empty board (night / Shabbat): when does this stop see its next bus?
+    nextDeparture: board.departures.length ? null : nextDepartureAtStop(store, stopIdx, clock),
     live: live
       ? { configured: live.configured, error: live.error, visitCount: live.visits?.length ?? 0 }
       : { configured: siriConfigured(), error: null, visitCount: 0 },

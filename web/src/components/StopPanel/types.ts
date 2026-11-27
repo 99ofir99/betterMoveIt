@@ -1,6 +1,6 @@
 /** Types for Moovit-style stop / station detail. */
 
-import type { DepartureGroup, Stop } from '../../types';
+import type { DepartureGroup, Stop, StopDeparturesResponse } from '../../types';
 
 export interface StopPanelProps {
   stopId: string;
@@ -18,16 +18,20 @@ export interface StopHeaderProps {
   name: string;
   code?: string;
   onClose: () => void;
+  favored: boolean;
+  onToggleFavourite: () => void;
 }
 
 export interface StopDepartureListProps {
   departures: DepartureGroup[];
+  /** Shown in the empty state: first departure after the board runs dry. */
+  nextDeparture?: StopDeparturesResponse['nextDeparture'];
+  /** Feed day-of-week (0 = Sunday) the board was computed for. */
+  dow?: number;
   onOpenLine?: (lineId: string) => void;
 }
 
 export interface StopActionsProps {
-  favored: boolean;
   onFromHere: () => void;
   onToHere: () => void;
-  onToggleFavourite: () => void;
 }

@@ -1,6 +1,6 @@
 /**
  * Stop / station detail — Moovit sheet:
- * back + name/code, upcoming arrivals board, From/To/Favorite pills.
+ * back + name/code + favorite star, route from/to row, upcoming arrivals board.
  */
 
 import { StopActions } from './StopActions';
@@ -25,7 +25,14 @@ export function StopPanel({
 
   return (
     <div className="stop-panel">
-      <StopHeader name={name} code={code} onClose={onClose} />
+      <StopHeader
+        name={name}
+        code={code}
+        onClose={onClose}
+        favored={s.favored}
+        onToggleFavourite={s.toggleFavourite}
+      />
+      <StopActions onFromHere={onSetOrigin} onToHere={onSetDestination} />
 
       <div className="stop-panel__body">
         <div className="stp-section-title">{t("Upcoming Arrivals")}</div>
@@ -34,16 +41,15 @@ export function StopPanel({
         {s.loading && <p className="muted stp-loading">{t("Loading departures…")}</p>}
 
         {s.data && (
-          <StopDepartureList departures={s.data.departures} onOpenLine={onOpenLine} />
+          <StopDepartureList
+            departures={s.data.departures}
+            nextDeparture={s.data.nextDeparture}
+            dow={s.data.time?.dow}
+            onOpenLine={onOpenLine}
+          />
         )}
       </div>
 
-      <StopActions
-        favored={s.favored}
-        onFromHere={onSetOrigin}
-        onToHere={onSetDestination}
-        onToggleFavourite={s.toggleFavourite}
-      />
     </div>
   );
 }
