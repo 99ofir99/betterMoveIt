@@ -6,6 +6,8 @@
  * state and call actions.
  */
 
+import { arriveBySearchStart, rankForArriveBy } from './arriveBy';
+import { israelClock } from './format';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { api } from './api';
 import { saveHistoryEntry } from './history';
@@ -198,12 +200,7 @@ export function useAppState(opts?: { watchLocation?: boolean }) {
       if (arriveByOpt) {
         setWhen('leave');
         // Seed depart ~2h before desired arrival so RAPTOR still finds candidates.
-        const arriveParts = arriveByOpt.split(':').map(Number);
-        const arriveSec = (arriveParts[0] || 0) * 3600 + (arriveParts[1] || 0) * 60;
-        const leaveSec = (arriveSec - 2 * 3600 + 86400) % 86400;
-        const hh = String(Math.floor(leaveSec / 3600)).padStart(2, '0');
-        const mm = String(Math.floor((leaveSec % 3600) / 60)).padStart(2, '0');
-        leaveAtOpt = `${hh}:${mm}`;
+        leaveAtOpt = arriveBySearchStart(arriveByOpt);
         leaveDateOpt = opts?.arriveDate ?? opts?.leaveDate;
         setDepartTime(leaveAtOpt);
         if (leaveDateOpt) setPlanDate(leaveDateOpt);
@@ -248,11 +245,12 @@ export function useAppState(opts?: { watchLocation?: boolean }) {
           (effectiveWhen === 'now' || opts?.forceNow) &&
           res.journeys.length === 0;
         if (allowNext) {
-          const tomorrow = new Date();
-          tomorrow.setDate(tomorrow.getDate() + 1);
-          const y = tomorrow.getFullYear();
-          const m = String(tomorrow.getMonth() + 1).padStart(2, '0');
-          const day = String(tomorrow.getDate()).padStart(2, '0');
+          // Tomorrow in Israel (feed date), not on the device's calendar.
+          const [ty, tm, td] = israelClock().isoDate.split('-').map(Number);
+          const tomorrow = new Date(Date.UTC(ty, tm - 1, td + 1));
+          const y = tomorrow.getUTCFullYear();
+          const m = String(tomorrow.getUTCMonth() + 1).padStart(2, '0');
+          const day = String(tomorrow.getUTCDate()).padStart(2, '0');
           res = await api.plan(
             o,
             d,
@@ -268,16 +266,7 @@ export function useAppState(opts?: { watchLocation?: boolean }) {
 
         // Arrive-by: keep journeys that land closest to the desired arrival.
         if (arriveByOpt && res.journeys.length > 1) {
-          const parts = arriveByOpt.split(':').map(Number);
-          const target = (parts[0] || 0) * 3600 + (parts[1] || 0) * 60;
-          res = {
-            ...res,
-            journeys: [...res.journeys].sort(
-              (a, b) =>
-                Math.abs(((a.arrivalSeconds % 86400) + 86400) % 86400 - target) -
-                Math.abs(((b.arrivalSeconds % 86400) + 86400) % 86400 - target)
-            ),
-          };
+          res = { ...res, journeys: rankForArriveBy(res.journeys, arriveByOpt) };
         }
 
         // Walk endpoints for straight-line map paths. OSRM foot geometry is slow

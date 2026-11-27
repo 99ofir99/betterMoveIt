@@ -40,7 +40,7 @@ export class TransitStore {
     const recOff = 32;
     const strOff = recOff + stopCount * 28;
     const cellOff = strOff + strLen;
-    this.stopStrings = JSON.parse(stopsBuf.subarray(strOff, strOff + strLen).toString('utf8'));
+    this.stopStrings = JSON.parse(stopsBuf.subarray(strOff, strOff + strLen).toString('utf8')).map(fixGershayim);
 
     this.stopCount = stopCount;
     this.stopLat = new Float32Array(stopCount);
@@ -91,7 +91,7 @@ export class TransitStore {
     const routeCount = routesBuf.readUInt32LE(0);
     const rStrLen = routesBuf.readUInt32LE(4);
     const rStrOff = 8 + routeCount * 20;
-    this.routeStrings = JSON.parse(routesBuf.subarray(rStrOff, rStrOff + rStrLen).toString('utf8'));
+    this.routeStrings = JSON.parse(routesBuf.subarray(rStrOff, rStrOff + rStrLen).toString('utf8')).map(fixGershayim);
     const rView = new DataView(routesBuf.buffer, routesBuf.byteOffset, routesBuf.byteLength);
     this.routeCount = routeCount;
     this.routeShortName = new Array(routeCount);
@@ -130,7 +130,7 @@ export class TransitStore {
     const tripCount = tripsBuf.readUInt32LE(0);
     const tStrLen = tripsBuf.readUInt32LE(4);
     const tStrOff = 8 + tripCount * 18;
-    this.tripStrings = JSON.parse(tripsBuf.subarray(tStrOff, tStrOff + tStrLen).toString('utf8'));
+    this.tripStrings = JSON.parse(tripsBuf.subarray(tStrOff, tStrOff + tStrLen).toString('utf8')).map(fixGershayim);
     const tView = new DataView(tripsBuf.buffer, tripsBuf.byteOffset, tripsBuf.byteLength);
     this.tripCount = tripCount;
     this.tripRoute = new Int32Array(tripCount);
@@ -348,6 +348,56 @@ export class TransitStore {
     return day;
   }
 
+  /**
+   * The part of a service day that runs past midnight: entries with a GTFS time
+   * ≥ 24:00 of trips active on `dateInt`. After midnight these buses are still on
+   * the road but belong to *yesterday's* service, so boards and the planner read
+   * yesterday's overflow next to today's index. Same shape as ensureDayIndex() but
+   * only a few percent of its size, so it is cheap to keep next to the full days.
+   */
+  ensureOverflowIndex(dateInt, dow) {
+    const key = dateInt * 10 + (dow | 0);
+    if (!this._overflowIndexes) this._overflowIndexes = new Map();
+    const cached = this._overflowIndexes.get(key);
+    if (cached) return cached;
+
+    const activeSvc = new Uint8Array(this.services.length);
+    for (let i = 0; i < this.services.length; i++) {
+      if (this.serviceActive(i, dateInt, dow)) activeSvc[i] = 1;
+    }
+    const start = new Int32Array(this.stopCount + 1);
+    const tripsList = [];
+    const rowsList = [];
+    for (let stop = 0; stop < this.stopCount; stop++) {
+      start[stop] = tripsList.length;
+      const b = this.stopTripStart[stop + 1];
+      // Slices are sorted by departure, so the ≥ 24:00 entries are the tail.
+      for (let idx = this.lowerBoundStopTrip(stop, DAY_SEC); idx < b; idx++) {
+        const trip = this.stopTripTrip[idx];
+        if (!activeSvc[this.tripService[trip]]) continue;
+        tripsList.push(trip);
+        rowsList.push(this.stopTripRow[idx]);
+      }
+    }
+    start[this.stopCount] = tripsList.length;
+    const day = {
+      key,
+      dateInt,
+      dow,
+      start,
+      trips: Int32Array.from(tripsList),
+      rows: Int32Array.from(rowsList),
+      activeSvc,
+      total: tripsList.length,
+      overflow: true,
+    };
+    while (this._overflowIndexes.size >= 2) {
+      this._overflowIndexes.delete(this._overflowIndexes.keys().next().value);
+    }
+    this._overflowIndexes.set(key, day);
+    return day;
+  }
+
   /** Departure seconds for an entry in a day-filtered stop→trip index. */
   dayStopTripDepAt(day, idx) {
     return this.stDeparture[day.rows[idx]];
@@ -498,14 +548,14 @@ export class TransitStore {
 
   /** Line search by short or long name (Hebrew/English digits and text). */
   searchRoutes(query, limit = 40) {
-    const q = query.trim().toLowerCase();
+    const q = foldForSearch(query.trim());
     if (!q) return [];
     const scored = [];
     for (let i = 0; i < this.routeCount; i++) {
       const shortRaw = this.routeShortName[i] || '';
       const longRaw = this.routeLongName[i] || '';
-      const shortName = shortRaw.toLowerCase();
-      const longName = longRaw.toLowerCase();
+      const shortName = foldForSearch(shortRaw);
+      const longName = foldForSearch(longRaw);
       const agencyId = this.routeAgency[i] || '';
       const type = this.routeType[i];
       const branded = brandLightRailRoute({
@@ -522,7 +572,7 @@ export class TransitStore {
         const trainNum = trip >= 0 ? String(this.tripHeadsign[trip] || '').trim() : '';
         displayRaw = shortRaw || trainNum;
       }
-      const displayName = displayRaw.toLowerCase();
+      const displayName = foldForSearch(displayRaw);
       let best = Infinity;
       if (shortName === q || displayName === q) best = 0;
       else if (shortName.startsWith(q) || displayName.startsWith(q)) best = 1;
@@ -651,6 +701,8 @@ export class TransitStore {
 
   /** Nearby stops via the spatial grid, nearest first. */
   nearby(lat, lon, radiusM = 500, limit = 20) {
+    // A huge radius walks millions of empty grid cells and blocks the event loop.
+    radiusM = Math.min(Number(radiusM) || 0, MAX_NEARBY_RADIUS_M);
     const scale = this.gridScale;
     const cells = Math.ceil(radiusM / (scale * 111_320));
     const cy0 = Math.floor(lat / scale);
@@ -675,15 +727,19 @@ export class TransitStore {
   }
 
   searchStops(query, limit = 20, bias = null) {
-    const q = query.trim().toLowerCase();
+    const q = foldForSearch(query.trim());
     if (!q) return [];
+    if (!this._stopSearchKeys) {
+      this._stopSearchKeys = this.stopName.map((n) => foldForSearch(n || ''));
+      this._stopSearchKeysEn = this.stopNameEn.map((n) => foldForSearch(n || ''));
+    }
     const scored = [];
     for (let i = 0; i < this.stopCount; i++) {
       // Match the local name and the English translation so either language works.
       const name = this.stopName[i];
       const en = this.stopNameEn[i];
-      const lowerName = name ? name.toLowerCase() : '';
-      const lowerEn = en ? en.toLowerCase() : '';
+      const lowerName = this._stopSearchKeys[i];
+      const lowerEn = this._stopSearchKeysEn[i];
       let best = Infinity;
       // Tier 0: exact name. Tier 1: prefix. Tier 2: substring anywhere.
       if (lowerName === q || lowerEn === q) best = 0;
@@ -754,6 +810,40 @@ export class TransitStore {
     this._shapeLru.set(shapeIdx, out);
     return out;
   }
+}
+
+export const DAY_SEC = 86400;
+
+/** YYYYMMDD shifted by whole days (calendar-correct across months/years). */
+export function addDaysDateInt(dateInt, days) {
+  const y = Math.floor(dateInt / 10000);
+  const m = Math.floor((dateInt % 10000) / 100);
+  const d = dateInt % 100;
+  const dt = new Date(Date.UTC(y, m - 1, d + days));
+  return dt.getUTCFullYear() * 10000 + (dt.getUTCMonth() + 1) * 100 + dt.getUTCDate();
+}
+
+/** Upper bound for nearby() so one request can't freeze the server. */
+export const MAX_NEARBY_RADIUS_M = 8000; // planner's wide access ring is 2.5 × max walk (3 km)
+
+/**
+ * MOT writes the Hebrew gershayim as two apostrophes (בי''ס, רק''ל, שד''). Show a
+ * real double quote, the way people type it (בי"ס).
+ */
+export function fixGershayim(s) {
+  return typeof s === 'string' && s.includes("''") ? s.replace(/''/g, '"') : s;
+}
+
+/**
+ * Search key: lower case, quote marks unified so ת"א, ת״א, ת''א and תא all match.
+ * Geresh (׳ ’) becomes an apostrophe so ז׳בוטינסקי finds ז'בוטינסקי.
+ */
+export function foldForSearch(s) {
+  return String(s)
+    .toLowerCase()
+    .replace(/''/g, '"')
+    .replace(/[\u05F3\u2018\u2019`]/g, "'")
+    .replace(/["\u05F4\u201C\u201D]/g, '');
 }
 
 export function haversine(lat1, lon1, lat2, lon2) {

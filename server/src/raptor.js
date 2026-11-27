@@ -15,7 +15,7 @@
  *  - The access/egress steps are walked, so door-to-door times are real.
  */
 
-import { haversine } from './store.js';
+import { addDaysDateInt, DAY_SEC, haversine } from './store.js';
 import { modeFamily } from './lightRailBrand.js';
 
 const INF = 0x7fffffff;
@@ -35,6 +35,10 @@ const CORRIDOR_BOARD_RADIUS_M = 550;
 const CORRIDOR_ARRIVAL_SLACK_SEC = 20 * 60;
 /** Max extra short-names to attach per journey as corridor siblings. */
 const CORRIDOR_ALT_LIMIT = 8;
+/** Trips shorter than this (straight line) get a direct walking option. */
+const DIRECT_WALK_MAX_M = 2500;
+/** Before this hour, yesterday's trips with GTFS times past 24:00 are still running. */
+const NIGHT_OVERFLOW_SEC = 6 * 3600;
 
 function journeyScore(j) {
   return j.arrivalSeconds + j.transfers * TRANSFER_PENALTY_SEC;
@@ -200,8 +204,13 @@ export class JourneyPlanner {
     const seenTrip = new Set();
     const seenRoutes = new Set();
 
+    // Straight-line distance; short trips get one direct walking option (below).
+    const straightM = haversine(from.lat, from.lon, destPoint.lat, destPoint.lon);
     const pushJourney = (j, kind) => {
       if (!j) return false;
+      // A search can "win" by walking stop to stop with no ride. That detour is
+      // always slower than the direct walk, which short trips already get.
+      if (!j.transitKey && kind !== 'walk' && straightM < DIRECT_WALK_MAX_M) return false;
       if (j.routes.length > MAX_RIDES) return false;
       // Prefer structural variety (route sequence). Exact trip keys still avoid clones.
       const routeSig = routeSignature(j);
@@ -253,6 +262,30 @@ export class JourneyPlanner {
     const search = this.planOnce({ ...ctx, departAt: secondsSinceMidnight });
     pushJourney(search?.journey ?? null, 'fastest');
     pullRoundAlternatives(search?.snapshots, secondsSinceMidnight);
+
+    // 1b) After midnight, buses of yesterday's service (GTFS 24:xx, 25:xx…) are still
+    //     running. Search them in yesterday's clock (+24h) and shift back to today.
+    if (secondsSinceMidnight < NIGHT_OVERFLOW_SEC) {
+      const night = s.ensureOverflowIndex(addDaysDateInt(dateInt, -1), (dow + 6) % 7);
+      let nightCursor = secondsSinceMidnight + DAY_SEC;
+      for (let i = 0; night.total > 0 && i < 3 && journeys.length < MAX_RESULTS; i++) {
+        const r = this.planOnce({
+          ...ctx,
+          day: night,
+          activeService: night.activeSvc,
+          departAt: nightCursor,
+        });
+        const j = r?.journey;
+        if (!j?.transitKey) break;
+        const board = firstBoardSec(j);
+        shiftJourney(j, -DAY_SEC);
+        pushJourney(j, 'later');
+        if (board == null) break;
+        nightCursor = board + 60;
+      }
+      // Keep the soonest arrival first so ban-sets / profile start from it.
+      journeys.sort((a, b) => a.arrivalSeconds - b.arrivalSeconds);
+    }
 
     // 2) Force different corridors by banning routes from the primary path.
     //    Fixed +15/+30 offsets often reboard the same first bus; bans find real variety.
@@ -359,8 +392,8 @@ export class JourneyPlanner {
     }
 
     // A pure walking option is always worth showing for short trips.
-    const straight = haversine(from.lat, from.lon, destPoint.lat, destPoint.lon);
-    if (straight > 0 && straight < 2500) {
+    const straight = straightM;
+    if (straight > 0 && straight < DIRECT_WALK_MAX_M) {
       const walkSec = Math.round(straight / walkSpeedMps);
       const earliestArrive = journeys.length
         ? Math.min(...journeys.map((j) => j.arrivalSeconds))
@@ -828,8 +861,14 @@ export class JourneyPlanner {
     if (!journey?.legs) return;
     for (const leg of journey.legs) {
       if (leg.mode !== 'transit' || !leg._geo) continue;
-      const { trip, boardRow, alightRow } = leg._geo;
+      const { trip, boardRow, alightRow, shift = 0 } = leg._geo;
       leg.intermediateStops = this.intermediateStops(trip, boardRow, alightRow);
+      if (shift) {
+        for (const st of leg.intermediateStops) {
+          st.arrival += shift;
+          st.departure += shift;
+        }
+      }
       leg.geometry = this.legGeometry(trip, boardRow, alightRow);
       delete leg._geo;
     }
@@ -1086,6 +1125,29 @@ export class JourneyPlanner {
       primaryRouteColor: legs.find((l) => l.mode === 'transit')?.route.color || null,
     };
   }
+}
+
+/**
+ * Move a journey found in another service day's clock (yesterday's 24:30) onto
+ * today's clock (00:30). Leg times, keys and deferred stop times all shift.
+ */
+function shiftJourney(j, shift) {
+  for (const l of j.legs) {
+    if (l.mode !== 'transit') continue;
+    l.departure += shift;
+    l.arrival += shift;
+    if (l._geo) l._geo.shift = (l._geo.shift ?? 0) + shift;
+  }
+  j.departSeconds += shift;
+  j.arrivalSeconds += shift;
+  j.legSignature = j.legs
+    .map((l) => (l.mode === 'transit' ? `${l.route.index}@${l.departure}` : 'w'))
+    .join('>');
+  j.transitKey = j.legs
+    .filter((l) => l.mode === 'transit')
+    .map((l) => `${l.route.index}:${l.departure}`)
+    .join('|');
+  return j;
 }
 
 /** Route indices only — used to keep structurally different alternatives. */

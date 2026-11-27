@@ -40,9 +40,37 @@ export function formatDurationMins(seconds: number): string {
   return mins === 1 ? t('1 min') : t('{n} mins', { n: mins });
 }
 
-export function secondsSinceLocalMidnight(d = new Date()): number {
-  return d.getHours() * 3600 + d.getMinutes() * 60 + d.getSeconds();
+const israelParts = new Intl.DateTimeFormat('en-CA', {
+  timeZone: 'Asia/Jerusalem',
+  year: 'numeric',
+  month: '2-digit',
+  day: '2-digit',
+  hour: '2-digit',
+  minute: '2-digit',
+  second: '2-digit',
+  hourCycle: 'h23',
+});
+
+/** Wall clock in Israel, the timezone every GTFS time in the feed is written in. */
+export function israelClock(d = new Date()): { isoDate: string; seconds: number } {
+  const parts = israelParts.formatToParts(d);
+  const get = (type: string) => parts.find((p) => p.type === type)?.value ?? '0';
+  return {
+    isoDate: `${get('year')}-${get('month')}-${get('day')}`,
+    seconds: Number(get('hour')) * 3600 + Number(get('minute')) * 60 + Number(get('second')),
+  };
 }
+
+/**
+ * Seconds since midnight in Israel (feed time). Not the device zone: a phone set to
+ * another timezone would otherwise put every countdown hours off.
+ */
+export function secondsSinceLocalMidnight(d = new Date()): number {
+  return israelClock(d).seconds;
+}
+
+/** How far in the past a departure still reads as "just left" rather than tomorrow. */
+const JUST_LEFT_WINDOW_SEC = 6 * 3600;
 
 /**
  * Minutes until departure. If today's trip already passed, roll to the next day
@@ -54,7 +82,9 @@ export function minutesUntilDepart(
 ): { minutes: number; nextDay: boolean } {
   let diff = departSeconds - nowSec;
   let nextDay = false;
-  if (diff < 0) {
+  // Only a time far in the past is tomorrow's bus. One that left a minute ago (stale
+  // results, a late refresh) is "now", not 24 hours away.
+  if (diff < -JUST_LEFT_WINDOW_SEC) {
     diff += 86400;
     nextDay = true;
   }

@@ -10,10 +10,10 @@ import { StopProgressList } from './StopProgressList';
 import type { TransitLeg } from '../../types';
 import type { TransitRideCardProps } from './types';
 import { t } from '../../lib/i18n';
+import { secondsSinceLocalMidnight } from '../../lib/format';
 
 function secondsNow(): number {
-  const d = new Date();
-  return d.getHours() * 3600 + d.getMinutes() * 60 + d.getSeconds();
+  return secondsSinceLocalMidnight();
 }
 
 export function TransitRideCard({

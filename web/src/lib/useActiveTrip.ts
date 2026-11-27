@@ -20,6 +20,7 @@ import {
   type TripSessionSnapshot,
 } from './tripSession';
 import { t } from './i18n';
+import { secondsSinceLocalMidnight } from './format';
 
 const ALERTS_STORAGE_KEY = 'bmi_trip_alerts_enabled';
 
@@ -37,8 +38,7 @@ function saveAlertsEnabled(value: boolean): void {
 }
 
 function nowInSeconds(): number {
-  const d = new Date();
-  return d.getHours() * 3600 + d.getMinutes() * 60 + d.getSeconds();
+  return secondsSinceLocalMidnight();
 }
 
 export interface ActiveTripHook {

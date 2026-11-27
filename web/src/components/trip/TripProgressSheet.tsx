@@ -30,6 +30,7 @@ import { useWaitOptions } from './useWaitOptions';
 import type { RouteInfo, TransitLeg, WalkLeg } from '../../types';
 import type { TripProgressSheetProps } from './types';
 import { t } from '../../lib/i18n';
+import { secondsSinceLocalMidnight } from '../../lib/format';
 
 export type { TripProgressSheetProps } from './types';
 
@@ -353,6 +354,5 @@ export function TripProgressSheet({
 }
 
 function secondsNow(): number {
-  const d = new Date();
-  return d.getHours() * 3600 + d.getMinutes() * 60 + d.getSeconds();
+  return secondsSinceLocalMidnight();
 }
