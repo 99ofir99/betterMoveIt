@@ -9,6 +9,7 @@ export function AboutPanel({ onBack }: AboutPanelProps) {
     <div className="more-panel">
       <PanelHeader title={t("About")} onBack={onBack} />
       <div className="more-about">
+        <img className="more-about__logo" src="/icon.svg" width={72} height={72} alt="" />
         <p className="more-about__title">{t("betterMoveIt")}</p>
         <p className="more-about__body">
           {t("A free, ad-free transit companion for Israel — live buses, directions, and favourites. Open source. No tracking.")}

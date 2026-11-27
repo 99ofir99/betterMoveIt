@@ -9925,3 +9925,14 @@ button.ld-option {
 [dir='rtl'] .prefs-sheet__switch.is-on::after {
   transform: translateX(-20px);
 }
+
+/* App logo in the More tab */
+.more-brand-card__mark img {
+  display: block;
+  border-radius: 9px;
+}
+.more-about__logo {
+  display: block;
+  border-radius: 18px;
+  margin-bottom: 12px;
+}
