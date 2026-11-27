@@ -93,7 +93,8 @@ export default function App() {
   const [bestTimeDismissed, setBestTimeDismissed] = useState(false);
   // Directions detail (Moovit trip sheet) — separate from the results list.
   const [showJourneyDetail, setShowJourneyDetail] = useState(false);
-  const [resultsSnap, setResultsSnap] = useState<SheetSnap>("half");
+  // Results open raised to the top (user request); drag down or tap Map for the map.
+  const [resultsSnap, setResultsSnap] = useState<SheetSnap>("full");
   /** Directions detail sheet snap — peek keeps the route path visible above Start. */
   const [detailSnap, setDetailSnap] = useState<SheetSnap>("peek");
   /** Stations sheet snap — peek reveals map markers; half/full shows the nearby list. */
@@ -287,7 +288,7 @@ export default function App() {
   useEffect(() => {
     if (state.panel !== "journeys") {
       setShowJourneyDetail(false);
-      setResultsSnap("half");
+      setResultsSnap("full");
     }
   }, [state.panel]);
 
@@ -1107,7 +1108,7 @@ export default function App() {
               onOpenDepartSheet={() => setShowDepartSheet(true)}
               mapPeek={resultsSnap === "peek"}
               onToggleMapView={() =>
-                setResultsSnap((s) => (s === "peek" ? "half" : "peek"))
+                setResultsSnap((s) => (s === "peek" ? "full" : "peek"))
               }
               sortMode={sortMode}
               onSortMode={setSortMode}
