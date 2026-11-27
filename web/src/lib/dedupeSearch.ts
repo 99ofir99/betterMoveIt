@@ -3,7 +3,7 @@
  */
 
 import type { Journey, Line, Place, SearchResult, TransitLeg } from '../types';
-import { formatLineLongName } from './lineCategory';
+import { corridorDedupeKey } from './lineCategory';
 
 function coordKey(lat?: number, lon?: number): string {
   if (lat == null || lon == null) return '';
@@ -39,8 +39,8 @@ export function dedupePlaces(places: Place[]): Place[] {
 export function searchResultDedupeKey(r: SearchResult): string {
   if (r.kind === 'line') {
     const name = (r.shortName || r.displayName || '').trim();
-    // Keep A↔B and B↔A distinct — opposite directions are separate lines.
-    const ends = formatLineLongName(r.longName || '');
+    // Collapse A↔B and B↔A — opposite directions share one list row.
+    const ends = corridorDedupeKey(r.longName || '');
     return `line:${name}|${ends}|${r.agency || ''}`;
   }
   if (r.kind === 'stop' && r.id) {
@@ -64,15 +64,16 @@ export function dedupeSearchResults(results: SearchResult[]): SearchResult[] {
 }
 
 /**
- * Lines tab: one row per shortName + ordered corridor + agency.
- * Opposite directions (A↔B vs B↔A) stay as separate rows; same-direction
- * GTFS variants (-10 / -11) still collapse via formatLineLongName.
+ * Lines tab: one row per shortName + corridor + agency.
+ * Opposite directions (A↔B vs B↔A) collapse; same-direction GTFS variants
+ * (-10 / -11) also collapse via corridorDedupeKey / formatLineLongName.
+ * Direction is chosen later in line detail ("Change direction").
  */
 export function dedupeLines(lines: Line[]): Line[] {
   const seen = new Set<string>();
   const out: Line[] = [];
   for (const line of lines) {
-    const ends = formatLineLongName(line.longName);
+    const ends = corridorDedupeKey(line.longName);
     const key = `${(line.shortName || line.displayName).trim()}|${ends}|${line.agency || ''}`;
     if (seen.has(key)) continue;
     seen.add(key);

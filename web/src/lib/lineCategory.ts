@@ -82,6 +82,21 @@ export function formatLineLongName(longName: string | undefined): string {
 }
 
 /**
+ * Stable corridor id that ignores travel direction (A↔B === B↔A).
+ * Used so the Lines list shows one row per corridor.
+ */
+export function corridorDedupeKey(longName: string | undefined): string {
+  const formatted = formatLineLongName(longName);
+  const parts = formatted.split(/\s*↔\s*/);
+  if (parts.length === 2 && parts[0] && parts[1]) {
+    return [parts[0].trim(), parts[1].trim()]
+      .sort((a, b) => a.localeCompare(b, 'he'))
+      .join('↔');
+  }
+  return formatted;
+}
+
+/**
  * Israel Railways long_name is `OriginStation-City<->DestStation-City`.
  * The trip terminates at the right-hand side — return that city only.
  */

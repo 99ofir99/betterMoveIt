@@ -1,9 +1,10 @@
 /**
  * Line detail state: schedule fetch, direction swap, board→alight picking.
  *
- * When GTFS only exposes one direction_id (common on some Israel routes),
- * "Change direction" still flips the stop order client-side — Moovit lines
- * are treated as bidirectional for browsing / onboard ride start.
+ * Direction swap prefers, in order:
+ * 1. Multiple GTFS direction_ids on the same route
+ * 2. Paired opposite-corridor route (Israel A↔B / B↔A as separate routes)
+ * 3. Client-side stop/geometry flip when the feed only has one pattern
  */
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
@@ -23,6 +24,7 @@ import type {
 export function useLineDetail(
   lineId: string,
   onGeometryChange?: (geometry: [number, number][] | null) => void,
+  onSwitchLine?: (lineId: string) => void,
 ) {
   const [data, setData] = useState<LineScheduleResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -30,8 +32,9 @@ export function useLineDetail(
   const [tick, setTick] = useState(0);
   const [direction, setDirection] = useState<number | undefined>(undefined);
   const [directionOptions, setDirectionOptions] = useState<LineDirectionOption[]>([]);
+  const [oppositeLineId, setOppositeLineId] = useState<string | null>(null);
   const [geometry, setGeometry] = useState<[number, number][] | null>(null);
-  /** Client-side flip when feed has only one GTFS direction. */
+  /** Client-side flip when feed has only one GTFS direction and no opposite route. */
   const [reversed, setReversed] = useState(false);
   const [boardIndex, setBoardIndex] = useState<number | null>(null);
   const [pickingDestination, setPickingDestination] = useState(false);
@@ -41,6 +44,7 @@ export function useLineDetail(
   useEffect(() => {
     setDirection(undefined);
     setDirectionOptions([]);
+    setOppositeLineId(null);
     setData(null);
     setBoardIndex(null);
     setPickingDestination(false);
@@ -58,6 +62,7 @@ export function useLineDetail(
         setError(null);
         setData(d);
         if (d.directions?.length) setDirectionOptions(d.directions);
+        setOppositeLineId(d.oppositeLineId ?? null);
         // Keep direction in state for Change direction, without forcing a refetch loop.
         if (direction === undefined && d.direction !== undefined) {
           setDirection(d.direction);
@@ -143,7 +148,8 @@ export function useLineDetail(
   }, [displayStops, feedDestination, reversed]);
 
   const multiGtfs = directionOptions.length > 1;
-  const canChangeDirection = multiGtfs || displayStops.length > 1;
+  const canChangeDirection =
+    multiGtfs || Boolean(oppositeLineId && onSwitchLine) || displayStops.length > 1;
 
   const changeDirection = useCallback(() => {
     setBoardIndex(null);
@@ -156,9 +162,14 @@ export function useLineDetail(
       setDirection(next.direction);
       return;
     }
+    // Separate GTFS route for the opposite corridor — open that line for real schedules.
+    if (oppositeLineId && onSwitchLine) {
+      onSwitchLine(oppositeLineId);
+      return;
+    }
     // Single GTFS direction — flip the pattern locally (Moovit still offers Change).
     setReversed((r) => !r);
-  }, [multiGtfs, direction, directionOptions]);
+  }, [multiGtfs, direction, directionOptions, oppositeLineId, onSwitchLine]);
 
   const toggleFavourite = useCallback(() => {
     if (!line) return;

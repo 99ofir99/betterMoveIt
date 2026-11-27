@@ -224,6 +224,8 @@ export interface LineDetailResponse {
   headsign?: string;
   direction?: number;
   directions?: LineDirectionOption[];
+  /** Paired opposite-corridor GTFS route when A↔B / B↔A are separate rows. */
+  oppositeLineId?: string | null;
 }
 
 export interface LineScheduleStop extends Stop {
@@ -235,6 +237,8 @@ export interface LineScheduleResponse {
   headsign?: string;
   direction?: number;
   directions?: LineDirectionOption[];
+  /** Paired opposite-corridor GTFS route when A↔B / B↔A are separate rows. */
+  oppositeLineId?: string | null;
   stops: LineScheduleStop[];
   time: { dateInt: number; seconds: number; dow: number };
 }

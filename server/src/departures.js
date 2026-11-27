@@ -12,16 +12,17 @@ function addDaysDateInt(dateInt, days) {
 }
 
 function collectDepartures(store, stopIdx, dateInt, dow, seconds, horizon, dayOffsetSec, out) {
-  const start = store.stopTripStart[stopIdx];
-  const end = store.stopTripStart[stopIdx + 1];
+  const day = store.ensureDayIndex(dateInt, dow);
+  const absNow = seconds;
+  const fromSec = Math.max(0, absNow - dayOffsetSec);
+  const start = store.lowerBoundDayStopTrip(day, stopIdx, fromSec);
+  const end = day.start[stopIdx + 1];
   for (let idx = start; idx < end; idx++) {
-    const dep = store.stopTripDepAt(idx);
+    const dep = store.dayStopTripDepAt(day, idx);
     const absDep = dep + dayOffsetSec;
-    const absNow = seconds;
-    if (absDep < absNow || absDep > absNow + horizon) continue;
-    const trip = store.stopTripTrip[idx];
-    const svc = store.tripService[trip];
-    if (!store.serviceActive(svc, dateInt, dow)) continue;
+    if (absDep < absNow) continue;
+    if (absDep > absNow + horizon) break;
+    const trip = day.trips[idx];
     const routeIdx = store.tripRoute[trip];
     out.push({
       tripId: trip,
@@ -81,16 +82,15 @@ export function nextForRouteAtStop(store, stopIdx, routeIdx, clock, limit = 5, d
   const dirFilter = direction !== undefined && Number.isFinite(Number(direction)) ? Number(direction) : null;
 
   const collect = (dInt, dDow, fromSec, dayOffsetSec) => {
-    const start = store.stopTripStart[stopIdx];
-    const end = store.stopTripStart[stopIdx + 1];
+    const day = store.ensureDayIndex(dInt, dDow);
+    const start = store.lowerBoundDayStopTrip(day, stopIdx, fromSec);
+    const end = day.start[stopIdx + 1];
     for (let idx = start; idx < end; idx++) {
-      const trip = store.stopTripTrip[idx];
+      const trip = day.trips[idx];
       if (store.tripRoute[trip] !== routeIdx) continue;
       if (dirFilter !== null && store.tripDirection[trip] !== dirFilter) continue;
-      const dep = store.stopTripDepAt(idx);
+      const dep = store.dayStopTripDepAt(day, idx);
       if (dep < fromSec) continue;
-      const svc = store.tripService[trip];
-      if (!store.serviceActive(svc, dInt, dDow)) continue;
       out.push({
         departure: dep,
         minutes: Math.max(0, Math.round((dep + dayOffsetSec - seconds) / 60)),

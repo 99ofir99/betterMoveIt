@@ -1080,6 +1080,7 @@ export default function App() {
             }}
             onOpenStop={openStop}
             onGeometryChange={setLineGeometry}
+            onSwitchLine={(id) => void openLine(id)}
             onStartLineRide={(journey) => {
               if (tripActive) {
                 setPendingLineRide(journey);

@@ -8,6 +8,11 @@
 
 import fs from 'node:fs';
 import path from 'node:path';
+import {
+  corridorDestCity,
+  corridorKey,
+  corridorOriginCity,
+} from './corridorKey.js';
 import { brandLightRailRoute, modeFamily } from './lightRailBrand.js';
 
 const SEARCH_DEPTH_ENV = 'GTFS_DATA_DIR';
@@ -285,6 +290,82 @@ export class TransitStore {
   }
 
   /**
+   * Compact stop→trip index containing only trips active on `dateInt`/`dow`.
+   * Built once per service day and reused across plan/departure queries so the
+   * hot RAPTOR loop never pays for inactive calendar rows.
+   * Keeps a small LRU (today + tomorrow) so night boards don't evict the plan day.
+   */
+  ensureDayIndex(dateInt, dow) {
+    const key = dateInt * 10 + (dow | 0);
+    if (!this._dayIndexes) this._dayIndexes = new Map();
+    const cached = this._dayIndexes.get(key);
+    if (cached) {
+      this._dayIndexes.delete(key);
+      this._dayIndexes.set(key, cached);
+      return cached;
+    }
+
+    const activeSvc = new Uint8Array(this.services.length);
+    for (let i = 0; i < this.services.length; i++) {
+      if (this.serviceActive(i, dateInt, dow)) activeSvc[i] = 1;
+    }
+
+    const start = new Int32Array(this.stopCount + 1);
+    let total = 0;
+    for (let stop = 0; stop < this.stopCount; stop++) {
+      const a = this.stopTripStart[stop];
+      const b = this.stopTripStart[stop + 1];
+      let n = 0;
+      for (let idx = a; idx < b; idx++) {
+        if (activeSvc[this.tripService[this.stopTripTrip[idx]]]) n++;
+      }
+      start[stop] = total;
+      total += n;
+    }
+    start[this.stopCount] = total;
+
+    const trips = new Int32Array(total);
+    const rows = new Int32Array(total);
+    let cursor = 0;
+    for (let stop = 0; stop < this.stopCount; stop++) {
+      const a = this.stopTripStart[stop];
+      const b = this.stopTripStart[stop + 1];
+      for (let idx = a; idx < b; idx++) {
+        const trip = this.stopTripTrip[idx];
+        if (!activeSvc[this.tripService[trip]]) continue;
+        trips[cursor] = trip;
+        rows[cursor] = this.stopTripRow[idx];
+        cursor++;
+      }
+    }
+
+    const day = { key, dateInt, dow, start, trips, rows, activeSvc, total };
+    while (this._dayIndexes.size >= 2) {
+      const oldest = this._dayIndexes.keys().next().value;
+      this._dayIndexes.delete(oldest);
+    }
+    this._dayIndexes.set(key, day);
+    return day;
+  }
+
+  /** Departure seconds for an entry in a day-filtered stop→trip index. */
+  dayStopTripDepAt(day, idx) {
+    return this.stDeparture[day.rows[idx]];
+  }
+
+  /** First day-index entry at `stop` with dep >= timeSec. */
+  lowerBoundDayStopTrip(day, stop, timeSec) {
+    let lo = day.start[stop];
+    let hi = day.start[stop + 1];
+    while (lo < hi) {
+      const mid = (lo + hi) >> 1;
+      if (this.dayStopTripDepAt(day, mid) < timeSec) lo = mid + 1;
+      else hi = mid;
+    }
+    return lo;
+  }
+
+  /**
    * Precompute foot-transfer neighbors (radius 500 m, limit 6, exclude self).
    * Same selection as RAPTOR's former per-round nearby() calls.
    */
@@ -466,6 +547,58 @@ export class TransitStore {
     return [...byDir.values()].sort((a, b) => a.direction - b.direction);
   }
 
+  /**
+   * Israel GTFS often stores opposite corridors as separate routes
+   * (A→B and B→A). Pair them so the UI can offer one list row + direction swap.
+   */
+  _buildOppositeRoutes() {
+    const n = this.routeCount;
+    const opposite = new Int32Array(n);
+    opposite.fill(-1);
+    /** @type {Map<string, number[]>} */
+    const byKey = new Map();
+    for (let i = 0; i < n; i++) {
+      const short = this.routeShortName[i] || '';
+      if (!short) continue;
+      const key = corridorKey(this.routeLongName[i] || '');
+      if (!key) continue;
+      const agency = this.routeAgency[i] || '';
+      const groupKey = `${short}\0${agency}\0${key}`;
+      let list = byKey.get(groupKey);
+      if (!list) {
+        list = [];
+        byKey.set(groupKey, list);
+      }
+      list.push(i);
+    }
+    for (const list of byKey.values()) {
+      if (list.length < 2) continue;
+      for (const i of list) {
+        const dest = corridorDestCity(this.routeLongName[i] || '');
+        let pick = -1;
+        for (const j of list) {
+          if (j === i) continue;
+          const origin = corridorOriginCity(this.routeLongName[j] || '');
+          if (dest && origin && dest === origin) {
+            pick = j;
+            break;
+          }
+          if (pick < 0) pick = j;
+        }
+        opposite[i] = pick;
+      }
+    }
+    this._oppositeRoute = opposite;
+  }
+
+  /** Paired opposite-corridor route id, or null. */
+  oppositeRouteId(routeIdx) {
+    if (routeIdx < 0 || routeIdx >= this.routeCount) return null;
+    if (!this._oppositeRoute) this._buildOppositeRoutes();
+    const j = this._oppositeRoute[routeIdx];
+    return j != null && j >= 0 ? String(j) : null;
+  }
+
   /** Pick a representative trip, optionally for a specific GTFS direction_id. */
   tripForRoute(routeIdx, direction) {
     if (routeIdx < 0 || routeIdx >= this.routeCount) return -1;
@@ -483,6 +616,7 @@ export class TransitStore {
     if (routeIdx < 0 || routeIdx >= this.routeCount) return null;
     const trip = this.tripForRoute(routeIdx, direction);
     const directions = this.routeDirections(routeIdx);
+    const oppositeLineId = this.oppositeRouteId(routeIdx);
     if (trip < 0) {
       return {
         line: this.routeObject(routeIdx),
@@ -491,6 +625,7 @@ export class TransitStore {
         headsign: '',
         direction: 0,
         directions,
+        oppositeLineId,
       };
     }
     const start = this.tripStopStart[trip];
@@ -508,6 +643,7 @@ export class TransitStore {
       headsign: this.tripHeadsign[trip] || '',
       direction: this.tripDirection[trip],
       directions,
+      oppositeLineId,
     };
   }
 
@@ -576,27 +712,44 @@ export class TransitStore {
 
   tripPolyline(shapeIdx) {
     if (shapeIdx < 0 || shapeIdx >= this.shapeCount) return [];
+    if (!this._shapeLru) this._shapeLru = new Map();
+    const cached = this._shapeLru.get(shapeIdx);
+    if (cached) {
+      // Refresh insertion order for a simple LRU.
+      this._shapeLru.delete(shapeIdx);
+      this._shapeLru.set(shapeIdx, cached);
+      return cached;
+    }
+
     const o = shapeIdx * 12;
     const offset = this.shapeMeta.getInt32(o, true);
     const count = this.shapeMeta.getInt32(o + 4, true);
     if (count <= 0) return [];
     // Prefer in-memory points when a host loaded the full buffer; else read
     // just this shape's range from the open shapes.bin fd.
+    let out;
     if (this.shapePoints) {
-      const out = new Array(count);
+      out = new Array(count);
       for (let k = 0; k < count; k++) {
         out[k] = [this.shapePoints[(offset + k) * 2], this.shapePoints[(offset + k) * 2 + 1]];
       }
-      return out;
+    } else {
+      const bytes = count * 8;
+      const buf = Buffer.allocUnsafe(bytes);
+      fs.readSync(this._shapesFd, buf, 0, bytes, this._shapesPtsFileOff + offset * 8);
+      const view = new Float32Array(buf.buffer, buf.byteOffset, count * 2);
+      out = new Array(count);
+      for (let k = 0; k < count; k++) {
+        out[k] = [view[k * 2], view[k * 2 + 1]];
+      }
     }
-    const bytes = count * 8;
-    const buf = Buffer.allocUnsafe(bytes);
-    fs.readSync(this._shapesFd, buf, 0, bytes, this._shapesPtsFileOff + offset * 8);
-    const view = new Float32Array(buf.buffer, buf.byteOffset, count * 2);
-    const out = new Array(count);
-    for (let k = 0; k < count; k++) {
-      out[k] = [view[k * 2], view[k * 2 + 1]];
+
+    // Cap cached shapes so popular corridors stay hot without unbounded RAM.
+    if (this._shapeLru.size >= 256) {
+      const oldest = this._shapeLru.keys().next().value;
+      this._shapeLru.delete(oldest);
     }
+    this._shapeLru.set(shapeIdx, out);
     return out;
   }
 }
