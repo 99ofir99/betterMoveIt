@@ -3,9 +3,9 @@
  */
 
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { friendlyError } from '../../lib/friendlyError';
 import { api } from '../../lib/api';
 import type { LatLon, NearbyStopBoard } from '../../types';
-import { t } from '../../lib/i18n';
 
 /** ~100m — ignore GPS jitter so watchPosition doesn't refetch every tick. */
 const FETCH_DELTA = 0.0009;
@@ -52,7 +52,7 @@ export function useNearbyTab(center: LatLon, locating: boolean) {
       }
     } catch (e) {
       if (!(e instanceof DOMException && e.name === 'AbortError')) {
-        setError((e as Error).message ?? t('Failed to load nearby stops'));
+        setError(friendlyError("Couldn't load nearby stops. Try again in a moment."));
       }
     } finally {
       setLoading(false);
@@ -78,6 +78,13 @@ export function useNearbyTab(center: LatLon, locating: boolean) {
     }
     wasLocatingRef.current = locating;
   }, [locating, center.lat, center.lon]);
+
+  // Back online after a failed load: fetch again instead of leaving the error up.
+  useEffect(() => {
+    const retry = () => setLocateTick((n) => n + 1);
+    window.addEventListener('online', retry);
+    return () => window.removeEventListener('online', retry);
+  }, []);
 
   useEffect(() => {
     const ctrl = new AbortController();

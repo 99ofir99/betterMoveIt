@@ -11,6 +11,7 @@ export function NearbyHeader({
   onToggleMapView,
   onLocate,
   locating,
+  hasLocation = true,
 }: NearbyHeaderProps) {
   return (
     <div className="nearby-tab__head">
@@ -18,7 +19,11 @@ export function NearbyHeader({
         <h2 className="nearby-tab__title">{t("Nearby")}</h2>
         {!loading && (
           <p className="nearby-tab__subtitle">
-            {stopCount === 1 ? t('1 stop around you') : t('{n} stops around you', { n: stopCount })}
+            {!hasLocation
+              ? t('{n} stops in this area', { n: stopCount })
+              : stopCount === 1
+                ? t('1 stop around you')
+                : t('{n} stops around you', { n: stopCount })}
           </p>
         )}
       </div>

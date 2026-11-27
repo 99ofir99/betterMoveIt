@@ -15,6 +15,7 @@ export function NearbyTab({
   onOpenStop,
   onLocate,
   locating,
+  hasLocation = true,
   mapPeek = false,
   onToggleMapView,
 }: NearbyTabProps) {
@@ -24,11 +25,12 @@ export function NearbyTab({
     <div className="nearby-tab">
       <NearbyHeader
         stopCount={stops.length}
-        loading={loading}
+        loading={loading || (Boolean(error) && stops.length === 0)}
         mapPeek={mapPeek}
         onToggleMapView={onToggleMapView}
         onLocate={onLocate}
         locating={locating}
+        hasLocation={hasLocation}
       />
 
       <div className="nearby-tab__scroll">

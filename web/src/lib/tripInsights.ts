@@ -30,13 +30,20 @@ export function computeTripInsights(journeys: readonly Journey[]): TripInsightMa
 
   const candidates = journeys.map(() => new Set<TripInsightLabel>());
 
+  // A walk-only trip has no ride, so "Direct" / "Fewest transfers" would be nonsense on it.
+  const rides = (j: Journey) => j.legs.some((l) => l.mode === 'transit');
   const allDirect = journeys.every((j) => j.transfers === 0);
   journeys.forEach((j, i) => {
     // A lone direct trip is still worth flagging; a list of all-direct trips is noise.
-    if (j.transfers === 0 && (journeys.length === 1 || !allDirect)) candidates[i]!.add('Direct');
+    if (rides(j) && j.transfers === 0 && (journeys.length === 1 || !allDirect)) {
+      candidates[i]!.add('Direct');
+    }
   });
 
   markMinimum(journeys, candidates, (j) => j.transfers, 'Fewest transfers');
+  journeys.forEach((j, i) => {
+    if (!rides(j)) candidates[i]!.delete('Fewest transfers');
+  });
   markMinimum(journeys, candidates, (j) => j.walkMeters, 'Least walking');
   markMinimum(journeys, candidates, (j) => j.arrivalSeconds, 'Earliest arrival');
   markMinimum(journeys, candidates, (j) => j.durationSec, 'Fastest');

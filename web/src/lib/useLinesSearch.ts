@@ -5,6 +5,7 @@
  */
 
 import { useEffect, useState } from 'react';
+import { friendlyError } from './friendlyError';
 import { api } from './api';
 import type { Line } from '../types';
 import { dedupeLines } from './dedupeSearch';
@@ -70,7 +71,7 @@ export function useLinesSearch(query: string): UseLinesSearchResult {
         })
         .catch((e: Error) => {
           if (ctrl.signal.aborted || e.name === 'AbortError') return;
-          setError(String(e.message ?? e));
+          setError(friendlyError("Couldn't search lines. Try again in a moment."));
         })
         .finally(() => {
           if (!ctrl.signal.aborted) setLoading(false);

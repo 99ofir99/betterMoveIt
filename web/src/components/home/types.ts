@@ -46,6 +46,9 @@ export interface HomeScreenProps {
   onOpenMore: () => void;
   onAddFavorite: () => void;
   onPlanManually: () => void;
+  /** Location permission was denied: show a hint card instead of the nearest station. */
+  locationDenied?: boolean;
+  onRetryLocation?: () => void;
 }
 
 /** Props for the FrequentDestinationCard visual component. */

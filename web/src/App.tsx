@@ -1,4 +1,5 @@
-﻿import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+﻿import { ResultsEmptyState } from "./components/results/ResultsEmptyState";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useAppState, type AppState } from "./lib/useAppState";
 import { MapCanvas } from "./components/MapCanvas";
 import { JourneyList } from "./components/JourneyList";
@@ -879,7 +880,7 @@ export default function App() {
       !tripLive);
 
   return (
-    <div className={`app app--tab-${activeTab}`}>
+    <div className={`app app--tab-${activeTab}${showTopbar && !showJourneyDetail ? " app--has-topbar" : ""}`}>
       {showMap && (
         <MapCanvas
           center={state.center}
@@ -977,6 +978,8 @@ export default function App() {
               onOpenMore={() => setActiveTab("more")}
               onAddFavorite={() => openSearch("to")}
               onPlanManually={() => setShowPlanForm(true)}
+              locationDenied={!state.gpsAllowed && !state.userLocation}
+              onRetryLocation={() => void state.locate()}
             />
           )}
         </main>
@@ -1112,9 +1115,18 @@ export default function App() {
             />
 
             {state.plan.loading && <p className="muted">{t("Finding the best routes…")}</p>}
-            {state.plan.error && <p className="error-text">{state.plan.error}</p>}
-            {!state.plan.loading && !state.plan.error && journeys.length === 0 && (
-              <p className="muted">{t("No route found. Try a different departure time.")}</p>
+            {!state.plan.loading && journeys.length === 0 && (
+              <ResultsEmptyState
+                reason={state.plan.reason}
+                error={state.plan.error}
+                timed={state.when !== "now"}
+                onRetry={() => void searchRoutes()}
+                onChangeTime={() => setShowDepartSheet(true)}
+                onChangeDestination={() => openSearch("to")}
+              />
+            )}
+            {state.plan.error && journeys.length > 0 && (
+              <p className="error-text">{state.plan.error}</p>
             )}
 
             {journeys.length >= 2 && !bestTimeDismissed && (
@@ -1200,6 +1212,7 @@ export default function App() {
             onOpenStop={openStop}
             onLocate={() => void handleLocate()}
             locating={state.locating}
+            hasLocation={Boolean(state.userLocation)}
             mapPeek={nearbySnap === "peek"}
             onToggleMapView={() =>
               setNearbySnap((s) => (s === "peek" ? "half" : "peek"))
@@ -1492,7 +1505,9 @@ function PlanForm({
         )}
       </div>
 
-      {state.plan.error && <p className="error-text">{state.plan.error}</p>}
+      {state.plan.error && state.plan.error !== "offline" && state.plan.error !== "failed" && (
+        <p className="error-text">{state.plan.error}</p>
+      )}
     </div>
   );
 }

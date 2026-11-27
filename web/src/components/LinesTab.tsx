@@ -3,6 +3,7 @@
  * Visual composition only; state lives in useLinesTab.
  */
 
+import { isOffline } from '../lib/friendlyError';
 import type { Line } from '../types';
 import { LineRow } from './LinesTab/LineRow';
 import { LineFavButton } from './LinesTab/LineFavButton';
@@ -80,7 +81,9 @@ export function LinesTab(props: LinesTabProps) {
 
         {!s.isFavouritesTab && !searching && noResults && !s.showRecent && (
           <div className="lines-empty">
-            <p className="lines-empty__text">{t("No lines in this category")}</p>
+            <p className="lines-empty__text">
+              {isOffline() ? t("No internet connection.") : t("No lines in this category")}
+            </p>
           </div>
         )}
 

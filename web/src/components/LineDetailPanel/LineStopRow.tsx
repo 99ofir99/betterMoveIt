@@ -3,7 +3,7 @@
  * when focused.
  */
 
-import { formatClock12h } from '../../lib/format';
+import { departsTomorrow, formatClock12h } from '../../lib/format';
 import type { LineStopRowProps } from './types';
 import { t } from '../../lib/i18n';
 
@@ -66,7 +66,11 @@ export function LineStopRow({
               </span>
               {primary && (
                 <span className="lnd-stop__clock">
-                  <span className="lnd-stop__clock-main">{formatClock12h(primary.departure)}</span>
+                  <span className="lnd-stop__clock-main">
+                    {departsTomorrow(primary.minutes)
+                      ? t('Tomorrow {time}', { time: formatClock12h(primary.departure) })
+                      : formatClock12h(primary.departure)}
+                  </span>
                   {rest.length > 0 && (
                     <span className="lnd-stop__clock-more">
                       {rest.map((n) => formatClock12h(n.departure)).join(', ')}

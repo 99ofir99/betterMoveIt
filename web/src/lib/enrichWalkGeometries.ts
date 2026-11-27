@@ -87,9 +87,10 @@ export async function enrichWalkGeometries(
         ([lon, lat]) => [lat, lon] as [number, number]
       );
       for (const leg of entry.legs) {
+        // Path only. The planner's distance and minutes stay: the trip's clock times
+        // are built from them, and OSRM's slower foot speed made a 17-min trip show
+        // a "27 min" walk inside it.
         leg.geometry = geometry;
-        if (Number.isFinite(result.distanceM)) leg.distanceM = result.distanceM;
-        if (Number.isFinite(result.durationSec)) leg.durationSec = result.durationSec;
       }
       applied = true;
     }

@@ -113,8 +113,9 @@ export function nextForRouteAtStop(store, stopIdx, routeIdx, clock, limit = 5, d
   if (out.length < limit) {
     const nextDate = addDaysDateInt(dateInt, 1);
     const nextDow = (dow + 1) % 7;
-    const remainToday = Math.max(0, 86400 - seconds);
-    collect(nextDate, nextDow, 0, remainToday);
+    // `minutes` is measured from today's `seconds`, so tomorrow's clock is offset a full day
+    // (offsetting by the time left today gave tomorrow's buses 0 minutes, i.e. "now").
+    collect(nextDate, nextDow, 0, DAY_SEC);
   }
   out.sort((a, b) => a.minutes - b.minutes);
   return out.slice(0, limit);

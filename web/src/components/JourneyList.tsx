@@ -223,7 +223,7 @@ function JourneyCardFooter({
 
   if (!firstTransit) return null;
 
-  const stop = firstTransit.fromName || 'stop';
+  const stop = firstTransit.fromName || t('the stop');
 
   // Leave-at / arrive-by: fixed planned clock, not live board vs wall-clock.
   if (!departNow) {

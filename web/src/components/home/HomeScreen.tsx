@@ -10,6 +10,7 @@ import { FrequentDestinationCard } from './FrequentDestinationCard';
 import { FavoriteItem } from './FavoriteItem';
 import { HomeCardCarousel } from './HomeCardCarousel';
 import { NearestStopCard } from './NearestStopCard';
+import { LocationOffCard } from './LocationOffCard';
 import { HeroArt } from './HeroArt';
 import { HamburgerIcon, SearchIcon } from '../shared/icons';
 import { t } from '../../lib/i18n';
@@ -25,6 +26,8 @@ export function HomeScreen({
   onOpenMore,
   onAddFavorite,
   onPlanManually,
+  locationDenied,
+  onRetryLocation,
 }: HomeScreenProps) {
   return (
     <div className="home-screen">
@@ -76,6 +79,8 @@ export function HomeScreen({
           ) : null,
           nearestStop && onOpenStop ? (
             <NearestStopCard key="nearest" data={nearestStop} onOpen={() => onOpenStop(nearestStop.stop)} />
+          ) : locationDenied ? (
+            <LocationOffCard key="location-off" onRetry={onRetryLocation} />
           ) : null,
         ]}
       />

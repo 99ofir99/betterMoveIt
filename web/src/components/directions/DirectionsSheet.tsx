@@ -52,6 +52,8 @@ export function DirectionsSheet({
           <RouteSequence legs={journey.legs} transitAlternatives={transitAlternatives} />
         </div>
 
+        {/* Earlier / later means nothing for a walk: it is the same whenever you leave. */}
+        {journey.legs.some((l) => l.mode === 'transit') && (
         <ShiftStrip
           departSeconds={journey.departSeconds}
           arrivalSeconds={journey.arrivalSeconds}
@@ -59,6 +61,7 @@ export function DirectionsSheet({
           onEarlier={onEarlier}
           onLater={onLater}
         />
+        )}
 
         <ItineraryTimeline
           journey={journey}

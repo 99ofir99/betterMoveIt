@@ -18,6 +18,7 @@ import { dedupeJourneys, dedupePlaces, dedupeSearchResults } from './dedupeSearc
 import { enrichWalkGeometries } from './enrichWalkGeometries';
 import { fillWalkEndpoints } from './journeyMap';
 import { normalizeJourneys } from './journeyTiming';
+import { haversine } from './tripGuidance';
 import { useStableLatLon } from './useStableLatLon';
 import { useWatchLocation } from './useWatchLocation';
 import type {
@@ -41,14 +42,15 @@ interface PlanState {
   reason?: string;
 }
 
+/** Start and destination this close together count as the same place. */
+const SAME_PLACE_M = 60;
+
 const DEFAULT_CENTER: LatLon = { lat: 32.0853, lon: 34.7818 }; // Tel Aviv
 
 function todayPlanDate(): string {
-  const d = new Date();
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, '0');
-  const day = String(d.getDate()).padStart(2, '0');
-  return `${y}-${m}-${day}`;
+  // Feed date in Israel, not the device calendar (a phone abroad / just past midnight
+  // in another zone would otherwise plan for the wrong service day).
+  return israelClock().isoDate;
 }
 
 /** YYYY-MM-DD from HTML date input → YYYYMMDD for the planner API. */
@@ -92,9 +94,10 @@ export function useAppState(opts?: { watchLocation?: boolean }) {
 
   // Mirror watchPosition into canonical userLocation.
   useEffect(() => {
+    // A denied permission never yields a location, so track it on its own.
+    setGpsAllowed(watched.allowed);
     if (!watched.location) return;
     setUserLocation(watched.location);
-    setGpsAllowed(watched.allowed);
   }, [watched.location?.lat, watched.location?.lon, watched.allowed]);
 
   // Keep "My location" origin coords in sync when the user walks (label stays until reverse-geocode).
@@ -137,7 +140,8 @@ export function useAppState(opts?: { watchLocation?: boolean }) {
       setCenter(loc);
       setGpsAllowed(true);
       return loc;
-    } catch {
+    } catch (err) {
+      if ((err as GeolocationPositionError)?.code === 1) setGpsAllowed(false);
       setPlan((p) => ({ ...p, error: t('Could not get your location. Check permissions.') }));
       return null;
     } finally {
@@ -227,6 +231,15 @@ export function useAppState(opts?: { watchLocation?: boolean }) {
       const ctrl = new AbortController();
       requestRef.current = ctrl;
 
+      // Start and destination are the same spot: nothing to plan, say so instead of
+      // "no route found" (or a "0 min" walk card).
+      if (haversine(o, d) <= SAME_PLACE_M) {
+        setPlan({ journeys: [], loading: false, error: null, elapsedMs: null, reason: 'same_place' });
+        setPanel('journeys');
+        setSelectedJourney(0);
+        return;
+      }
+
       setPlan({ journeys: opts?.seed ?? [], loading: true, error: null, elapsedMs: null });
       setPanel('journeys');
       setSelectedJourney(0);
@@ -259,7 +272,9 @@ export function useAppState(opts?: { watchLocation?: boolean }) {
         const allowNext =
           opts?.allowNextDay !== false &&
           (effectiveWhen === 'now' || opts?.forceNow) &&
-          res.journeys.length === 0;
+          res.journeys.length === 0 &&
+          // No stops near either end: tomorrow won't help either.
+          res.reason !== 'no_stops_nearby';
         if (allowNext) {
           // Tomorrow in Israel (feed date), not on the device's calendar.
           const [ty, tm, td] = israelClock().isoDate.split('-').map(Number);
@@ -278,7 +293,7 @@ export function useAppState(opts?: { watchLocation?: boolean }) {
             ctrl.signal
           );
           if (ctrl.signal.aborted) return;
-          res = { ...res, nextDay: true };
+          res = { ...res, nextDay: true, reason: res.journeys.length ? undefined : 'no_service_soon' };
         }
         // Tomorrow's trips carry clock times that look like the past today.
         if (res.nextDay) res = { ...res, journeys: markNextDay(res.journeys) };
@@ -329,7 +344,15 @@ export function useAppState(opts?: { watchLocation?: boolean }) {
         });
       } catch (e) {
         if (ctrl.signal.aborted || (e as Error).name === 'AbortError') return;
-        setPlan({ journeys: [], loading: false, error: (e as Error).message, elapsedMs: null });
+        // Raw fetch errors ("Failed to fetch", "502 Bad Gateway for /api/plan") mean
+        // nothing to a rider; keep the cause for the results screen to word it.
+        const offline = typeof navigator !== 'undefined' && navigator.onLine === false;
+        setPlan({
+          journeys: [],
+          loading: false,
+          error: offline ? 'offline' : 'failed',
+          elapsedMs: null,
+        });
       }
     },
     [departTime, from, planDate, to, when]

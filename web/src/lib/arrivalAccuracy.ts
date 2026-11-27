@@ -11,7 +11,7 @@
  */
 
 import type { ArrivalConfidence, ArrivalSource, DepartureNext } from '../types';
-import { formatArrivalClock } from './format';
+import { departsTomorrow, formatArrivalClock } from './format';
 import { formatVehicleAge } from './vehicleAge';
 import { t } from './i18n';
 
@@ -99,7 +99,9 @@ export function formatEtaLabel(
   if (shouldShowRelativeEta(minutes, opts?.nextDay)) {
     return minutes === 1 ? t('1 min') : t('{n} min', { n: minutes });
   }
-  return formatArrivalClock(minutes, opts?.departureSec);
+  const clock = formatArrivalClock(minutes, opts?.departureSec);
+  // Boards peek into tomorrow morning: a bare "06:10" late at night reads as today.
+  return opts?.nextDay || departsTomorrow(minutes) ? t('Tomorrow {time}', { time: clock }) : clock;
 }
 
 export function formatSignalUpdated(next?: DepartureNext | null): string | null {

@@ -66,7 +66,7 @@ function WalkRow({ leg }: ItineraryWalkRowProps) {
       <div className="itin__title">{t('Walk {dist}', { dist: formatDistance(leg.distanceM) })}</div>
       <div className="itin__sub">
         {t('{n} min', { n: Math.max(1, Math.round(leg.durationSec / 60)) })}
-        {leg.toName ? ` · to ${leg.toName}` : ''}
+        {leg.toName ? ` · ${t('to {name}', { name: leg.toName })}` : ''}
       </div>
     </>
   );

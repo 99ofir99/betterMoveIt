@@ -5,6 +5,7 @@ import type { HistoryPanelProps } from './types';
 import type { TripHistoryEntry } from '../../lib/history';
 import type { Place } from '../../types';
 import { getLocale, t, tn, seqArrow } from '../../lib/i18n';
+import { durationMinutes } from '../../lib/format';
 
 export function HistoryPanel({ history, onReplay, onRemove, onNewTrip, onBack }: HistoryPanelProps) {
   return (
@@ -41,7 +42,7 @@ function HistoryRow({
 }) {
   const meta = [
     new Date(entry.createdAt).toLocaleDateString(getLocale() === 'he' ? 'he-IL' : undefined),
-    entry.durationSec != null ? t('{n} min', { n: Math.round(entry.durationSec / 60) }) : '',
+    entry.durationSec != null ? t('{n} min', { n: durationMinutes(entry.durationSec) }) : '',
     entry.transfers != null
       ? tn(entry.transfers, '1 change', '{n} changes')
       : '',

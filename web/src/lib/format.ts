@@ -26,8 +26,14 @@ export function formatClock12h(seconds: number): string {
   return `${h12}:${String(m).padStart(2, '0')} ${t(ampm)}`;
 }
 
+/** Whole minutes for a trip/leg length: anything that takes time is at least 1 min, never "0 min". */
+export function durationMinutes(seconds: number): number {
+  if (!(seconds > 0)) return 0;
+  return Math.max(1, Math.round(seconds / 60));
+}
+
 export function formatDuration(seconds: number): string {
-  const mins = Math.round(seconds / 60);
+  const mins = durationMinutes(seconds);
   if (mins < 60) return t('{n} min', { n: mins });
   const h = Math.floor(mins / 60);
   const m = mins % 60;
@@ -36,7 +42,7 @@ export function formatDuration(seconds: number): string {
 
 /** Short duration label for Moovit-style cards (`42 mins`). */
 export function formatDurationMins(seconds: number): string {
-  const mins = Math.round(seconds / 60);
+  const mins = durationMinutes(seconds);
   return mins === 1 ? t('1 min') : t('{n} mins', { n: mins });
 }
 
@@ -67,6 +73,11 @@ export function israelClock(d = new Date()): { isoDate: string; seconds: number 
  */
 export function secondsSinceLocalMidnight(d = new Date()): number {
   return israelClock(d).seconds;
+}
+
+/** A departure `minutes` from now falls after midnight in Israel (i.e. tomorrow). */
+export function departsTomorrow(minutes: number, nowSec = secondsSinceLocalMidnight()): boolean {
+  return nowSec + Math.max(0, minutes) * 60 >= 86400;
 }
 
 /** How far in the past a departure still reads as "just left" rather than tomorrow. */
