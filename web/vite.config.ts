@@ -10,7 +10,7 @@ const pwaInDev = process.env.PWA_DEV === '1';
 
 /** Replaces a leftover production SW so ngrok phones stop serving the old build. */
 function killStalePwaInDev(): Plugin {
-  const killSw = `/* betterMoveIt dev: clear production PWA cache */
+  const killSw = `/* BetterMoveIt dev: clear production PWA cache */
 self.addEventListener('install', (e) => { self.skipWaiting(); });
 self.addEventListener('activate', (e) => {
   e.waitUntil((async () => {
@@ -54,8 +54,8 @@ export default defineConfig({
       includeAssets: ['icon.svg', 'favicon.ico', 'apple-touch-icon.png', 'icon-192.png', 'icon-512.png', 'icon-maskable-192.png', 'icon-maskable-512.png'],
       manifest: {
         id: '/',
-        name: 'betterMoveIt',
-        short_name: 'betterMoveIt',
+        name: 'BetterMoveIt',
+        short_name: 'BetterMoveIt',
         description: 'Ad-free multimodal transit with every feature unlocked.',
         theme_color: '#000000',
         background_color: '#000000',

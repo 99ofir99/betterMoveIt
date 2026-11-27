@@ -1,4 +1,4 @@
-# betterMoveIt - Current Status
+# BetterMoveIt - Current Status
 
 ## ✅ FULLY FUNCTIONAL - Ready to Use!
 
@@ -267,7 +267,7 @@
 
 ## 🎯 App vs Moovit Comparison
 
-| Feature | Moovit | betterMoveIt | Status |
+| Feature | Moovit | BetterMoveIt | Status |
 |---------|--------|--------------|--------|
 | Trip Planning | ✅ | ✅ | MATCH |
 | Live Departures | ✅ | ✅ | MATCH |
@@ -315,7 +315,7 @@ npm start
 
 ## 🎉 Summary
 
-**betterMoveIt is PRODUCTION READY for core transit use!**
+**BetterMoveIt is PRODUCTION READY for core transit use!**
 
 ✅ Full trip planning  
 ✅ Live departures  
