@@ -19,6 +19,8 @@ import type {
   VehiclesResponse,
 } from '../types';
 
+import { formatAddress, type NominatimReverse } from './formatAddress';
+
 // Always same-origin so Vite's `/api` proxy works in dev and Express serves both in prod.
 const BASE = '';
 
@@ -181,10 +183,11 @@ export const api = {
 
   reverseGeocode: async (lat: number, lon: number, signal?: AbortSignal): Promise<string> => {
     try {
-      const url = `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=jsonv2&accept-language=he,en`;
+      // zoom=18 = building level, so a mapped house number comes back in `address`.
+      const url = `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=jsonv2&addressdetails=1&zoom=18&accept-language=he,en`;
       const res = await fetch(url, { signal, headers: { Accept: 'application/json' } });
-      const j = await res.json();
-      return j.display_name?.split(',').slice(0, 3).join(', ') ?? `${lat.toFixed(4)}, ${lon.toFixed(4)}`;
+      const j = (await res.json()) as NominatimReverse;
+      return formatAddress(j) ?? `${lat.toFixed(4)}, ${lon.toFixed(4)}`;
     } catch {
       return `${lat.toFixed(4)}, ${lon.toFixed(4)}`;
     }
