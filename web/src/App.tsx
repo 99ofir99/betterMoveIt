@@ -814,6 +814,7 @@ export default function App() {
           count={vehicles.length}
           loading={vehiclesLoading}
           updatedAt={vehiclesUpdatedAt}
+          requestedAt={liveFocus?.key ?? null}
           onFind={handleChipFind}
           onClose={turnOffLiveBuses}
         />

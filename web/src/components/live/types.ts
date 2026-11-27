@@ -9,6 +9,8 @@ export interface LiveStatusChipProps {
   updatedAt: number | null;
   /** Fly to the nearest buses and make them blink. */
   onFind: () => void;
+  /** When Live location was last pressed (ms); a "none" answer shows only then. */
+  requestedAt?: number | null;
   /** Turn Live location off. */
   onClose: () => void;
 }

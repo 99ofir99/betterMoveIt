@@ -362,4 +362,13 @@ export const HE: Record<string, string> = {
   '{time} ride': 'נסיעה של {time}',
   '{time} to {dest}, arriving {arrive}': '{time} עד {dest}, הגעה ב-{arrive}',
   '~{time} remaining': 'נותרו כ-{time}',
+  'line {lines}': 'קו {lines}',
+  'lines {lines}': 'קווים {lines}',
+  'Live buses · {lines}': 'אוטובוסים בזמן אמת · {lines}',
+  'Looking for buses near you…': 'מחפש אוטובוסים לידך…',
+  'No bus is sending GPS right now': 'אף אוטובוס לא משדר מיקום כרגע',
+  '{n} on the map': '{n} על המפה',
+  'Show live buses on the map': 'הצג אוטובוסים חיים על המפה',
+  'Show': 'הצג',
+  'Hide live buses': 'הסתר אוטובוסים חיים',
 };

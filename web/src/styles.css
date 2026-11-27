@@ -4605,7 +4605,7 @@ select {
   background: none;
   border: 0;
   color: inherit;
-  text-align: left;
+  text-align: start;
   font: inherit;
   cursor: pointer;
 }
