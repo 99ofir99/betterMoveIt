@@ -15,27 +15,7 @@ import {
   type FavoritesState,
 } from '../../lib/favorites';
 import { t } from '../../lib/i18n';
-
-/** A saved place whose subtitle is a placeholder ("My location", "Home"), not an address. */
-function needsAddress(label: string | undefined): boolean {
-  const l = (label ?? '').trim();
-  return !l || ['My location', 'Home', 'Work'].some((k) => l === k || l === t(k));
-}
-
-/**
- * Home / Work keep the coordinates captured when they were saved. Give them a
- * real street address as their subtitle instead of "My location".
- */
-function fillAddress(kind: 'home' | 'work' | 'custom', place: Place, label: string | undefined) {
-  if (kind === 'custom' || !needsAddress(place.label)) return;
-  void api.reverseGeocode(place.lat, place.lon).then((address) => {
-    if (!address) return;
-    const current = loadFavorites().places.find((p) => p.id === kind);
-    // Only if it is still the same spot (not changed meanwhile).
-    if (!current || current.place.lat !== place.lat || current.place.lon !== place.lon) return;
-    upsertPlace(kind, { ...current.place, label: address }, label ?? current.label);
-  });
-}
+import { fillPlaceAddress, fillSavedPlaceAddresses } from '../../lib/placeAddress';
 
 export function useFavoritesTab() {
   const [favs, setFavs] = useState<FavoritesState>(() => loadFavorites());
@@ -45,10 +25,7 @@ export function useFavoritesTab() {
     const refresh = () => setFavs(loadFavorites());
     refresh();
     window.addEventListener(FAVORITES_CHANGED_EVENT, refresh);
-    // Places saved earlier with a placeholder subtitle get their address once.
-    for (const p of loadFavorites().places) {
-      if (p.kind !== 'custom') fillAddress(p.kind, p.place, p.label);
-    }
+    fillSavedPlaceAddresses();
     return () => window.removeEventListener(FAVORITES_CHANGED_EVENT, refresh);
   }, []);
 
@@ -65,7 +42,7 @@ export function useFavoritesTab() {
       if (!settingKind) return;
       const labelDefault = settingKind === 'home' ? 'Home' : 'Work';
       setFavs(upsertPlace(settingKind, place, labelDefault));
-      fillAddress(settingKind, place, labelDefault);
+      fillPlaceAddress(settingKind, place, labelDefault);
       setSettingKind(null);
     },
     [settingKind]

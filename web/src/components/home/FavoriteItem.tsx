@@ -2,6 +2,7 @@
  * FavoriteItem — one row in the home Favourites list. Visual only.
  */
 
+import { isPlaceholderAddress } from '../../lib/placeAddress';
 import type { FavoriteItemProps } from './types';
 import { ChevronRightIcon, HomeIcon, StarIcon, WorkIcon } from '../shared/icons';
 import { t } from '../../lib/i18n';
@@ -21,7 +22,7 @@ function slotTitle(fav: FavoriteItemProps['fav']): string {
 /** Address / place name under Home · Work (always), or under custom when distinct. */
 function placeAddress(fav: FavoriteItemProps['fav']): string | null {
   const addr = fav.place.label?.trim();
-  if (!addr) return null;
+  if (!addr || isPlaceholderAddress(addr)) return null;
   if (fav.kind === 'home' || fav.kind === 'work') return addr;
   return addr !== fav.label ? addr : null;
 }

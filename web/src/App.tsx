@@ -1,6 +1,7 @@
 ﻿import { useApiRetrying } from "./lib/useApiRetrying";
 import { ResultsEmptyState } from "./components/results/ResultsEmptyState";
 import { displayPlaceLabel } from "./lib/placeLabel";
+import { fillSavedPlaceAddresses } from "./lib/placeAddress";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useAppState, type AppState } from "./lib/useAppState";
 import { MapCanvas } from "./components/MapCanvas";
@@ -160,6 +161,11 @@ export default function App() {
       if (!ret.selectedLineId) setLineGeometry(null);
     }
     return true;
+  }, []);
+
+  // Saved Home / Work with a placeholder subtitle ("My location") get a real address.
+  useEffect(() => {
+    fillSavedPlaceAddresses();
   }, []);
 
   // Apply restored minimize flag once trip hydration finishes.

@@ -1,5 +1,6 @@
 /** Home / Work / custom favourite row — Moovit list style. Visual only. */
 
+import { isPlaceholderAddress } from '../../lib/placeAddress';
 import { ChevronRightIcon, HomeIcon, StarIcon, WorkIcon } from '../shared/icons';
 import type { PlaceRowProps } from './types';
 import { t } from '../../lib/i18n';
@@ -7,7 +8,8 @@ import { t } from '../../lib/i18n';
 export function PlaceRow({ kind, place, label, onSet, onGo, onClear }: PlaceRowProps) {
   const title =
     label ? t(label) : kind === 'home' ? t('Home') : kind === 'work' ? t('Work') : place?.label ?? t('Place');
-  const address = place?.place.label?.trim() || null;
+  const raw = place?.place.label?.trim() || null;
+  const address = raw && !isPlaceholderAddress(raw) ? raw : null;
   const icon =
     kind === 'home' ? (
       <HomeIcon size={22} />
