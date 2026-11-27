@@ -117,7 +117,9 @@ export default defineConfig({
           {
             // Stop detail / search can be briefly stale; nearby must stay fresh
             // (location-keyed empty results would otherwise stick for an hour).
-            urlPattern: /\/api\/(health|stop|search).*/i,
+            // Stop *detail* only: /api/stop/:id/departures is a live board and must
+            // never come from an hour-old cache (it showed departed buses as "now").
+            urlPattern: /\/api\/(health|search|stop\/[^/?]+(\?|$)).*/i,
             handler: 'StaleWhileRevalidate',
             options: { cacheName: 'transit-api', expiration: { maxEntries: 300, maxAgeSeconds: 3600 } },
           },
