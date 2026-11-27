@@ -4,7 +4,7 @@ import { PanelHeader } from './PanelHeader';
 import type { HistoryPanelProps } from './types';
 import type { TripHistoryEntry } from '../../lib/history';
 import type { Place } from '../../types';
-import { getLocale, t, tn } from '../../lib/i18n';
+import { getLocale, t, tn, seqArrow } from '../../lib/i18n';
 
 export function HistoryPanel({ history, onReplay, onRemove, onNewTrip, onBack }: HistoryPanelProps) {
   return (
@@ -58,7 +58,7 @@ function HistoryRow({
         aria-label={t('Replay trip from {from} to {to}', { from: entry.from.label, to: entry.to.label })}
       >
         <span className="more-history-row__route">
-          {entry.from.label} → {entry.to.label}
+          {entry.from.label} {seqArrow()} {entry.to.label}
         </span>
         <span className="more-history-row__meta">{meta}</span>
       </button>

@@ -26,7 +26,7 @@ import { ChevronRightIcon, WalkIcon } from './icons';
 import { TripStartBar } from './trip/TripStartBar';
 import { TripTips } from './results/TripTips';
 import type { JourneyDetailProps, JourneyListProps } from './types';
-import { t, tn } from '../lib/i18n';
+import { t, tn, seqArrow } from '../lib/i18n';
 
 export function JourneyList({ journeys, selected, onSelect, departNow, insights }: JourneyListProps) {
   return (
@@ -83,7 +83,7 @@ function ClampedRouteSequence({
 }) {
   let transitIdx = 0;
   return (
-    <SwipeRail className="journey-card__legs" ltrSequence aria-label={t("Route legs")}>
+    <SwipeRail className="journey-card__legs" legSequence aria-label={t("Route legs")}>
       {previewLegs(journey.legs).map((leg, li) => {
         const sep =
           li > 0 ? (
@@ -298,7 +298,7 @@ export function JourneyDetail({
       <div className="journey-detail__header">
         <div>
           <div className="journey-detail__time">
-            {formatClock(journey.departSeconds)} → {formatClock(journey.arrivalSeconds)}
+            {formatClock(journey.departSeconds)} {seqArrow()} {formatClock(journey.arrivalSeconds)}
           </div>
           <div className="journey-detail__summary">
             {formatDuration(journey.durationSec)} ·{' '}
@@ -322,7 +322,7 @@ export function JourneyDetail({
                   <div>
                     <div className="leg__title">{t('Walk {dist}', { dist: formatDistance(leg.distanceM) })}</div>
                     <div className="leg__sub">
-                      {leg.fromName ?? t('Start')} → {leg.toName}
+                      {leg.fromName ?? t('Start')} {seqArrow()} {leg.toName}
                       <span className="leg__aside"> · {t('{n} min', { n: Math.round(leg.durationSec / 60) })}</span>
                     </div>
                   </div>
@@ -346,7 +346,7 @@ export function JourneyDetail({
                 <div className="leg__body">
                   <div className="leg__line">
                     <BundledLineBadge routes={alts} />
-                    {railDest ? <span className="leg__headsign">→ {railDest}</span> : null}
+                    {railDest ? <span className="leg__headsign">{seqArrow()} {railDest}</span> : null}
                   </div>
 
                   <div className="leg__stops">

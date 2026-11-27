@@ -9980,15 +9980,40 @@ button.ld-option {
   transform: scaleX(-1);
 }
 
-/* Leg-sequence separators keep pointing right (›) in Hebrew too, as asked;
-   the row order and alignment still follow RTL. */
-/* Leg sequences are dir="ltr": trip order left to right, aligned to the card's left edge
-   (asked for in Hebrew too). */
+/* Leg sequences (walk › bus › train) follow the page direction. In Hebrew the
+   whole row is a mirror image of English: first leg on the right, chips flow
+   right to left, separators point left (‹, via .rtl-flip) and the walker faces
+   the way the trip goes. */
+[dir='rtl'] .journey-card__legs .leg-chip--moovit-walk svg,
+[dir='rtl'] .directions__chip-walk svg,
+[dir='rtl'] .fdcard__walk-chip svg {
+  transform: scaleX(-1);
+}
 
-[dir='rtl'] .directions__timeline-arrow.rtl-flip,
-[dir='rtl'] .journey-card__leg-sep-icon.rtl-flip,
-[dir='rtl'] .fdcard__arrow.rtl-flip {
-  transform: none;
+/* A leg row wider than its card scrolls sideways; fade whichever edge hides chips. */
+.swipe-rail--fade-end {
+  -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 28px), transparent);
+  mask-image: linear-gradient(to right, #000 calc(100% - 28px), transparent);
+}
+.swipe-rail--fade-start {
+  -webkit-mask-image: linear-gradient(to left, #000 calc(100% - 28px), transparent);
+  mask-image: linear-gradient(to left, #000 calc(100% - 28px), transparent);
+}
+.swipe-rail--fade-start.swipe-rail--fade-end {
+  -webkit-mask-image: linear-gradient(to right, transparent, #000 28px, #000 calc(100% - 28px), transparent);
+  mask-image: linear-gradient(to right, transparent, #000 28px, #000 calc(100% - 28px), transparent);
+}
+[dir='rtl'] .swipe-rail--fade-end {
+  -webkit-mask-image: linear-gradient(to left, #000 calc(100% - 28px), transparent);
+  mask-image: linear-gradient(to left, #000 calc(100% - 28px), transparent);
+}
+[dir='rtl'] .swipe-rail--fade-start {
+  -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 28px), transparent);
+  mask-image: linear-gradient(to right, #000 calc(100% - 28px), transparent);
+}
+[dir='rtl'] .swipe-rail--fade-start.swipe-rail--fade-end {
+  -webkit-mask-image: linear-gradient(to right, transparent, #000 28px, #000 calc(100% - 28px), transparent);
+  mask-image: linear-gradient(to right, transparent, #000 28px, #000 calc(100% - 28px), transparent);
 }
 
 [dir='rtl'] .prefs-sheet__switch.is-on::after {

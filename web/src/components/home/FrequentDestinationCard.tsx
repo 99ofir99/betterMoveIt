@@ -61,7 +61,7 @@ function TransitChip({ leg }: { leg: TransitLeg }) {
 
 function LegChips({ journey }: { journey: Journey }) {
   return (
-    <div className="fdcard__legs" dir="ltr" aria-label={t("Route legs")}>
+    <div className="fdcard__legs" aria-label={t("Route legs")}>
       {previewLegs(journey.legs).map((leg, i) => (
         <span key={i} className="fdcard__legs-group">
           {i > 0 && <ChevronRightIcon size={14} className="fdcard__arrow" />}

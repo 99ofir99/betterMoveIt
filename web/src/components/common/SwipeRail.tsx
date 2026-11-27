@@ -7,19 +7,22 @@
 import {
   useEffect,
   useRef,
+  useState,
   type HTMLAttributes,
   type MouseEvent,
   type PointerEvent,
   type ReactNode,
 } from 'react';
+import { useLocale } from '../../lib/i18n';
 
 interface SwipeRailProps extends HTMLAttributes<HTMLDivElement> {
   children: ReactNode;
   /**
-   * A leg sequence (walk › bus › train) that reads left to right in every
-   * language, in trip order, starting at the left edge (Hebrew too).
+   * A leg sequence (walk › bus › train) in trip order. It follows the page
+   * direction: left to right in English, right to left (mirrored) in Hebrew.
+   * Edges fade while more chips are hidden past them.
    */
-  ltrSequence?: boolean;
+  legSequence?: boolean;
 }
 
 function nearestVerticalScrollParent(from: HTMLElement): HTMLElement | null {
@@ -40,12 +43,38 @@ export function SwipeRail({
   className,
   onPointerDown,
   onClick,
-  ltrSequence = false,
+  legSequence = false,
   ...rest
 }: SwipeRailProps) {
   const railRef = useRef<HTMLDivElement>(null);
   const originX = useRef(0);
   const panned = useRef(false);
+  const locale = useLocale();
+  const [fade, setFade] = useState({ start: false, end: false });
+
+  // Which edges hide chips. scrollLeft is 0 at the start in both directions and
+  // goes negative in RTL, so measure distance from the start with Math.abs.
+  const updateFade = () => {
+    const el = railRef.current;
+    if (!el || !legSequence) return;
+    const fromStart = Math.abs(el.scrollLeft);
+    const hidden = el.scrollWidth - el.clientWidth;
+    const next = { start: fromStart > 2, end: hidden - fromStart > 2 };
+    setFade((prev) => (prev.start === next.start && prev.end === next.end ? prev : next));
+  };
+
+  useEffect(() => {
+    const el = railRef.current;
+    if (!el || !legSequence) return;
+    // A rail that was scrolled in the other direction (locale switch) starts over.
+    el.scrollLeft = 0;
+    updateFade();
+    const ro = new ResizeObserver(updateFade);
+    ro.observe(el);
+    for (const child of Array.from(el.children)) ro.observe(child);
+    return () => ro.disconnect();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [legSequence, locale]);
 
   // overflow-x rails can trap vertical wheel/trackpad deltas; hand them to the sheet.
   useEffect(() => {
@@ -89,8 +118,18 @@ export function SwipeRail({
     <div
       {...rest}
       ref={railRef}
-      dir={ltrSequence ? 'ltr' : rest.dir}
-      className={[className, ltrSequence ? 'swipe-rail--ltr-seq' : ''].filter(Boolean).join(' ')}
+      className={[
+        className,
+        legSequence ? 'swipe-rail--leg-seq' : '',
+        legSequence && fade.start ? 'swipe-rail--fade-start' : '',
+        legSequence && fade.end ? 'swipe-rail--fade-end' : '',
+      ]
+        .filter(Boolean)
+        .join(' ')}
+      onScroll={(e) => {
+        updateFade();
+        rest.onScroll?.(e);
+      }}
       onPointerDown={handlePointerDown}
       onPointerMove={handlePointerMove}
       onClick={handleClick}

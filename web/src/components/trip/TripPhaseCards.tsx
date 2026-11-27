@@ -6,7 +6,7 @@ import { RouteBadge } from '../common/RouteBadge';
 import { CheckCircleIcon, WalkIcon } from '../icons';
 import type { TransitLeg, WalkLeg } from '../../types';
 import type { LegPreviewCardProps, TripPhaseCardProps } from './types';
-import { t } from '../../lib/i18n';
+import { t, seqArrow } from '../../lib/i18n';
 
 function countdownLabel(sec: number): string {
   if (sec <= 0) return t('now');
@@ -133,7 +133,7 @@ export function LegPreviewCard({ leg, isPast }: LegPreviewCardProps) {
             {transitDestinationLabel(leg.route, leg.headsign) || leg.headsign}
           </div>
           <div className="trip-progress__subtitle">
-            {leg.fromName} {formatClock12h(leg.departure)} → {leg.toName} {formatClock12h(leg.arrival)}
+            {leg.fromName} {formatClock12h(leg.departure)} {seqArrow()} {leg.toName} {formatClock12h(leg.arrival)}
           </div>
           <div className="trip-progress__subtitle">{t('{time} ride', { time: formatDuration(leg.durationSec) })}</div>
         </>

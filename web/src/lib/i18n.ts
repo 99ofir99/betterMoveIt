@@ -30,6 +30,11 @@ export function isRtl(locale: Locale = current): boolean {
   return locale === 'he';
 }
 
+/** Arrow between two ends of a trip in running text: → in LTR, ← in RTL (trip order reads right to left). */
+export function seqArrow(locale: Locale = current): string {
+  return isRtl(locale) ? '\u2190' : '\u2192';
+}
+
 /** Set `<html lang dir>` and notify `useLocale()` subscribers. */
 export function applyLocale(locale: Locale): void {
   const changed = locale !== current;
