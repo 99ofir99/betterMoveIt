@@ -10303,3 +10303,23 @@ button.home-card-dots__dot {
 .depart-sheet__drag .depart-sheet__grabber {
   margin-bottom: 8px;
 }
+
+/* Route preferences chip, first in the results filter row. */
+.results-toolbar__chip--prefs {
+  position: relative;
+  color: var(--text);
+}
+.results-toolbar__chip-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: 999px;
+  background: var(--accent);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+}
+

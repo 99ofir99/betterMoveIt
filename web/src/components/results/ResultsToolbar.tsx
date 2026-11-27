@@ -3,7 +3,7 @@ import type { ResultsToolbarProps, SortChip } from './types';
 import { t } from '../../lib/i18n';
 
 const SORT_CHIPS: SortChip[] = [
-  { mode: 'fastest', label: 'Fastest', icon: 'sliders' },
+  { mode: 'fastest', label: 'Fastest', icon: 'trophy' },
   { mode: 'least-walking', label: 'Less walking', icon: 'walk' },
   { mode: 'fewest-transfers', label: 'Fewer transfers', icon: 'swap-horiz' },
 ];
@@ -15,6 +15,8 @@ export function ResultsToolbar({
   onToggleMapView,
   sortMode,
   onSortMode,
+  onOpenPreferences,
+  prefsBadgeCount = 0,
 }: ResultsToolbarProps) {
   return (
     <div className="results-toolbar">
@@ -39,6 +41,26 @@ export function ResultsToolbar({
         </button>
       </div>
       <div className="results-toolbar__chips" role="group" aria-label={t("Sort journeys")}>
+        {onOpenPreferences ? (
+          <button
+            type="button"
+            className={`results-toolbar__chip results-toolbar__chip--prefs ${prefsBadgeCount > 0 ? 'has-badge' : ''}`}
+            onClick={onOpenPreferences}
+            aria-label={
+              prefsBadgeCount > 0
+                ? t('Preferences, {n} active', { n: prefsBadgeCount })
+                : t('Preferences')
+            }
+          >
+            <Icon name="sliders" size={16} className="results-toolbar__chip-icon" />
+            {t('Preferences')}
+            {prefsBadgeCount > 0 ? (
+              <span className="results-toolbar__chip-badge" aria-hidden="true">
+                {prefsBadgeCount}
+              </span>
+            ) : null}
+          </button>
+        ) : null}
         {SORT_CHIPS.map(({ mode, label, icon }) => (
           <button
             key={mode}

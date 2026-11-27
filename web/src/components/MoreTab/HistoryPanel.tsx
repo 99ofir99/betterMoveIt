@@ -1,5 +1,6 @@
 /** Trip history sub-panel. Visual only. */
 
+import { displayPlaceLabel } from '../../lib/placeLabel';
 import { PanelHeader } from './PanelHeader';
 import type { HistoryPanelProps } from './types';
 import type { TripHistoryEntry } from '../../lib/history';
@@ -59,7 +60,7 @@ function HistoryRow({
         aria-label={t('Replay trip from {from} to {to}', { from: entry.from.label, to: entry.to.label })}
       >
         <span className="more-history-row__route">
-          {entry.from.label} {seqArrow()} {entry.to.label}
+          {displayPlaceLabel(entry.from.label)} {seqArrow()} {displayPlaceLabel(entry.to.label)}
         </span>
         <span className="more-history-row__meta">{meta}</span>
       </button>
