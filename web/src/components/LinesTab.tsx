@@ -13,6 +13,7 @@ import { RecentHeader } from './LinesTab/RecentHeader';
 import { LINES_TABS, useLinesTab } from './LinesTab/useLinesTab';
 import type { LinesTabProps } from './LinesTab/types';
 import { t } from '../lib/i18n';
+import { RippleLoader } from './common/RippleLoader';
 
 interface LineListProps {
   lines: Line[];
@@ -68,9 +69,13 @@ export function LinesTab({ onOpenLine }: LinesTabProps) {
       <div className="lines-content">
         {s.error && <p className="error-text lines-error">{s.error}</p>}
 
-        {searching && s.loading && !s.isFavouritesTab && (
+        {s.loading && !s.isFavouritesTab && mainLines.length === 0 && (
+          <RippleLoader label={searching ? t("Searching…") : t("Loading lines…")} />
+        )}
+
+        {!s.isFavouritesTab && !searching && noResults && !s.showRecent && (
           <div className="lines-empty">
-            <p className="lines-empty__text">{t("Searching…")}</p>
+            <p className="lines-empty__text">{t("No lines in this category")}</p>
           </div>
         )}
 

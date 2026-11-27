@@ -8,6 +8,7 @@ import { NearbyStopRow } from './NearbyStopRow';
 import { useNearbyTab } from './useNearbyTab';
 import type { NearbyTabProps } from './types';
 import { t } from '../../lib/i18n';
+import { RippleLoader } from '../common/RippleLoader';
 
 export function NearbyTab({
   center,
@@ -32,7 +33,7 @@ export function NearbyTab({
 
       <div className="nearby-tab__scroll">
         {error && <p className="error-text nearby-tab__status">{error}</p>}
-        {loading && <p className="muted nearby-tab__status">{t("Finding nearby stops…")}</p>}
+        {loading && <RippleLoader label={t("Finding nearby stops…")} />}
         {!loading && !error && stops.length === 0 && (
           <p className="muted nearby-tab__status">
             {outOfCoverage

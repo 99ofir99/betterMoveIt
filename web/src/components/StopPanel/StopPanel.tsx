@@ -9,6 +9,7 @@ import { StopHeader } from './StopHeader';
 import type { StopPanelProps } from './types';
 import { useStopPanel } from './useStopPanel';
 import { t } from '../../lib/i18n';
+import { RippleLoader } from '../common/RippleLoader';
 
 export function StopPanel({
   stopId,
@@ -38,7 +39,7 @@ export function StopPanel({
         <div className="stp-section-title">{t("Upcoming Arrivals")}</div>
 
         {s.error && <p className="error-text">{s.error}</p>}
-        {s.loading && <p className="muted stp-loading">{t("Loading departures…")}</p>}
+        {s.loading && <RippleLoader compact label={t("Loading departures…")} />}
 
         {s.data && (
           <StopDepartureList
