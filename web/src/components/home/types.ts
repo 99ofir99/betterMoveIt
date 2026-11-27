@@ -2,6 +2,7 @@
  * Types local to the home/ folder.
  * Global types (Journey, Place, etc.) live in src/types.ts.
  */
+import type { NearestStopResult } from '../../lib/useNearestStop';
 import type { FavoritePlace, Journey, Place, Stop } from '../../types';
 
 /** Result returned by useFrequentDestination. */
@@ -32,9 +33,12 @@ export interface FrequentDestResult {
 /** Props for the HomeScreen visual component. */
 export interface HomeScreenProps {
   frequentDest: FrequentDestResult | null;
+  /** Home "Nearest station" card; null while locating or when no stop is near. */
+  nearestStop?: NearestStopResult | null;
   favorites: FavoritePlace[];
   onOpenSearch: () => void;
-  onPlanTo: (place: Place) => void;
+  /** seed: a trip already planned for this place, shown while the full plan loads. */
+  onPlanTo: (place: Place, seed?: Journey | null) => void;
   /** Plan to a place with the "Depart at" time picker open. */
   onPlanAtTime?: (place: Place) => void;
   /** Open a stop's live departures board. */

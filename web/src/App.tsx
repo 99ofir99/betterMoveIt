@@ -19,6 +19,7 @@ import { HomeScreen } from "./components/home/HomeScreen";
 import { ResultsToolbar } from "./components/results/ResultsToolbar";
 import { ResultsHeader } from "./components/results/ResultsHeader";
 import { PreferencesSheet } from "./components/results/PreferencesSheet";
+import { useNearestStop } from "./lib/useNearestStop";
 import { DepartAtSheet, type DepartAtAction } from "./components/results/DepartAtSheet";
 import { DirectionsSheet } from "./components/directions/DirectionsSheet";
 import { formatClock12h, secondsSinceLocalMidnight } from "./lib/format";
@@ -167,6 +168,7 @@ export default function App() {
   // Minimized trips keep browsing UI (home / results / detail) with a PiP chip.
   const isHomeScreenVisible =
     activeTab === "directions" && state.panel === "plan" && !showPlanForm && !tripLive;
+  const nearestStop = useNearestStop(state.userLocation, isHomeScreenVisible);
 
   // Hide the map on the home screen to show the full hero band.
   const showMap =
@@ -708,14 +710,15 @@ export default function App() {
    * then immediately plan the trip. Falls back to PlanForm if no location.
    */
   const handlePlanFromHome = useCallback(
-    async (place: Place) => {
+    async (place: Place, seed?: Journey | null) => {
       state.selectPlace(place, "to");
       setActiveTab("directions");
       // Home shortcuts always mean "go now", never an earlier depart-at time.
       state.setWhen("now");
       const origin = await state.useMyLocationAsOrigin();
       if (origin) {
-        void searchRoutes(origin, place, { forceNow: true });
+        // The card's trip shows at once; the full list replaces it when it lands.
+        void searchRoutes(origin, place, { forceNow: true, seed: seed ? [seed] : undefined });
       } else {
         setShowPlanForm(true);
       }
@@ -840,9 +843,10 @@ export default function App() {
           {isHomeScreenVisible && (
             <HomeScreen
               frequentDest={frequentDest}
+              nearestStop={nearestStop}
               favorites={homeFavorites}
               onOpenSearch={() => openSearch("to")}
-              onPlanTo={(place) => void handlePlanFromHome(place)}
+              onPlanTo={(place, seed) => void handlePlanFromHome(place, seed)}
               onPlanAtTime={(place) => void handlePlanAtTimeFromHome(place)}
               onOpenStop={openStop}
               onOpenMore={() => setActiveTab("more")}

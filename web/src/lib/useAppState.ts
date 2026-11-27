@@ -146,10 +146,19 @@ export function useAppState(opts?: { watchLocation?: boolean }) {
   const useMyLocationAsOrigin = useCallback(async (): Promise<Place | null> => {
     const loc = userLocation ?? (await locate());
     if (!loc) return null;
-    const name = await api.reverseGeocode(loc.lat, loc.lon);
-    const place: Place = { label: name || t('My location'), lat: loc.lat, lon: loc.lon };
+    // Return at once: waiting on the reverse geocoder (Nominatim) held every
+    // "plan from my location" tap for 1-2 s. The street name fills in afterwards.
+    const place: Place = { label: t('My location'), lat: loc.lat, lon: loc.lon };
     setFrom(place);
-    rememberPlace(place);
+    void api
+      .reverseGeocode(loc.lat, loc.lon)
+      .then((name) => {
+        if (!name) return;
+        const named: Place = { ...place, label: name };
+        setFrom((prev) => (prev && prev.lat === loc.lat && prev.lon === loc.lon ? named : prev));
+        rememberPlace(named);
+      })
+      .catch(() => undefined);
     return place;
   }, [locate, rememberPlace, userLocation]);
 
@@ -176,6 +185,8 @@ export function useAppState(opts?: { watchLocation?: boolean }) {
         arriveDate?: string;
         /** Roll to next calendar day when today's plan is empty (default true for "now"). */
         allowNextDay?: boolean;
+        /** Shown at once while the real plan loads (home card's already-planned trip). */
+        seed?: Journey[];
       }
     ) => {
       const o = origin ?? from;
@@ -212,7 +223,7 @@ export function useAppState(opts?: { watchLocation?: boolean }) {
       const ctrl = new AbortController();
       requestRef.current = ctrl;
 
-      setPlan({ journeys: [], loading: true, error: null, elapsedMs: null });
+      setPlan({ journeys: opts?.seed ?? [], loading: true, error: null, elapsedMs: null });
       setPanel('journeys');
       setSelectedJourney(0);
 

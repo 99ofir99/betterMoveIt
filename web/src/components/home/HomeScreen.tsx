@@ -8,12 +8,15 @@ import type { HomeScreenProps } from './types';
 import type { Journey, Stop, TransitLeg } from '../../types';
 import { FrequentDestinationCard } from './FrequentDestinationCard';
 import { FavoriteItem } from './FavoriteItem';
+import { HomeCardCarousel } from './HomeCardCarousel';
+import { NearestStopCard } from './NearestStopCard';
 import { HeroArt } from './HeroArt';
 import { HamburgerIcon, SearchIcon } from '../shared/icons';
 import { t } from '../../lib/i18n';
 
 export function HomeScreen({
   frequentDest,
+  nearestStop,
   favorites,
   onOpenSearch,
   onPlanTo,
@@ -56,23 +59,26 @@ export function HomeScreen({
         </button>
       </div>
 
-      {/* ── Frequent Destination Card ──────────────────────────────────── */}
-      {frequentDest && (
-        <div className="home-card-band">
-          <FrequentDestinationCard
-            dest={frequentDest}
-            onTap={() => onPlanTo(frequentDest.place)}
-            onPickTime={onPlanAtTime ? () => onPlanAtTime(frequentDest.place) : undefined}
-            onLiveBoarding={(() => {
-              const stop = boardingStopOf(frequentDest.journey);
-              return stop && onOpenStop ? () => onOpenStop(stop) : undefined;
-            })()}
-          />
-          <div className="home-card-dots" aria-hidden="true">
-            <span className="home-card-dots__dot is-active" />
-          </div>
-        </div>
-      )}
+      {/* ── Card carousel: frequent destination, nearest station (Moovit) ── */}
+      <HomeCardCarousel
+        cards={[
+          frequentDest ? (
+            <FrequentDestinationCard
+              key="frequent"
+              dest={frequentDest}
+              onTap={() => onPlanTo(frequentDest.place, frequentDest.journey)}
+              onPickTime={onPlanAtTime ? () => onPlanAtTime(frequentDest.place) : undefined}
+              onLiveBoarding={(() => {
+                const stop = boardingStopOf(frequentDest.journey);
+                return stop && onOpenStop ? () => onOpenStop(stop) : undefined;
+              })()}
+            />
+          ) : null,
+          nearestStop && onOpenStop ? (
+            <NearestStopCard key="nearest" data={nearestStop} onOpen={() => onOpenStop(nearestStop.stop)} />
+          ) : null,
+        ]}
+      />
 
       {/* ── Favourites section ─────────────────────────────────────────── */}
       <section className="home-section" aria-label={t("Favourites")}>

@@ -10008,3 +10008,82 @@ button.fdcard__chip:active {
 .fdcard[role="button"] {
   cursor: pointer;
 }
+
+/* ── Home card carousel (frequent destination, nearest station) ───────────── */
+.home-card-track {
+  display: flex;
+  gap: 12px;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  scrollbar-width: none;
+  overscroll-behavior-x: contain;
+}
+.home-card-track::-webkit-scrollbar {
+  display: none;
+}
+.home-card-slide {
+  flex: 0 0 100%;
+  min-width: 0;
+  scroll-snap-align: start;
+  display: flex;
+}
+.home-card-slide > .fdcard {
+  flex: 1;
+}
+button.home-card-dots__dot {
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+}
+
+/* nscard = Nearest Station Card */
+.nscard__name {
+  margin-bottom: 2px;
+}
+.nscard__distance {
+  margin: 0 0 10px;
+  font-size: 14px;
+  color: var(--home-blue-chip, #1a73e8);
+}
+.nscard__rows {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.nscard__row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+.nscard__headsign {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 15px;
+}
+.nscard__times {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+  flex-shrink: 0;
+}
+.nscard__eta {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 6px;
+  font-weight: 700;
+  font-size: 16px;
+}
+.nscard__later {
+  font-size: 12px;
+  font-weight: 600;
+  opacity: 0.8;
+}
