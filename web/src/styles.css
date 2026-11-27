@@ -369,14 +369,14 @@ select {
 }
 
 .sheet--with-nav {
-  bottom: var(--tabbar-h);
+  bottom: calc(var(--tabbar-h) + env(safe-area-inset-bottom));
   max-height: calc(var(--sheet-full) - var(--tabbar-h));
   padding-bottom: 20px;
 }
 
 .tab-screen {
   position: absolute;
-  inset: 0 0 var(--tabbar-h) 0;
+  inset: 0 0 calc(var(--tabbar-h) + env(safe-area-inset-bottom)) 0;
   z-index: 12;
   overflow-y: auto;
   background: var(--bg);
@@ -405,7 +405,7 @@ select {
 }
 
 .sheet--overlay.sheet--with-nav {
-  bottom: var(--tabbar-h);
+  bottom: calc(var(--tabbar-h) + env(safe-area-inset-bottom));
 }
 
 /* Moovit line detail: map peeks above a ~65% sheet */
@@ -2730,6 +2730,9 @@ select {
   background: var(--surface);
   border-top: 1px solid var(--line);
   padding: 4px 2px calc(4px + env(safe-area-inset-bottom));
+  /* Exactly --tabbar-h tall: sheets and tab screens stop at --tabbar-h, so a
+     shorter nav left a strip of map showing under the sheet. */
+  min-height: calc(var(--tabbar-h) + env(safe-area-inset-bottom));
   box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.5);
 }
 
