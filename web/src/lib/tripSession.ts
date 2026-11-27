@@ -7,6 +7,7 @@
  */
 
 import type { Journey, RouteInfo } from '../types';
+import { secondsSinceLocalMidnight } from './format';
 
 const SESSION_KEY = 'bmi_active_trip_session';
 /** Drop sessions older than this (ms) even if arrival is still in the future. */
@@ -22,8 +23,7 @@ export interface TripSessionSnapshot {
 }
 
 function nowInSeconds(): number {
-  const d = new Date();
-  return d.getHours() * 3600 + d.getMinutes() * 60 + d.getSeconds();
+  return secondsSinceLocalMidnight();
 }
 
 function arrivalStillRelevant(journey: Journey, startedAt: number): boolean {

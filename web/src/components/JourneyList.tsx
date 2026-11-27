@@ -12,7 +12,11 @@ import {
   minutesUntilDepart,
   routeColor,
 } from '../lib/format';
-import { leaveEtasFromBoard, type LeaveEtaEntry } from '../lib/boardingEta';
+import {
+  leaveEtasFromBoard,
+  PLANNED_TRIP_SLACK_MIN,
+  type LeaveEtaEntry,
+} from '../lib/boardingEta';
 import { isHeavyRailRoute, transitDestinationLabel } from '../lib/railLabel';
 import { api } from '../lib/api';
 import { BundledLineBadge } from './common/BundledLineBadge';
@@ -157,7 +161,12 @@ function JourneyCardFooter({
         .stopDepartures(stopId, ctrl.signal)
         .then((board) => {
           if (ctrl.signal.aborted) return;
-          const fromBoard = leaveEtasFromBoard(board.departures, altRoutes, 3);
+          // Only buses from the planned trip on: earlier ones belong to another card.
+          const planned = minutesUntilDepart(firstTransit.departure);
+          const minMinutes = planned.nextDay
+            ? 0
+            : Math.max(0, planned.minutes - PLANNED_TRIP_SLACK_MIN);
+          const fromBoard = leaveEtasFromBoard(board.departures, altRoutes, 3, minMinutes);
           if (fromBoard.length > 0) {
             setEtas(fromBoard);
             return;

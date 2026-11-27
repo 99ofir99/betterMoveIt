@@ -7,6 +7,7 @@
  */
 
 import { arriveBySearchStart, rankForArriveBy } from './arriveBy';
+import { israelClock } from './format';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { api } from './api';
 import { saveHistoryEntry } from './history';
@@ -244,11 +245,12 @@ export function useAppState(opts?: { watchLocation?: boolean }) {
           (effectiveWhen === 'now' || opts?.forceNow) &&
           res.journeys.length === 0;
         if (allowNext) {
-          const tomorrow = new Date();
-          tomorrow.setDate(tomorrow.getDate() + 1);
-          const y = tomorrow.getFullYear();
-          const m = String(tomorrow.getMonth() + 1).padStart(2, '0');
-          const day = String(tomorrow.getDate()).padStart(2, '0');
+          // Tomorrow in Israel (feed date), not on the device's calendar.
+          const [ty, tm, td] = israelClock().isoDate.split('-').map(Number);
+          const tomorrow = new Date(Date.UTC(ty, tm - 1, td + 1));
+          const y = tomorrow.getUTCFullYear();
+          const m = String(tomorrow.getUTCMonth() + 1).padStart(2, '0');
+          const day = String(tomorrow.getUTCDate()).padStart(2, '0');
           res = await api.plan(
             o,
             d,

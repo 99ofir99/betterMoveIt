@@ -3,16 +3,16 @@
 import { useState } from 'react';
 import type { DepartTimeFormProps } from './types';
 import { t } from '../../lib/i18n';
+import { israelClock } from '../../lib/format';
 
+// Feed times are Israel time, whatever zone the phone is set to.
 function todayIso(): string {
-  const d = new Date();
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  return israelClock().isoDate;
 }
 
 function defaultTimeValue(): string {
-  const d = new Date();
-  d.setMinutes(d.getMinutes() + 15);
-  return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+  const sec = (israelClock().seconds + 15 * 60) % 86400;
+  return `${String(Math.floor(sec / 3600)).padStart(2, '0')}:${String(Math.floor((sec % 3600) / 60)).padStart(2, '0')}`;
 }
 
 export function DepartTimeForm({ mode, onBack, onApply }: DepartTimeFormProps) {

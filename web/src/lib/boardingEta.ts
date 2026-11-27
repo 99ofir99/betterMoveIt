@@ -35,12 +35,18 @@ export function groupMatchesRoutes(group: DepartureGroup, routes: RouteInfo[]): 
 export function leaveEtasFromBoard(
   groups: DepartureGroup[],
   routes: RouteInfo[],
-  limit = 3
+  limit = 3,
+  /**
+   * Skip buses leaving before this many minutes from now. A journey card planned on
+   * a later trip (e.g. 24 at 18:06) must not say "Leaves 2 min" for the bus before it.
+   */
+  minMinutes = 0
 ): LeaveEtaEntry[] {
   const matched = groups.filter((g) => groupMatchesRoutes(g, routes));
   const entries: LeaveEtaEntry[] = [];
   for (const g of matched) {
     for (const n of g.next) {
+      if (n.minutes < minMinutes) continue;
       // Live (colored) only when GPS-backed confidence is present (Moovit).
       entries.push({
         minutes: n.minutes,
@@ -65,3 +71,6 @@ export function bestBoardingMinutes(
   const etas = leaveEtasFromBoard(groups, routes, 1);
   return etas[0] ?? null;
 }
+
+/** Minutes before a planned boarding that a live bus may still count as "this" trip. */
+export const PLANNED_TRIP_SLACK_MIN = 2;

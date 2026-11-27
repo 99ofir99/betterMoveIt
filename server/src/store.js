@@ -348,6 +348,56 @@ export class TransitStore {
     return day;
   }
 
+  /**
+   * The part of a service day that runs past midnight: entries with a GTFS time
+   * ≥ 24:00 of trips active on `dateInt`. After midnight these buses are still on
+   * the road but belong to *yesterday's* service, so boards and the planner read
+   * yesterday's overflow next to today's index. Same shape as ensureDayIndex() but
+   * only a few percent of its size, so it is cheap to keep next to the full days.
+   */
+  ensureOverflowIndex(dateInt, dow) {
+    const key = dateInt * 10 + (dow | 0);
+    if (!this._overflowIndexes) this._overflowIndexes = new Map();
+    const cached = this._overflowIndexes.get(key);
+    if (cached) return cached;
+
+    const activeSvc = new Uint8Array(this.services.length);
+    for (let i = 0; i < this.services.length; i++) {
+      if (this.serviceActive(i, dateInt, dow)) activeSvc[i] = 1;
+    }
+    const start = new Int32Array(this.stopCount + 1);
+    const tripsList = [];
+    const rowsList = [];
+    for (let stop = 0; stop < this.stopCount; stop++) {
+      start[stop] = tripsList.length;
+      const b = this.stopTripStart[stop + 1];
+      // Slices are sorted by departure, so the ≥ 24:00 entries are the tail.
+      for (let idx = this.lowerBoundStopTrip(stop, DAY_SEC); idx < b; idx++) {
+        const trip = this.stopTripTrip[idx];
+        if (!activeSvc[this.tripService[trip]]) continue;
+        tripsList.push(trip);
+        rowsList.push(this.stopTripRow[idx]);
+      }
+    }
+    start[this.stopCount] = tripsList.length;
+    const day = {
+      key,
+      dateInt,
+      dow,
+      start,
+      trips: Int32Array.from(tripsList),
+      rows: Int32Array.from(rowsList),
+      activeSvc,
+      total: tripsList.length,
+      overflow: true,
+    };
+    while (this._overflowIndexes.size >= 2) {
+      this._overflowIndexes.delete(this._overflowIndexes.keys().next().value);
+    }
+    this._overflowIndexes.set(key, day);
+    return day;
+  }
+
   /** Departure seconds for an entry in a day-filtered stop→trip index. */
   dayStopTripDepAt(day, idx) {
     return this.stDeparture[day.rows[idx]];
@@ -760,6 +810,17 @@ export class TransitStore {
     this._shapeLru.set(shapeIdx, out);
     return out;
   }
+}
+
+export const DAY_SEC = 86400;
+
+/** YYYYMMDD shifted by whole days (calendar-correct across months/years). */
+export function addDaysDateInt(dateInt, days) {
+  const y = Math.floor(dateInt / 10000);
+  const m = Math.floor((dateInt % 10000) / 100);
+  const d = dateInt % 100;
+  const dt = new Date(Date.UTC(y, m - 1, d + days));
+  return dt.getUTCFullYear() * 10000 + (dt.getUTCMonth() + 1) * 100 + dt.getUTCDate();
 }
 
 /** Upper bound for nearby() so one request can't freeze the server. */
