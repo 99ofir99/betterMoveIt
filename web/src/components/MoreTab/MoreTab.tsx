@@ -14,7 +14,6 @@ import { useMoreTab } from './useMoreTab';
 import {
   AccessibilityIcon,
   BellIcon,
-  CardsIcon,
   HistoryIcon,
   InfoIcon,
   MapLayersIcon,
@@ -78,19 +77,6 @@ export function MoreTab({ onReplayTrip, onOpenSearch }: MoreTabProps) {
           icon={<SettingsIcon />}
           label={t("Settings")}
           onClick={() => s.setPanel('settings')}
-        />
-      </div>
-
-      <p className="more-menu-section">{t("Payment for Public Transit")}</p>
-      <div className="more-menu-group">
-        <MenuItem
-          icon={<CardsIcon />}
-          label={t("Tickets & payment")}
-          onClick={() =>
-            window.alert(
-              t('betterMoveIt does not process payments. Use Rav-Kav, HopOn, or the operator app.')
-            )
-          }
         />
       </div>
 
