@@ -19,94 +19,32 @@
 
 import fs from 'node:fs';
 import path from 'node:path';
-import readline from 'node:readline';
+import { readCsv } from '../lib/csv.mjs';
 
-const RAW_DIR = process.argv[2];
-const OUT_DIR = process.argv[3];
+const [RAW_DIR, OUT_DIR] = process.argv.slice(2).filter((a) => !a.startsWith('--'));
+const flag = (name) => process.argv.find((a) => a.startsWith(`--${name}=`))?.split('=')[1];
 
 if (!RAW_DIR || !OUT_DIR) {
-  console.error('usage: node ingest.mjs <gtfs-raw-dir> <out-dir>');
+  console.error('usage: node ingest.mjs <gtfs-raw-dir> <out-dir> [--days=N] [--from=YYYYMMDD]');
   process.exit(1);
 }
+
+// Optional service window: keep only trips that run on at least one day in
+// [from, from + days). The MOT feed covers ~2 months; the server only ever
+// asks about today and tomorrow, and the full feed needs ~560 MB RAM, over
+// Render free tier's 512 MB. `--days=14` (or INGEST_DAYS=14) keeps it lean.
+const WINDOW_DAYS = Number(flag('days') ?? process.env.INGEST_DAYS ?? 0) || 0;
+const WINDOW_FROM =
+  flag('from') ??
+  process.env.INGEST_FROM ??
+  new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Jerusalem' }).format(new Date()).replace(/-/g, '');
 
 fs.mkdirSync(OUT_DIR, { recursive: true });
 
 const t0 = Date.now();
 const log = (...a) => console.log(`[${((Date.now() - t0) / 1000).toFixed(1)}s]`, ...a);
 
-/** Minimal RFC4180 CSV reader that streams rows without building the whole file. */
-function readCsv(file, onRow) {
-  return new Promise((resolve, reject) => {
-    const stream = fs.createReadStream(file, { encoding: 'utf8' });
-    const rl = readline.createInterface({ input: stream, crlfDelay: Infinity });
-    let header = null;
-    let pending = '';
-    let inQuotes = false;
-    let lineNo = 0;
-
-    const emit = (line) => {
-      const cells = splitCsvLine(line + pending);
-      pending = '';
-      if (!header) {
-        header = cells;
-        return;
-      }
-      if (cells.length === 1 && cells[0] === '') return;
-      const row = {};
-      for (let i = 0; i < header.length; i++) row[header[i]] = cells[i] ?? '';
-      onRow(row);
-    };
-
-    // BOM strip + header
-    let first = true;
-    rl.on('line', (line) => {
-      lineNo++;
-      if (first) {
-        line = line.replace(/^\uFEFF/, '');
-        first = false;
-      }
-      // Track quote parity so multi-line quoted fields survive.
-      const quotes = (line.match(/"/g) || []).length;
-      if (inQuotes) {
-        pending += '\n' + line;
-      } else {
-        pending = line;
-      }
-      if (quotes % 2 === 1) {
-        inQuotes = !inQuotes;
-        return;
-      }
-      inQuotes = false;
-      emit(pending);
-    });
-    rl.on('close', () => resolve({ header, lineNo }));
-    rl.on('error', reject);
-    stream.on('error', reject);
-  });
-}
-
-function splitCsvLine(line) {
-  const out = [];
-  let cur = '';
-  let q = false;
-  for (let i = 0; i < line.length; i++) {
-    const c = line[i];
-    if (q) {
-      if (c === '"') {
-        if (line[i + 1] === '"') {
-          cur += '"';
-          i++;
-        } else q = false;
-      } else cur += c;
-    } else if (c === '"') q = true;
-    else if (c === ',') {
-      out.push(cur);
-      cur = '';
-    } else cur += c;
-  }
-  out.push(cur);
-  return out;
-}
+// CSV parsing lives in tools/lib/csv.mjs (handles MOT's bare ת"א quotes).
 
 // ---------------------------------------------------------------- agencies & routes
 
@@ -160,6 +98,28 @@ await readCsv(path.join(RAW_DIR, 'calendar.txt'), (r) => {
     end: r.end_date,
   });
 });
+
+/** service_ids active on at least one date of the window (null = keep all). */
+const activeServices = (() => {
+  if (!WINDOW_DAYS) return null;
+  const y = Number(WINDOW_FROM.slice(0, 4));
+  const m = Number(WINDOW_FROM.slice(4, 6));
+  const d = Number(WINDOW_FROM.slice(6, 8));
+  const dates = [];
+  for (let i = 0; i < WINDOW_DAYS; i++) {
+    const dt = new Date(Date.UTC(y, m - 1, d + i));
+    const ymd = dt.toISOString().slice(0, 10).replace(/-/g, '');
+    dates.push({ ymd, dow: dt.getUTCDay() });
+  }
+  const keep = new Set();
+  for (const svc of services.values()) {
+    if (dates.some(({ ymd, dow }) => ymd >= svc.start && ymd <= svc.end && svc.daysMask & (1 << dow))) {
+      keep.add(svc.id);
+    }
+  }
+  log(`service window ${WINDOW_FROM} +${WINDOW_DAYS}d: ${keep.size}/${services.size} services active`);
+  return keep;
+})();
 
 // ---------------------------------------------------------------- stops
 
@@ -232,6 +192,7 @@ log('reading trips.txt');
 await readCsv(path.join(RAW_DIR, 'trips.txt'), (r) => {
   const routeIdx = routeIndexByGtfsId.get(r.route_id);
   if (routeIdx === undefined) return;
+  if (activeServices && !activeServices.has(r.service_id)) return;
   const idx = trips.length;
   trips.push({
     id: r.trip_id,
@@ -542,6 +503,7 @@ const feedInfo = {
     shapePoints: shapePointCursor,
     services: services.size,
   },
+  serviceWindow: WINDOW_DAYS ? { from: WINDOW_FROM, days: WINDOW_DAYS } : null,
   routeTypes: ROUTE_TYPE_NAMES,
   bbox: (() => {
     let minLat = 90, maxLat = -90, minLon = 180, maxLon = -180;

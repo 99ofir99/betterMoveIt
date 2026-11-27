@@ -11,7 +11,7 @@ tools (`tools/`). Node 20 (`.node-version` = 20.19), ESM everywhere. No lint con
 | `npm run setup` | Install deps, get transit data (real if present, else synthetic sample), typecheck + test. Idempotent, ~12 s fresh |
 | `npm run dev` | API on :8787 (`node --watch`) + Vite on :5173 with HMR; Vite proxies `/api` → :8787 |
 | `npm run dev:debug` | Same, API with `--inspect` on :9229 |
-| `npm test` / `npm run test:watch` | Vitest (web only, pure-logic tests in `web/src/**/*.test.ts`) |
+| `npm test` / `npm run test:watch` | `node --test` for tools/lib (CSV parser) + Vitest for web (`web/src/**/*.test.ts`) |
 | `npm run check` | `tsc --noEmit` for web (strict, `noUnusedLocals`) |
 | `npm run verify` | check + test + production build |
 | `npm run smoke` | Boot API on :8797 and hit every endpoint; `SMOKE_URL=…` to target a running server |
@@ -29,6 +29,8 @@ run current tool script, and a "Full stack" compound.
   path, then `data/gtfs-sample` (logs a SAMPLE warning). See `getStore()` in `server/src/store.js`.
 - `deploy/gtfs-dist.tgz` is Git LFS (64 MB). In a fresh clone without `git lfs pull` it is a
   ~130-byte pointer; `tools/prepare-data.mjs` detects this and moves on to the next source.
+- GTFS CSV is parsed by `tools/lib/csv.mjs` (ingest + filter-gtfs). MOT writes Hebrew abbreviations with a bare `"` (e.g. `ת"א`) in unquoted fields; a quote only opens a quoted field at the start of a field. The old per-line quote counting merged/dropped ~3.4% of trips.
+- `ingest.mjs --days=N [--from=YYYYMMDD]` (or `INGEST_DAYS`) keeps only trips running in that window. Measured server RSS on the 2026-11-26 MOT feed: whole feed ~800 MB peak, 14 days ~620 MB, 7 days ~495 MB (Render free tier is 512 MB). A windowed store must be rebuilt before the window runs out (`meta.json` → `serviceWindow`).
 - Binary format is written by `tools/ingest/ingest.mjs` and read by `TransitStore` in
   `store.js` — change both together. `stop_times.bin` is unpadded typed-array columns: an **odd
   stop_times row count misaligns the Float32 column and the server refuses to boot**.

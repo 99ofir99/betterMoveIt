@@ -8,7 +8,7 @@
  */
 import fs from 'node:fs';
 import path from 'node:path';
-import readline from 'node:readline';
+import { readCsv } from './lib/csv.mjs';
 
 const RAW = process.argv[2];
 const OUT = process.argv[3];
@@ -26,68 +26,8 @@ if (!RAW || !OUT) {
 
 fs.mkdirSync(OUT, { recursive: true });
 
-function splitCsvLine(line) {
-  const out = [];
-  let cur = '';
-  let q = false;
-  for (let i = 0; i < line.length; i++) {
-    const c = line[i];
-    if (q) {
-      if (c === '"') {
-        if (line[i + 1] === '"') {
-          cur += '"';
-          i++;
-        } else q = false;
-      } else cur += c;
-    } else if (c === '"') q = true;
-    else if (c === ',') {
-      out.push(cur);
-      cur = '';
-    } else cur += c;
-  }
-  out.push(cur);
-  return out;
-}
-
 async function forEachCsv(file, onHeader, onRow) {
-  await new Promise((resolve, reject) => {
-    const stream = fs.createReadStream(file, { encoding: 'utf8' });
-    const rl = readline.createInterface({ input: stream, crlfDelay: Infinity });
-    let header = null;
-    let pending = '';
-    let inQuotes = false;
-    let first = true;
-    const emit = (line) => {
-      const cells = splitCsvLine(line);
-      if (!header) {
-        header = cells;
-        onHeader?.(header);
-        return;
-      }
-      if (cells.length === 1 && cells[0] === '') return;
-      const row = {};
-      for (let i = 0; i < header.length; i++) row[header[i]] = cells[i] ?? '';
-      onRow(row, header, line);
-    };
-    rl.on('line', (line) => {
-      if (first) {
-        line = line.replace(/^\uFEFF/, '');
-        first = false;
-      }
-      const quotes = (line.match(/"/g) || []).length;
-      if (inQuotes) pending += '\n' + line;
-      else pending = line;
-      if (quotes % 2 === 1) {
-        inQuotes = !inQuotes;
-        return;
-      }
-      inQuotes = false;
-      emit(pending);
-    });
-    rl.on('close', resolve);
-    rl.on('error', reject);
-    stream.on('error', reject);
-  });
+  await readCsv(file, onRow, onHeader);
 }
 
 function csvEscape(v) {
