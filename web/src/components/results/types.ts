@@ -81,12 +81,16 @@ export type DepartAtAction =
 export interface DepartAtSheetProps {
   onClose: () => void;
   onSelect: (action: DepartAtAction) => void;
+  /** Open on a time form instead of the menu (home card clock chip). */
+  startMode?: Exclude<DepartSheetMode, 'menu'>;
 }
 
 export type DepartSheetMode = 'menu' | 'depart' | 'arrive';
 
 export interface DepartTimeFormProps {
   mode: Exclude<DepartSheetMode, 'menu'>;
+  /** When set, the form shows a Depart at / Arrive by switch. */
+  onModeChange?: (mode: Exclude<DepartSheetMode, 'menu'>) => void;
   onBack: () => void;
   onApply: (action: DepartAtAction) => void;
 }
