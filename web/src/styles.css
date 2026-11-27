@@ -10292,6 +10292,8 @@ button.home-card-dots__dot {
 }
 .locoff-card__action {
   margin-top: 4px;
+}
+
 /* Grab area of the depart/time sheet: tall enough to catch a thumb. */
 .depart-sheet__drag {
   padding: 10px 0 6px;
