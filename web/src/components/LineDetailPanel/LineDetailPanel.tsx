@@ -15,6 +15,7 @@ import { LineStopList } from './LineStopList';
 import type { LineDetailPanelProps } from './types';
 import { useLineDetail } from './useLineDetail';
 import { t } from '../../lib/i18n';
+import { RippleLoader } from '../common/RippleLoader';
 
 function agencyLabel(agency: string | undefined): string {
   if (!agency) return '';
@@ -88,7 +89,7 @@ export function LineDetailPanel({
       )}
 
       {s.error && !s.data && <p className="error-text">{s.error}</p>}
-      {!s.data && !s.error && <p className="muted lnd-loading">{t("Loading line…")}</p>}
+      {!s.data && !s.error && <RippleLoader compact label={t("Loading line…")} />}
 
       {s.data && (
         <LineStopList

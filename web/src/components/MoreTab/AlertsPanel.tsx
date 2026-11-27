@@ -3,13 +3,14 @@
 import { PanelHeader } from './PanelHeader';
 import type { AlertsPanelProps } from './types';
 import { t } from '../../lib/i18n';
+import { RippleLoader } from '../common/RippleLoader';
 
 export function AlertsPanel({ alerts, loading, onBack }: AlertsPanelProps) {
   return (
     <div className="more-panel">
       <PanelHeader title={t("Service alerts")} onBack={onBack} />
 
-      {loading && <p className="fav-empty">{t("Loading alerts…")}</p>}
+      {loading && <RippleLoader label={t("Loading alerts…")} />}
       {!loading && alerts.length === 0 && (
         <p className="fav-empty">{t("No active service alerts right now.")}</p>
       )}

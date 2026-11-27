@@ -165,6 +165,8 @@ export const HE: Record<string, string> = {
   'Live buses on map': 'אוטובוסים חיים במפה',
   'Live location': 'מיקום חי',
   'Loading alerts…': 'טוענים התראות…',
+  'Loading lines…': 'טוענים קווים…',
+  'No lines in this category': 'אין קווים בקטגוריה הזו',
   'Loading departures…': 'טוענים יציאות…',
   'Loading line…': 'טוענים קו…',
   'Locating…': 'מאתרים…',

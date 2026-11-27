@@ -10087,3 +10087,20 @@ button.home-card-dots__dot {
   font-weight: 600;
   opacity: 0.8;
 }
+
+/* In-page loading state (components/common/RippleLoader.tsx), same art as the startup splash. */
+.ripple-loader { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; padding: 48px 16px; animation: ripple-loader-in .3s ease both; }
+.ripple-loader--compact { padding: 20px 16px; }
+.ripple-loader__art { width: 132px; height: auto; overflow: visible; }
+.ripple-loader--compact .ripple-loader__art { width: 88px; }
+.ripple-loader__label { margin: 0; font-size: 0.9rem; color: var(--icon-muted, #8e8e96); text-align: center; }
+.ripple-loader__rip { transform-box: fill-box; transform-origin: center; animation: ripple-loader-rip 2.4s cubic-bezier(.2,.6,.4,1) infinite; }
+.ripple-loader__rip--d1 { animation-delay: -.8s; }
+.ripple-loader__rip--d2 { animation-delay: -1.6s; }
+.ripple-loader__float { animation: ripple-loader-float 2.6s ease-in-out infinite; }
+.ripple-loader__blink { transform-origin: 0px -14px; animation: ripple-loader-blink 4.2s infinite; }
+@keyframes ripple-loader-in { from { opacity: 0; } }
+@keyframes ripple-loader-rip { 0% { transform: scale(.35); opacity: .8; } 100% { transform: scale(1); opacity: 0; } }
+@keyframes ripple-loader-float { 50% { transform: translateY(-4px); } }
+@keyframes ripple-loader-blink { 0%, 90%, 100% { transform: scaleY(1); } 93% { transform: scaleY(.1); } 96% { transform: scaleY(1); } }
+@media (prefers-reduced-motion: reduce) { .ripple-loader * { animation-duration: 6s !important; } }
