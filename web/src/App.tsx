@@ -21,7 +21,7 @@ import { ResultsHeader } from "./components/results/ResultsHeader";
 import { PreferencesSheet } from "./components/results/PreferencesSheet";
 import { DepartAtSheet, type DepartAtAction } from "./components/results/DepartAtSheet";
 import { DirectionsSheet } from "./components/directions/DirectionsSheet";
-import { formatClock12h, israelClock, secondsSinceLocalMidnight } from "./lib/format";
+import { formatClock12h, secondsSinceLocalMidnight } from "./lib/format";
 import { DraggableSheet } from "./components/sheet/DraggableSheet";
 import type { SheetSnap } from "./components/sheet/types";
 import { useFrequentDestination } from "./lib/useFrequentDestination";
@@ -723,23 +723,13 @@ export default function App() {
     [searchRoutes, state],
   );
 
-  /** Home card clock chip: open the planner on "Depart at" for this destination. */
+  /** Home card clock chip: plan to this destination now, then open the time picker. */
   const handlePlanAtTimeFromHome = useCallback(
     async (place: Place) => {
-      state.selectPlace(place, "to");
-      setToQuery("");
-      setActiveTab("directions");
-      state.setWhen("leave");
-      // Start the picker at the current Israel time, not an empty field.
-      const clock = israelClock();
-      const hh = String(Math.floor(clock.seconds / 3600)).padStart(2, "0");
-      const mm = String(Math.floor((clock.seconds % 3600) / 60)).padStart(2, "0");
-      state.setPlanDate(clock.isoDate);
-      state.setDepartTime(`${hh}:${mm}`);
-      setShowPlanForm(true);
-      await state.useMyLocationAsOrigin();
+      await handlePlanFromHome(place);
+      setShowDepartSheet(true);
     },
-    [state],
+    [handlePlanFromHome],
   );
 
   const replayTrip = useCallback(
