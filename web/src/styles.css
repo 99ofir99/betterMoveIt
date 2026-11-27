@@ -3043,8 +3043,9 @@ select {
 .lines-tab {
   display: flex;
   flex-direction: column;
-  height: 100vh;
-  padding-bottom: 72px; /* Bottom nav space */
+  /* Fill .tab-screen, which already stops above the bottom nav. 100vh plus
+     nav padding made the page taller than the screen and scroll for nothing. */
+  height: 100%;
 }
 
 .lines-header {
