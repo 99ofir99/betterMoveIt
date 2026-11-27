@@ -40,7 +40,7 @@ export class TransitStore {
     const recOff = 32;
     const strOff = recOff + stopCount * 28;
     const cellOff = strOff + strLen;
-    this.stopStrings = JSON.parse(stopsBuf.subarray(strOff, strOff + strLen).toString('utf8'));
+    this.stopStrings = JSON.parse(stopsBuf.subarray(strOff, strOff + strLen).toString('utf8')).map(fixGershayim);
 
     this.stopCount = stopCount;
     this.stopLat = new Float32Array(stopCount);
@@ -91,7 +91,7 @@ export class TransitStore {
     const routeCount = routesBuf.readUInt32LE(0);
     const rStrLen = routesBuf.readUInt32LE(4);
     const rStrOff = 8 + routeCount * 20;
-    this.routeStrings = JSON.parse(routesBuf.subarray(rStrOff, rStrOff + rStrLen).toString('utf8'));
+    this.routeStrings = JSON.parse(routesBuf.subarray(rStrOff, rStrOff + rStrLen).toString('utf8')).map(fixGershayim);
     const rView = new DataView(routesBuf.buffer, routesBuf.byteOffset, routesBuf.byteLength);
     this.routeCount = routeCount;
     this.routeShortName = new Array(routeCount);
@@ -130,7 +130,7 @@ export class TransitStore {
     const tripCount = tripsBuf.readUInt32LE(0);
     const tStrLen = tripsBuf.readUInt32LE(4);
     const tStrOff = 8 + tripCount * 18;
-    this.tripStrings = JSON.parse(tripsBuf.subarray(tStrOff, tStrOff + tStrLen).toString('utf8'));
+    this.tripStrings = JSON.parse(tripsBuf.subarray(tStrOff, tStrOff + tStrLen).toString('utf8')).map(fixGershayim);
     const tView = new DataView(tripsBuf.buffer, tripsBuf.byteOffset, tripsBuf.byteLength);
     this.tripCount = tripCount;
     this.tripRoute = new Int32Array(tripCount);
@@ -498,14 +498,14 @@ export class TransitStore {
 
   /** Line search by short or long name (Hebrew/English digits and text). */
   searchRoutes(query, limit = 40) {
-    const q = query.trim().toLowerCase();
+    const q = foldForSearch(query.trim());
     if (!q) return [];
     const scored = [];
     for (let i = 0; i < this.routeCount; i++) {
       const shortRaw = this.routeShortName[i] || '';
       const longRaw = this.routeLongName[i] || '';
-      const shortName = shortRaw.toLowerCase();
-      const longName = longRaw.toLowerCase();
+      const shortName = foldForSearch(shortRaw);
+      const longName = foldForSearch(longRaw);
       const agencyId = this.routeAgency[i] || '';
       const type = this.routeType[i];
       const branded = brandLightRailRoute({
@@ -522,7 +522,7 @@ export class TransitStore {
         const trainNum = trip >= 0 ? String(this.tripHeadsign[trip] || '').trim() : '';
         displayRaw = shortRaw || trainNum;
       }
-      const displayName = displayRaw.toLowerCase();
+      const displayName = foldForSearch(displayRaw);
       let best = Infinity;
       if (shortName === q || displayName === q) best = 0;
       else if (shortName.startsWith(q) || displayName.startsWith(q)) best = 1;
@@ -651,6 +651,8 @@ export class TransitStore {
 
   /** Nearby stops via the spatial grid, nearest first. */
   nearby(lat, lon, radiusM = 500, limit = 20) {
+    // A huge radius walks millions of empty grid cells and blocks the event loop.
+    radiusM = Math.min(Number(radiusM) || 0, MAX_NEARBY_RADIUS_M);
     const scale = this.gridScale;
     const cells = Math.ceil(radiusM / (scale * 111_320));
     const cy0 = Math.floor(lat / scale);
@@ -675,15 +677,19 @@ export class TransitStore {
   }
 
   searchStops(query, limit = 20, bias = null) {
-    const q = query.trim().toLowerCase();
+    const q = foldForSearch(query.trim());
     if (!q) return [];
+    if (!this._stopSearchKeys) {
+      this._stopSearchKeys = this.stopName.map((n) => foldForSearch(n || ''));
+      this._stopSearchKeysEn = this.stopNameEn.map((n) => foldForSearch(n || ''));
+    }
     const scored = [];
     for (let i = 0; i < this.stopCount; i++) {
       // Match the local name and the English translation so either language works.
       const name = this.stopName[i];
       const en = this.stopNameEn[i];
-      const lowerName = name ? name.toLowerCase() : '';
-      const lowerEn = en ? en.toLowerCase() : '';
+      const lowerName = this._stopSearchKeys[i];
+      const lowerEn = this._stopSearchKeysEn[i];
       let best = Infinity;
       // Tier 0: exact name. Tier 1: prefix. Tier 2: substring anywhere.
       if (lowerName === q || lowerEn === q) best = 0;
@@ -754,6 +760,29 @@ export class TransitStore {
     this._shapeLru.set(shapeIdx, out);
     return out;
   }
+}
+
+/** Upper bound for nearby() so one request can't freeze the server. */
+export const MAX_NEARBY_RADIUS_M = 8000; // planner's wide access ring is 2.5 × max walk (3 km)
+
+/**
+ * MOT writes the Hebrew gershayim as two apostrophes (בי''ס, רק''ל, שד''). Show a
+ * real double quote, the way people type it (בי"ס).
+ */
+export function fixGershayim(s) {
+  return typeof s === 'string' && s.includes("''") ? s.replace(/''/g, '"') : s;
+}
+
+/**
+ * Search key: lower case, quote marks unified so ת"א, ת״א, ת''א and תא all match.
+ * Geresh (׳ ’) becomes an apostrophe so ז׳בוטינסקי finds ז'בוטינסקי.
+ */
+export function foldForSearch(s) {
+  return String(s)
+    .toLowerCase()
+    .replace(/''/g, '"')
+    .replace(/[\u05F3\u2018\u2019`]/g, "'")
+    .replace(/["\u05F4\u201C\u201D]/g, '');
 }
 
 export function haversine(lat1, lon1, lat2, lon2) {

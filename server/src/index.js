@@ -42,6 +42,20 @@ app.use((req, res, next) => {
   next();
 });
 
+const jerusalemClock = new Intl.DateTimeFormat('en-GB', {
+  timeZone: 'Asia/Jerusalem',
+  hour: '2-digit',
+  minute: '2-digit',
+  second: '2-digit',
+  hourCycle: 'h23',
+});
+
+/** Seconds since midnight in Asia/Jerusalem for an instant. */
+function feedClockSeconds(date) {
+  const [h, m, sec] = jerusalemClock.format(date).split(':').map(Number);
+  return h * 3600 + m * 60 + sec;
+}
+
 /** Feed-local now: the feed is Asia/Jerusalem. */
 function feedClock(dateParam, timeParam) {
   const now = new Date();
@@ -183,9 +197,8 @@ app.get('/api/stop/:id/departures', async (req, res) => {
           const exp = Date.parse(match.expected);
           if (Number.isFinite(exp)) {
             const minutes = Math.max(0, Math.round((exp - nowMs) / 60_000));
-            const expDate = new Date(exp);
-            const departureSec =
-              expDate.getHours() * 3600 + expDate.getMinutes() * 60 + expDate.getSeconds();
+            // Clock-of-day in Israel; getHours() would use the server's zone (UTC on Render).
+            const departureSec = feedClockSeconds(new Date(exp));
             const aimedMs = match.aimed ? Date.parse(match.aimed) : NaN;
             const delayMin = Number.isFinite(aimedMs)
               ? Math.round((exp - aimedMs) / 60_000)
@@ -290,7 +303,7 @@ app.get('/api/lines/search', (req, res) => {
 /** Line detail: stops along a representative trip + shape geometry. */
 app.get('/api/lines/:id', (req, res) => {
   const routeIdx = Number(req.params.id);
-  if (!Number.isFinite(routeIdx)) return res.status(400).json({ error: 'invalid line id' });
+  if (!Number.isInteger(routeIdx)) return res.status(400).json({ error: 'invalid line id' });
   const direction = req.query.direction !== undefined ? Number(req.query.direction) : undefined;
   const detail = store.routeDetail(routeIdx, direction);
   if (!detail) return res.status(404).json({ error: 'unknown line' });
@@ -300,7 +313,7 @@ app.get('/api/lines/:id', (req, res) => {
 /** Per-stop schedule for a line (next departures along the pattern). */
 app.get('/api/lines/:id/schedule', (req, res) => {
   const routeIdx = Number(req.params.id);
-  if (!Number.isFinite(routeIdx)) return res.status(400).json({ error: 'invalid line id' });
+  if (!Number.isInteger(routeIdx)) return res.status(400).json({ error: 'invalid line id' });
   const direction = req.query.direction !== undefined ? Number(req.query.direction) : undefined;
   const detail = store.routeDetail(routeIdx, direction);
   if (!detail) return res.status(404).json({ error: 'unknown line' });
@@ -376,7 +389,9 @@ app.get('/api/stop/:id', (req, res) => {
 // ------------------------------------------------------------------ plan
 
 app.post('/api/plan', (req, res) => {
-  const { from, to, date, time, maxWalk } = req.body || {};
+  const { from, to, date, time } = req.body || {};
+  // Same range as the Settings slider; an unbounded value makes every search crawl.
+  const maxWalk = Math.min(3000, Math.max(300, Number(req.body?.maxWalk) || 1200));
   if (!from || !to) return res.status(400).json({ error: 'from/to required' });
   const { dateInt, seconds, dow } = feedClock(date, time);
 
