@@ -81,6 +81,8 @@ export default function App() {
   const [mapPickSlot, setMapPickSlot] = useState<MapPickSlot | null>(null);
   const [showPreferences, setShowPreferences] = useState(false);
   const [showDepartSheet, setShowDepartSheet] = useState(false);
+  /** Destination whose home-card clock chip opened the time sheet. */
+  const [homeTimePlace, setHomeTimePlace] = useState<Place | null>(null);
   const [sortMode, setSortMode] = useState<SortMode>("fastest");
   const [transportPrefs, setTransportPrefs] = useState<TransportPrefs | undefined>(
     () => loadSettings().transportPrefs,
@@ -429,6 +431,7 @@ export default function App() {
     state.panel === "journeys" ||
     showPlanForm;
   const canGoBack =
+    homeTimePlace != null ||
     mapPickSlot != null ||
     showTripConfirm ||
     inFlowBack ||
@@ -436,6 +439,10 @@ export default function App() {
     activeTab !== "directions";
 
   const systemBack = useCallback(() => {
+    if (homeTimePlace) {
+      setHomeTimePlace(null);
+      return;
+    }
     if (mapPickSlot) {
       setMapPickSlot(null);
       return;
@@ -460,7 +467,7 @@ export default function App() {
       if (prev !== "nearby") state.clearStop();
       if (prev === "directions") setShowPlanForm(false);
     }
-  }, [mapPickSlot, showTripConfirm, inFlowBack, goBack, selectedLineId, closeLine, activeTab, state]);
+  }, [homeTimePlace, mapPickSlot, showTripConfirm, inFlowBack, goBack, selectedLineId, closeLine, activeTab, state]);
 
   useBackTrap(canGoBack, systemBack);
 
@@ -576,10 +583,11 @@ export default function App() {
   }, [activeJourney, state.from, state.to]);
 
   const departLabel = useMemo(() => {
+    if (state.arriveByTime) return t("Arrive by {time}", { time: state.arriveByTime });
     if (state.when === "now") return t("Depart now");
     if (state.departTime) return t("Depart at {time}", { time: state.departTime });
     return t("Depart at");
-  }, [state.when, state.departTime, locale]);
+  }, [state.when, state.departTime, state.arriveByTime, locale]);
 
   const handleDepartAction = useCallback(
     (action: DepartAtAction) => {
@@ -819,13 +827,28 @@ export default function App() {
     [searchRoutes, state],
   );
 
-  /** Home card clock chip: plan to this destination now, then open the time picker. */
-  const handlePlanAtTimeFromHome = useCallback(
-    async (place: Place) => {
-      await handlePlanFromHome(place);
-      setShowDepartSheet(true);
+  /** Home card clock chip: pick a time for this destination, then plan for it. */
+  const handlePlanAtTimeFromHome = useCallback((place: Place) => {
+    setHomeTimePlace(place);
+  }, []);
+  const planHomeAtTime = useCallback(
+    async (place: Place, action: DepartAtAction) => {
+      state.selectPlace(place, "to");
+      setActiveTab("directions");
+      const origin = await state.useMyLocationAsOrigin();
+      if (!origin) {
+        setShowPlanForm(true);
+        return;
+      }
+      if (action.type === "departAt") {
+        void searchRoutes(origin, place, { leaveAt: action.time, leaveDate: action.date });
+      } else if (action.type === "arriveBy") {
+        void searchRoutes(origin, place, { arriveBy: action.time, arriveDate: action.date });
+      } else {
+        void searchRoutes(origin, place, { forceNow: true });
+      }
     },
-    [handlePlanFromHome],
+    [searchRoutes, state],
   );
 
   const replayTrip = useCallback(
@@ -940,7 +963,7 @@ export default function App() {
               favorites={homeFavorites}
               onOpenSearch={() => openSearch("to")}
               onPlanTo={(place, seed) => void handlePlanFromHome(place, seed)}
-              onPlanAtTime={(place) => void handlePlanAtTimeFromHome(place)}
+              onPlanAtTime={handlePlanAtTimeFromHome}
               onOpenStop={openStop}
               onOpenMore={() => setActiveTab("more")}
               onAddFavorite={() => openSearch("to")}
@@ -1272,6 +1295,14 @@ export default function App() {
           }}
           onClose={() => setShowPreferences(false)}
           onTransportPrefsChange={setTransportPrefs}
+        />
+      )}
+
+      {homeTimePlace && (
+        <DepartAtSheet
+          startMode="depart"
+          onClose={() => setHomeTimePlace(null)}
+          onSelect={(action) => void planHomeAtTime(homeTimePlace, action)}
         />
       )}
 

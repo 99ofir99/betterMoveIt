@@ -79,6 +79,8 @@ export function useAppState(opts?: { watchLocation?: boolean }) {
   });
   const [when, setWhen] = useState<'now' | 'leave'>('now');
   const [departTime, setDepartTime] = useState<string>('');
+  /** HH:MM the user asked to arrive by (null for depart-now / depart-at plans). */
+  const [arriveByTime, setArriveByTime] = useState<string | null>(null);
   const [planDate, setPlanDate] = useState<string>(todayPlanDate);
   const requestRef = useRef<AbortController | null>(null);
 
@@ -208,6 +210,7 @@ export function useAppState(opts?: { watchLocation?: boolean }) {
       let leaveAtOpt = opts?.leaveAt;
       let leaveDateOpt = opts?.leaveDate;
       const arriveByOpt = opts?.arriveBy;
+      setArriveByTime(arriveByOpt ?? null);
 
       if (arriveByOpt) {
         setWhen('leave');
@@ -410,6 +413,7 @@ export function useAppState(opts?: { watchLocation?: boolean }) {
       when,
       setWhen,
       departTime,
+      arriveByTime,
       setDepartTime,
       planDate,
       setPlanDate,
@@ -439,6 +443,7 @@ export function useAppState(opts?: { watchLocation?: boolean }) {
       recent,
       when,
       departTime,
+      arriveByTime,
       planDate,
       locate,
       useMyLocationAsOrigin,

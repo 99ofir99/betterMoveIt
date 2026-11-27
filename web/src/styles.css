@@ -10104,3 +10104,8 @@ button.home-card-dots__dot {
 @keyframes ripple-loader-float { 50% { transform: translateY(-4px); } }
 @keyframes ripple-loader-blink { 0%, 90%, 100% { transform: scaleY(1); } 93% { transform: scaleY(.1); } 96% { transform: scaleY(1); } }
 @media (prefers-reduced-motion: reduce) { .ripple-loader * { animation-duration: 6s !important; } }
+
+/* Home clock chip opens the time form directly: Depart at / Arrive by switch. */
+.depart-sheet__switch {
+  margin: 0 16px 12px;
+}
