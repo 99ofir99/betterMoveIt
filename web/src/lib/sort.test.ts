@@ -124,9 +124,17 @@ describe('sortJourneys fastest — light-rail preference', () => {
   it('keeps the bus first when light rail is clearly slower', () => {
     const bus = journey({ transfers: 1, arrival: 36000, duration: 40 * 60, routes: ['1', '66'] });
     const tram = withTram(
-      journey({ transfers: 1, arrival: 36000 + 6 * 60, duration: 46 * 60, routes: ['R1', '66'] })
+      journey({ transfers: 1, arrival: 36000 + 10 * 60, duration: 50 * 60, routes: ['R1', '66'] })
     );
     expect(sortJourneys([tram, bus], 'fastest')[0]).toBe(bus);
+  });
+
+  it('still prefers light rail when it is 8 minutes slower', () => {
+    const bus = journey({ transfers: 0, arrival: 36000, duration: 30 * 60, routes: ['1'] });
+    const tram = withTram(
+      journey({ transfers: 0, arrival: 36000 + 8 * 60, duration: 38 * 60, routes: ['R1'] })
+    );
+    expect(sortJourneys([bus, tram], 'fastest')[0]).toBe(tram);
   });
 
   it('does not lift light rail over a faster trip with fewer transfers', () => {

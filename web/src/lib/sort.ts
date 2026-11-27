@@ -21,7 +21,7 @@ const TRANSFER_SLACK_SEC = 12 * 60;
  * "Fastest": a light-rail (tram) option wins over a non-light-rail one with the
  * same number of transfers when it is at most this much slower.
  */
-export const LIGHT_RAIL_PREFERENCE_SEC = 4 * 60;
+export const LIGHT_RAIL_PREFERENCE_SEC = 8 * 60;
 
 function journeyUsesLightRail(journey: Journey): boolean {
   return journey.legs.some(
