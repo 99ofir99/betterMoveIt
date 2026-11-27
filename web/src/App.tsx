@@ -23,6 +23,7 @@ import { ResultsHeader } from "./components/results/ResultsHeader";
 import { PreferencesSheet } from "./components/results/PreferencesSheet";
 import { useNearestStop } from "./lib/useNearestStop";
 import { useBackTrap } from "./lib/useBackTrap";
+import { useCompactOnScroll } from "./lib/useCompactOnScroll";
 import { DepartAtSheet, type DepartAtAction } from "./components/results/DepartAtSheet";
 import { DirectionsSheet } from "./components/directions/DirectionsSheet";
 import { formatClock12h, secondsSinceLocalMidnight } from "./lib/format";
@@ -94,6 +95,8 @@ export default function App() {
   // Directions detail (Moovit trip sheet) — separate from the results list.
   const [showJourneyDetail, setShowJourneyDetail] = useState(false);
   // Results open raised to the top (user request); drag down or tap Map for the map.
+  const resultsRef = useRef<HTMLDivElement>(null);
+  const resultsCompact = useCompactOnScroll(resultsRef, state.panel === "journeys");
   const [resultsSnap, setResultsSnap] = useState<SheetSnap>("full");
   /** Directions detail sheet snap — peek keeps the route path visible above Start. */
   const [detailSnap, setDetailSnap] = useState<SheetSnap>("peek");
@@ -1085,36 +1088,54 @@ export default function App() {
           snap={resultsSnap}
           onSnapChange={setResultsSnap}
         >
-          <div className="results">
+          <div className="results" ref={resultsRef}>
+            {/* Sticky top: full header at rest; once the list scrolls, a one-line
+                from → to summary plus the filter chips stay pinned. */}
+            <div className={`results-sticky${resultsCompact ? " is-compact" : ""}`}>
+              {resultsCompact ? (
+                <button
+                  type="button"
+                  className="results-sticky__summary"
+                  onClick={() => resultsRef.current?.closest(".sheet")?.scrollTo({ top: 0, behavior: "smooth" })}
+                >
+                  <span className="results-sticky__route" dir="auto">
+                    {fromIsCurrentLocation ? t("Current location") : displayPlaceLabel(state.from?.label)}
+                    {" ← "}
+                    {displayPlaceLabel(state.to?.label)}
+                  </span>
+                  <span className="results-sticky__when">{departLabel}</span>
+                </button>
+              ) : null}
             <ResultsHeader
-              from={state.from}
-              to={state.to}
-              fromIsCurrentLocation={fromIsCurrentLocation}
-              onBack={goBack}
-              onSwap={() => {
-                if (!state.from || !state.to) {
+                from={state.from}
+                to={state.to}
+                fromIsCurrentLocation={fromIsCurrentLocation}
+                onBack={goBack}
+                onSwap={() => {
+                  if (!state.from || !state.to) {
+                    state.swapEnds();
+                    return;
+                  }
+                  void searchRoutes(state.to, state.from);
                   state.swapEnds();
-                  return;
+                }}
+                onEditFrom={() => openSearch("from")}
+                onEditTo={() => openSearch("to")}
+              />
+  
+              <ResultsToolbar
+                departLabel={departLabel}
+                onOpenDepartSheet={() => setShowDepartSheet(true)}
+                mapPeek={resultsSnap === "peek"}
+                onToggleMapView={() =>
+                  setResultsSnap((s) => (s === "peek" ? "full" : "peek"))
                 }
-                void searchRoutes(state.to, state.from);
-                state.swapEnds();
-              }}
-              onEditFrom={() => openSearch("from")}
-              onEditTo={() => openSearch("to")}
-            />
-
-            <ResultsToolbar
-              departLabel={departLabel}
-              onOpenDepartSheet={() => setShowDepartSheet(true)}
-              mapPeek={resultsSnap === "peek"}
-              onToggleMapView={() =>
-                setResultsSnap((s) => (s === "peek" ? "full" : "peek"))
-              }
-              sortMode={sortMode}
-              onSortMode={setSortMode}
-              onOpenPreferences={() => setShowPreferences(true)}
-              prefsBadgeCount={prefsBadgeCount}
-            />
+                sortMode={sortMode}
+                onSortMode={setSortMode}
+                onOpenPreferences={() => setShowPreferences(true)}
+                prefsBadgeCount={prefsBadgeCount}
+              />
+            </div>
 
             {state.plan.loading && <p className="muted">{t("Finding the best routes…")}</p>}
             {!state.plan.loading && journeys.length === 0 && (
