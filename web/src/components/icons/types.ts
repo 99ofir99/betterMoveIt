@@ -22,7 +22,8 @@ export type IconName =
   | 'close'
   | 'expand-more'
   | 'map'
-  | 'list';
+  | 'list'
+  | 'my-location';
 
 export interface NamedIconProps extends IconProps {
   name: IconName;
