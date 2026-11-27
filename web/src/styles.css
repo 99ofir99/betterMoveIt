@@ -9653,6 +9653,18 @@ button.ld-option {
   background: linear-gradient(115deg, #6b2cff 0%, #b12ad4 48%, #e23a8c 100%);
   color: #fff;
   box-shadow: 0 8px 24px rgba(120, 30, 160, 0.35);
+  /* It's a button (opens About): fill the row like the old div did. */
+  width: calc(100% - 32px);
+  border: none;
+  text-align: start;
+  font: inherit;
+  cursor: pointer;
+  transition: transform 0.12s, filter 0.12s;
+}
+
+.more-brand-card:active {
+  transform: scale(0.98);
+  filter: brightness(0.95);
 }
 
 .more-brand-card__mark {

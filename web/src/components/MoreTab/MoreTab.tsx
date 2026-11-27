@@ -54,7 +54,7 @@ export function MoreTab({ onReplayTrip, onOpenSearch }: MoreTabProps) {
 
   return (
     <div className="more-tab">
-      <BrandCard />
+      <BrandCard onOpen={() => s.setPanel('about')} />
 
       <div className="more-menu-group">
         <MenuToggle
