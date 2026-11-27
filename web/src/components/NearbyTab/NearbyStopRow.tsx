@@ -9,6 +9,7 @@ import {
 import { contrastText, routeColor } from '../../lib/format';
 import { railTrainNumber, transitDestinationLabel } from '../../lib/railLabel';
 import type { NearbyStopRowProps } from './types';
+import { t } from '../../lib/i18n';
 
 export function NearbyStopRow({ stop, onPress, showDivider = true }: NearbyStopRowProps) {
   const deps = stop.departures ?? [];
@@ -21,7 +22,7 @@ export function NearbyStopRow({ stop, onPress, showDivider = true }: NearbyStopR
         type="button"
         className="nearby-board__header"
         onClick={() => onPress(stop)}
-        aria-label={`Open stop ${stop.name}`}
+        aria-label={t('Open stop {name}', { name: stop.name })}
       >
         <span className="nearby-board__icon" aria-hidden="true">
           <BusStopSvg />
@@ -31,7 +32,7 @@ export function NearbyStopRow({ stop, onPress, showDivider = true }: NearbyStopR
             {stop.name}
           </span>
           {stop.code ? (
-            <span className="nearby-board__meta">Stop {stop.code}</span>
+            <span className="nearby-board__meta">{t("Stop")} {stop.code}</span>
           ) : null}
         </div>
         {distanceLabel && (
@@ -87,8 +88,8 @@ export function NearbyStopRow({ stop, onPress, showDivider = true }: NearbyStopR
 }
 
 function formatDistance(meters: number): string {
-  if (meters < 1000) return `${Math.round(meters)} m`;
-  return `${(meters / 1000).toFixed(1)} km`;
+  if (meters < 1000) return t('{n} m', { n: Math.round(meters) });
+  return t('{n} km', { n: (meters / 1000).toFixed(1) });
 }
 
 function BusStopSvg() {

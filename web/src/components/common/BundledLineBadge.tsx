@@ -6,6 +6,7 @@
 import { RouteBadge } from './RouteBadge';
 import { formatBundledLineLabel, lineLabel } from './bundledLineLabel';
 import type { BundledLineBadgeProps } from './types';
+import { t } from '../../lib/i18n';
 
 export function BundledLineBadge({ routes, className }: BundledLineBadgeProps) {
   if (!routes.length) return null;
@@ -32,7 +33,7 @@ export function BundledLineBadge({ routes, className }: BundledLineBadgeProps) {
       color={primary.color}
       className={['route-badge--bundled', className].filter(Boolean).join(' ')}
       title={label}
-      ariaLabel={`Lines ${label}`}
+      ariaLabel={t('Lines {line}', { line: label })}
     />
   );
 }

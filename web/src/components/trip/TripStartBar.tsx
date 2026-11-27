@@ -1,3 +1,4 @@
+import { t } from '../../lib/i18n';
 /** Sticky primary CTA shown at the bottom of JourneyDetail. Visual only. */
 
 interface TripStartBarProps {
@@ -9,7 +10,7 @@ export function TripStartBar({ onStart }: TripStartBarProps) {
     <div className="trip-start">
       <button type="button" className="trip-start__btn" onClick={onStart}>
         <span aria-hidden="true" className="trip-start__icon">▶</span>
-        Start trip
+        {t("Start trip")}
       </button>
     </div>
   );

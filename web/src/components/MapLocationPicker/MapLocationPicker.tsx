@@ -9,6 +9,7 @@ import { DEFAULT_MAP_STYLE_URL, buildRasterStyle } from '../../lib/mapStyle';
 import { Icon } from '../icons/Icon';
 import { useMapLocationPicker } from './useMapLocationPicker';
 import type { MapLocationPickerProps } from './types';
+import { t } from '../../lib/i18n';
 
 export function MapLocationPicker({
   initialCenter,
@@ -66,20 +67,20 @@ export function MapLocationPicker({
   }, []);
 
   return (
-    <div className="map-pick" role="dialog" aria-label="Choose location">
+    <div className="map-pick" role="dialog" aria-label={t("Choose location")}>
       <header className="map-pick__bar">
         <button
           type="button"
           className="icon-button icon-button--ghost"
           onClick={onCancel}
-          aria-label="Back"
+          aria-label={t("Back")}
         >
           <Icon name="arrow-back" />
         </button>
-        <h1 className="map-pick__title">Choose Location</h1>
+        <h1 className="map-pick__title">{t("Choose Location")}</h1>
       </header>
 
-      <p className="map-pick__hint">Move the map to find your location</p>
+      <p className="map-pick__hint">{t("Move the map to find your location")}</p>
 
       <div className="map-pick__map-wrap">
         <div ref={mapEl} className="map-pick__map" />
@@ -96,10 +97,10 @@ export function MapLocationPicker({
           </span>
           <div className="map-pick__location-text">
             <span className="map-pick__location-label">
-              {s.resolving ? 'Finding address…' : s.label}
+              {s.resolving ? t('Finding address…') : s.label}
             </span>
             <span className="map-pick__location-meta">
-              Transit will walk to/from the nearest stop
+              {t("Transit will walk to/from the nearest stop")}
             </span>
           </div>
         </div>
@@ -109,7 +110,7 @@ export function MapLocationPicker({
           onClick={s.confirm}
           disabled={s.resolving}
         >
-          OK
+          {t("OK")}
         </button>
       </footer>
     </div>

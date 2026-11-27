@@ -184,8 +184,8 @@ select {
 .topbar {
   position: absolute;
   top: 0;
-  left: 0;
-  right: 0;
+  inset-inline-start: 0;
+  inset-inline-end: 0;
   z-index: 20;
   display: flex;
   align-items: center;
@@ -321,8 +321,8 @@ select {
 .sheet__grabber {
   position: absolute;
   top: 0;
-  left: 0;
-  right: 0;
+  inset-inline-start: 0;
+  inset-inline-end: 0;
   z-index: 2;
   height: 36px;
   cursor: grab;
@@ -434,7 +434,7 @@ select {
 /* On desktop, dock non-overlay sheets as a side panel. */
 @media (min-width: 900px) {
   .sheet:not(.sheet--overlay) {
-    left: 24px;
+    inset-inline-start: 24px;
     transform: none;
     bottom: 24px;
     top: 80px;
@@ -540,7 +540,8 @@ select {
   border: none;
   background: transparent;
   font-size: 15px;
-  padding: 3px 40px 3px 0;
+  padding-block: 3px 3px;
+  padding-inline: 0 40px;
   outline: none;
   color: var(--text);
 }
@@ -552,7 +553,7 @@ select {
 .place-field__clear,
 .place-field__locate {
   position: absolute;
-  right: 0;
+  inset-inline-end: 0;
   bottom: -2px;
   width: 28px;
   height: 28px;
@@ -565,7 +566,7 @@ select {
 }
 
 .place-field__locate {
-  right: 30px;
+  inset-inline-end: 30px;
   color: var(--accent);
 }
 
@@ -577,7 +578,7 @@ select {
 
 .planner__swap {
   position: absolute;
-  right: 14px;
+  inset-inline-end: 14px;
   top: 50%;
   transform: translateY(-50%);
   z-index: 2;
@@ -604,8 +605,8 @@ select {
 .suggestions {
   position: absolute;
   top: calc(100% + 8px);
-  left: -12px;
-  right: -12px;
+  inset-inline-start: -12px;
+  inset-inline-end: -12px;
   z-index: 30;
   margin: 0;
   padding: 8px;
@@ -640,7 +641,7 @@ select {
   width: 100%;
   padding: 12px;
   border-radius: var(--radius-sm);
-  text-align: left;
+  text-align: start;
   min-height: 48px; /* Material touch target */
   transition: background 0.15s;
 }
@@ -854,7 +855,7 @@ select {
 .lnd-dir {
   display: block;
   width: 100%;
-  text-align: left;
+  text-align: start;
   padding: 8px 4px 12px;
   border-bottom: 1px solid var(--line);
   flex-shrink: 0;
@@ -955,7 +956,7 @@ select {
   gap: 0;
   width: 100%;
   padding: 0;
-  text-align: left;
+  text-align: start;
   background: transparent;
   border: 0;
   color: inherit;
@@ -1019,7 +1020,8 @@ select {
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 12px 8px 12px 6px;
+  padding-block: 12px 12px;
+  padding-inline: 6px 8px;
 }
 
 .lnd-stop__name {
@@ -1040,7 +1042,8 @@ select {
 .lnd-stop__card {
   flex: 1;
   min-width: 0;
-  margin: 4px 2px 8px 4px;
+  margin-block: 4px 8px;
+  margin-inline: 4px 2px;
   padding: 14px 14px 12px;
   border-radius: 14px;
   background: var(--surface-2, #242424);
@@ -1090,7 +1093,7 @@ select {
 .lnd-stop__clock-more {
   font-size: 11px;
   color: var(--text-faint);
-  text-align: right;
+  text-align: end;
   max-width: 130px;
 }
 
@@ -1120,8 +1123,8 @@ select {
 
 .lnd-actions {
   position: absolute;
-  left: 0;
-  right: 0;
+  inset-inline-start: 0;
+  inset-inline-end: 0;
   bottom: 0;
   z-index: 3;
   display: flex;
@@ -1212,7 +1215,7 @@ select {
   font-variant-numeric: tabular-nums;
   color: var(--text);
   min-width: 58px;
-  text-align: right;
+  text-align: end;
 }
 
 .advanced__note {
@@ -1458,7 +1461,8 @@ select {
   align-items: center;
   gap: 6px;
   height: 32px;
-  padding: 0 12px 0 10px;
+  padding-block: 0 0;
+  padding-inline: 10px 12px;
   border-radius: 999px;
   background: transparent;
   border: 1px solid var(--line);
@@ -1528,7 +1532,7 @@ select {
 
 .journey-card {
   width: 100%;
-  text-align: left;
+  text-align: start;
   padding: 14px 14px 12px;
   border-radius: var(--radius);
   background: var(--surface-base);
@@ -1653,7 +1657,8 @@ select {
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  padding: 3px 10px 3px 8px;
+  padding-block: 3px 3px;
+  padding-inline: 8px 10px;
   border-radius: 999px;
   background: rgba(var(--purple-rgb), 0.18);
   border: 1px solid rgba(var(--purple-rgb), 0.45);
@@ -1698,7 +1703,8 @@ select {
   justify-content: center;
   width: 32px;
   height: 32px;
-  margin: -4px -6px 0 0;
+  margin-block: -4px 0;
+  margin-inline: 0 -6px;
   border: 0;
   border-radius: 999px;
   background: transparent;
@@ -2097,7 +2103,7 @@ select {
   align-items: center;
   gap: 8px;
   padding: 4px 0;
-  text-align: left;
+  text-align: start;
   font-size: 13px;
   width: 100%;
 }
@@ -2144,7 +2150,8 @@ select {
 .leg__intermediate summary {
   font-size: 12px;
   color: var(--text-faint);
-  padding: 4px 0 4px 17px;
+  padding-block: 4px 4px;
+  padding-inline: 17px 0;
   cursor: pointer;
   list-style: none;
 }
@@ -2164,9 +2171,10 @@ select {
 .leg__intermediate ol {
   list-style: none;
   margin: 0;
-  padding: 0 0 0 17px;
-  border-left: 1px dashed var(--line);
-  margin-left: 4px;
+  padding-block: 0 0;
+  padding-inline: 17px 0;
+  border-inline-start: 1px dashed var(--line);
+  margin-inline-start: 4px;
 }
 
 .leg__stop--small {
@@ -2178,7 +2186,7 @@ select {
   font-size: 11.5px;
   color: var(--text-faint);
   margin-top: 6px;
-  padding-left: 17px;
+  padding-inline-start: 17px;
 }
 
 /* ------------------------------------------------------------ stop panel (Moovit) */
@@ -2276,8 +2284,8 @@ select {
 
 .stp-actions {
   position: absolute;
-  left: 0;
-  right: 0;
+  inset-inline-start: 0;
+  inset-inline-end: 0;
   bottom: 0;
   z-index: 3;
   display: flex;
@@ -2707,8 +2715,8 @@ select {
 .bottom-nav {
   position: fixed;
   bottom: 0;
-  left: 0;
-  right: 0;
+  inset-inline-start: 0;
+  inset-inline-end: 0;
   z-index: 100;
   display: flex;
   align-items: flex-end;
@@ -2853,7 +2861,7 @@ select {
   background: var(--surface);
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 999px;
-  text-align: left;
+  text-align: start;
   width: 100%;
   min-height: 48px;
   transition:
@@ -2935,7 +2943,7 @@ select {
   background: var(--surface-2);
   border: 1px solid var(--line);
   border-radius: var(--radius);
-  text-align: left;
+  text-align: start;
   transition:
     background 0.2s,
     box-shadow 0.2s,
@@ -2992,7 +3000,7 @@ select {
   background: var(--surface-2);
   border: 1px solid var(--line);
   border-radius: var(--radius);
-  text-align: left;
+  text-align: start;
   transition:
     background 0.2s,
     border-color 0.2s;
@@ -3080,8 +3088,8 @@ select {
 .lines-categories__chip::after {
   content: "";
   position: absolute;
-  left: 10px;
-  right: 10px;
+  inset-inline-start: 10px;
+  inset-inline-end: 10px;
   bottom: 0;
   height: 3px;
   border-radius: 3px 3px 0 0;
@@ -3107,7 +3115,8 @@ select {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 10px 8px 6px 20px;
+  padding-block: 10px 6px;
+  padding-inline: 20px 8px;
   background: rgba(255, 255, 255, 0.03);
 }
 
@@ -3136,7 +3145,7 @@ select {
 .lines-recent__menu {
   position: absolute;
   top: calc(100% - 4px);
-  right: 12px;
+  inset-inline-end: 12px;
   z-index: 20;
   min-width: 170px;
   padding: 6px;
@@ -3155,7 +3164,7 @@ select {
   font-size: 14px;
   color: var(--text);
   border-radius: 8px;
-  text-align: left;
+  text-align: start;
 }
 
 .lines-recent__menu-item:hover {
@@ -3221,8 +3230,8 @@ select {
   color: #fff;
   min-width: 2rem;
   justify-content: center;
-  padding-left: 8px;
-  padding-right: 8px;
+  padding-inline-start: 8px;
+  padding-inline-end: 8px;
   font-weight: 700;
 }
 
@@ -3284,7 +3293,7 @@ select {
   flex-shrink: 0;
   width: 32px;
   height: 32px;
-  margin-right: 4px;
+  margin-inline-end: 4px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -3309,7 +3318,8 @@ select {
 
 .lines-search__input {
   flex: 1;
-  padding: 12px 48px 12px 18px;
+  padding-block: 12px 12px;
+  padding-inline: 18px 48px;
   background: #2c2c2e;
   border: 1px solid transparent;
   border-radius: 14px;
@@ -3336,7 +3346,7 @@ select {
 
 .lines-search__icon {
   position: absolute;
-  right: 16px;
+  inset-inline-end: 16px;
   display: inline-flex;
   color: var(--text-dim);
   pointer-events: none;
@@ -3372,7 +3382,7 @@ select {
   background: var(--surface-2);
   border: 1px solid var(--line);
   border-radius: var(--radius);
-  text-align: left;
+  text-align: start;
   width: 100%;
   transition: background 0.2s;
   margin-bottom: 8px;
@@ -3485,7 +3495,7 @@ select {
   border: 1px solid var(--line);
   border-radius: var(--radius);
   min-height: 72px;
-  text-align: left;
+  text-align: start;
   width: 100%;
 }
 
@@ -3500,7 +3510,7 @@ select {
   align-items: center;
   gap: 10px;
   padding: 14px;
-  text-align: left;
+  text-align: start;
   min-width: 0;
 }
 
@@ -3573,7 +3583,7 @@ select {
   background: var(--surface-2);
   border: 1px solid var(--line);
   border-radius: var(--radius);
-  text-align: left;
+  text-align: start;
   min-height: 56px;
   min-width: 0;
 }
@@ -3608,8 +3618,8 @@ select {
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  padding-left: 0;
-  padding-right: 0;
+  padding-inline-start: 0;
+  padding-inline-end: 0;
   padding-bottom: 0;
 }
 
@@ -3786,7 +3796,8 @@ select {
   border: 1px solid var(--line) !important;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.45) !important;
   border-radius: var(--radius-sm) !important;
-  margin: 10px 10px 0 0 !important;
+  margin-block: 10px 0 !important;
+  margin-inline: 0 10px !important;
 }
 
 .maplibregl-ctrl-group button {
@@ -3870,7 +3881,7 @@ select {
   gap: 12px;
   width: 100%;
   padding: 12px 0 8px;
-  text-align: left;
+  text-align: start;
   min-height: 52px;
   background: transparent;
   border: 0;
@@ -3937,7 +3948,8 @@ select {
 .nearby-board__deps {
   list-style: none;
   margin: 0;
-  padding: 0 0 4px 52px;
+  padding-block: 0 4px;
+  padding-inline: 52px 0;
   display: flex;
   flex-direction: column;
   gap: 6px;
@@ -4013,7 +4025,7 @@ select {
   min-height: 56px;
   padding: 12px 0;
   border-bottom: 1px solid var(--line);
-  text-align: left;
+  text-align: start;
   transition: background 0.15s;
 }
 
@@ -4062,7 +4074,7 @@ select {
   font-size: 13px;
   color: var(--text-dim);
   min-width: 56px;
-  text-align: right;
+  text-align: end;
 }
 
 .alert-list {
@@ -4122,7 +4134,7 @@ select {
 
 .history-row__main {
   flex: 1;
-  text-align: left;
+  text-align: start;
   padding: 12px 14px;
   background: var(--surface-2);
   border: 1px solid var(--line);
@@ -4172,7 +4184,8 @@ select {
 .global-search__input {
   width: 100%;
   min-height: 44px;
-  padding: 10px 44px 10px 16px;
+  padding-block: 10px 10px;
+  padding-inline: 16px 44px;
   border-radius: 999px;
   border: 1px solid var(--line);
   background: var(--surface);
@@ -4191,7 +4204,7 @@ select {
 
 .global-search__clear {
   position: absolute;
-  right: 6px;
+  inset-inline-end: 6px;
   top: 50%;
   transform: translateY(-50%);
   width: 32px;
@@ -4286,12 +4299,12 @@ select {
   gap: 10px;
   min-height: 48px;
   padding: 0 16px;
-  margin-right: 0;
+  margin-inline-end: 0;
   background: var(--surface);
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 999px;
   color: var(--text-dim);
-  text-align: left;
+  text-align: start;
   font-size: 15px;
   font-weight: 400;
   box-shadow: var(--shadow-2);
@@ -4358,7 +4371,7 @@ select {
 
 .planner__hero-search > span:first-child {
   flex: 1;
-  text-align: left;
+  text-align: start;
   color: var(--text-dim);
 }
 
@@ -4753,7 +4766,7 @@ select {
   gap: 10px;
   width: 100%;
   padding: 14px 16px;
-  text-align: left;
+  text-align: start;
   background: var(--surface-2);
   border: 1px solid var(--line);
   border-radius: var(--radius);
@@ -4914,7 +4927,7 @@ select {
   width: 100%;
   min-height: 56px;
   padding: 14px 16px;
-  text-align: left;
+  text-align: start;
   border-bottom: 1px solid var(--line);
   transition: background 0.15s;
 }
@@ -4965,8 +4978,8 @@ select {
 .alerts-banner {
   position: absolute;
   top: calc(max(8px, env(safe-area-inset-top)) + 52px + 10px);
-  left: 0;
-  right: 0;
+  inset-inline-start: 0;
+  inset-inline-end: 0;
   z-index: 19;
   width: min(100%, var(--sheet-max));
   margin: 0 auto;
@@ -4979,7 +4992,8 @@ select {
   display: flex;
   align-items: flex-start;
   gap: 8px;
-  padding: 9px 12px 9px 14px;
+  padding-block: 9px 9px;
+  padding-inline: 14px 12px;
   margin-bottom: 6px;
   font-size: 12px;
   line-height: 1.4;
@@ -5285,8 +5299,8 @@ select {
 .ld-shell__pager {
   position: absolute;
   top: calc(56px + env(safe-area-inset-top));
-  left: 0;
-  right: 0;
+  inset-inline-start: 0;
+  inset-inline-end: 0;
   z-index: 26;
 }
 
@@ -5356,8 +5370,8 @@ select {
 .trip-progress__grabber {
   position: absolute;
   top: 0;
-  left: 0;
-  right: 0;
+  inset-inline-start: 0;
+  inset-inline-end: 0;
   z-index: 2;
   height: 36px;
   cursor: grab;
@@ -5555,7 +5569,7 @@ details[open] .trip-progress__itinerary-toggle::before {
 .trip-progress__it-time {
   font-size: 12px;
   color: var(--text-faint);
-  margin-left: auto;
+  margin-inline-start: auto;
   font-variant-numeric: tabular-nums;
 }
 
@@ -5597,8 +5611,8 @@ details[open] .trip-progress__itinerary-toggle::before {
 .ld-header {
   position: absolute;
   top: 0;
-  left: 0;
-  right: 0;
+  inset-inline-start: 0;
+  inset-inline-end: 0;
   z-index: 27;
   display: flex;
   align-items: center;
@@ -5643,7 +5657,7 @@ details[open] .trip-progress__itinerary-toggle::before {
 .ld-header__center {
   flex: 1;
   min-width: 0;
-  text-align: left;
+  text-align: start;
 }
 
 .ld-header__title {
@@ -6449,8 +6463,8 @@ button.ld-option {
 .ld-pills {
   position: absolute;
   z-index: 26;
-  left: 0;
-  right: 0;
+  inset-inline-start: 0;
+  inset-inline-end: 0;
   bottom: 0;
   flex: none;
   margin: 0;
@@ -6653,7 +6667,8 @@ button.ld-option {
 .ld-stops {
   list-style: none;
   margin: 4px 0 0;
-  padding: 4px 16px 8px 0;
+  padding-block: 4px 8px;
+  padding-inline: 0 16px;
   position: relative;
 }
 
@@ -6663,7 +6678,7 @@ button.ld-option {
   position: absolute;
   top: 14px;
   bottom: 18px;
-  left: 23px;
+  inset-inline-start: 23px;
   width: 3px;
   border-radius: 999px;
   background: linear-gradient(
@@ -6759,7 +6774,7 @@ button.ld-option {
 }
 
 .ld-stops__time {
-  padding-right: 16px;
+  padding-inline-end: 16px;
   font-size: 13px;
   color: #9a9ba1;
   font-variant-numeric: tabular-nums;
@@ -6779,7 +6794,8 @@ button.ld-option {
   gap: 8px;
   flex: 0 0 auto;
   min-height: 44px;
-  padding: 0 18px 0 14px;
+  padding-block: 0 0;
+  padding-inline: 14px 18px;
   border-radius: 999px;
   color: #fff;
   font-size: 15px;
@@ -7094,8 +7110,8 @@ button.ld-option {
   /* Fade the illustration into the page background */
   content: "";
   position: absolute;
-  left: 0;
-  right: 0;
+  inset-inline-start: 0;
+  inset-inline-end: 0;
   bottom: 0;
   height: 48px;
   background: linear-gradient(180deg, rgba(0, 0, 0, 0) 0%, var(--bg) 100%);
@@ -7115,7 +7131,7 @@ button.ld-option {
 .home-hero__menu-btn {
   width: 44px;
   height: 44px;
-  margin-left: -10px;
+  margin-inline-start: -10px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -7161,7 +7177,8 @@ button.ld-option {
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 8px 8px 8px 22px;
+  padding-block: 8px 8px;
+  padding-inline: 22px 8px;
   background: rgba(34, 34, 36, 0.78);
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 999px;
@@ -7169,7 +7186,7 @@ button.ld-option {
   -webkit-backdrop-filter: blur(14px);
   backdrop-filter: blur(14px);
   min-height: 60px;
-  text-align: left;
+  text-align: start;
   width: 100%;
   transition:
     background 0.15s,
@@ -7219,7 +7236,7 @@ button.ld-option {
   display: flex;
   flex-direction: column;
   width: 100%;
-  text-align: left;
+  text-align: start;
   padding: 0;
   overflow: hidden;
   background: var(--home-card);
@@ -7485,7 +7502,7 @@ button.ld-option {
   font-weight: 500;
   color: var(--accent-dim);
   padding: 6px 10px;
-  margin-right: -10px;
+  margin-inline-end: -10px;
   border-radius: 8px;
   transition: background 0.15s;
 }
@@ -7517,7 +7534,7 @@ button.ld-option {
   background: var(--home-card);
   border: 1px solid rgba(255, 255, 255, 0.05);
   border-radius: 14px;
-  text-align: left;
+  text-align: start;
   min-height: 60px;
   transition:
     background 0.15s,
@@ -7616,7 +7633,8 @@ button.ld-option {
 
 .planner__back {
   align-self: flex-start;
-  margin: 0 0 4px -6px;
+  margin-block: 0 4px;
+  margin-inline: -6px 0;
 }
 
 .directions-topbar__back {
@@ -7652,7 +7670,8 @@ button.ld-option {
   background: #0a0a0a;
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 14px;
-  padding: 8px 44px 8px 12px;
+  padding-block: 8px 8px;
+  padding-inline: 12px 44px;
 }
 
 .results-header__field {
@@ -7661,7 +7680,7 @@ button.ld-option {
   gap: 10px;
   width: 100%;
   min-height: 36px;
-  text-align: left;
+  text-align: start;
   color: var(--text);
   background: transparent;
   border: 0;
@@ -7701,7 +7720,7 @@ button.ld-option {
 
 .results-header__swap {
   position: absolute;
-  right: 8px;
+  inset-inline-end: 8px;
   top: 50%;
   transform: translateY(-50%);
   width: 32px;
@@ -7724,7 +7743,7 @@ button.ld-option {
 .results-header__badge {
   position: absolute;
   top: 4px;
-  right: 4px;
+  inset-inline-end: 4px;
   min-width: 18px;
   height: 18px;
   padding: 0 5px;
@@ -7743,8 +7762,8 @@ button.ld-option {
 .directions-topbar {
   position: absolute;
   top: 0;
-  left: 0;
-  right: 0;
+  inset-inline-start: 0;
+  inset-inline-end: 0;
   z-index: 16;
   display: flex;
   align-items: center;
@@ -7775,8 +7794,8 @@ button.ld-option {
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  padding-left: 0;
-  padding-right: 0;
+  padding-inline-start: 0;
+  padding-inline-end: 0;
   padding-bottom: 0;
 }
 
@@ -8040,7 +8059,7 @@ button.ld-option {
 }
 
 .itin__when {
-  text-align: right;
+  text-align: end;
   flex-shrink: 0;
 }
 
@@ -8218,7 +8237,7 @@ button.ld-option {
   gap: 10px;
   width: 100%;
   padding: 8px 0;
-  text-align: left;
+  text-align: start;
   background: transparent;
   border: 0;
   color: var(--text);
@@ -8335,7 +8354,7 @@ button.ld-option {
   border-bottom: 1px solid var(--line);
   background: transparent;
   color: var(--text);
-  text-align: left;
+  text-align: start;
   font-size: 15px;
 }
 
@@ -8399,7 +8418,7 @@ button.ld-option {
   content: "";
   position: absolute;
   top: -3px;
-  left: -2px;
+  inset-inline-start: -2px;
   width: 20px;
   height: 20px;
   border-radius: 999px;
@@ -8729,7 +8748,7 @@ button.ld-option {
 
 .depart-sheet__row {
   width: 100%;
-  text-align: left;
+  text-align: start;
   padding: 18px 20px;
   background: transparent;
   border: 0;
@@ -9050,7 +9069,7 @@ button.ld-option {
   gap: 12px;
   width: 100%;
   padding: 12px 16px;
-  text-align: left;
+  text-align: start;
   transition: background 0.12s;
 }
 
@@ -9073,7 +9092,7 @@ button.ld-option {
   position: absolute;
   /* Sits above the LegPager dots row (top ~90px) but clear of the header */
   top: calc(60px + env(safe-area-inset-top) + 52px);
-  right: 12px;
+  inset-inline-end: 12px;
   z-index: 28;
   display: flex;
   align-items: center;
@@ -9277,7 +9296,7 @@ button.ld-option {
 }
 
 .trip-pip.is-controls .trip-pip__body {
-  padding-right: 34px;
+  padding-inline-end: 34px;
 }
 
 .trip-pip__icon {
@@ -9403,7 +9422,7 @@ button.ld-option {
 
 .trip-pip__action--close {
   top: 2px;
-  right: 2px;
+  inset-inline-end: 2px;
   width: 28px;
   height: 28px;
   border-radius: 50%;
@@ -9418,7 +9437,7 @@ button.ld-option {
 .trip-pip__action--expand {
   top: 50%;
   left: 50%;
-  right: auto;
+  inset-inline-end: auto;
   bottom: auto;
   width: 36px;
   height: 36px;
@@ -9501,7 +9520,7 @@ button.ld-option {
   font-weight: 500;
   color: var(--accent-dim);
   padding: 6px 10px;
-  margin-right: -6px;
+  margin-inline-end: -6px;
   border-radius: 8px;
   transition: background 0.15s;
 }
@@ -9521,19 +9540,20 @@ button.ld-option {
   align-items: center;
   gap: 14px;
   width: 100%;
-  text-align: left;
+  text-align: start;
   min-height: 64px;
   background: transparent;
   color: var(--text);
 }
 
 .fav-row {
-  padding: 0 8px 0 20px;
+  padding-block: 0 0;
+  padding-inline: 20px 8px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 .fav-row--set {
-  padding-right: 4px;
+  padding-inline-end: 4px;
 }
 
 .fav-row__main {
@@ -9598,7 +9618,7 @@ button.ld-option {
 .fav-row__chevron {
   flex-shrink: 0;
   color: var(--text-faint);
-  margin-right: 8px;
+  margin-inline-end: 8px;
 }
 
 .fav-row__overflow,
@@ -9699,7 +9719,7 @@ button.ld-option {
   width: 100%;
   min-height: 56px;
   padding: 12px 20px;
-  text-align: left;
+  text-align: start;
   color: var(--text);
   background: transparent;
   transition: background 0.15s;
@@ -9917,7 +9937,7 @@ button.ld-option {
   flex: 1;
   min-width: 0;
   padding: 14px 16px;
-  text-align: left;
+  text-align: start;
   display: flex;
   flex-direction: column;
   gap: 4px;
@@ -9948,4 +9968,15 @@ button.ld-option {
   font-size: 15px;
   line-height: 1.5;
   color: var(--text-dim);
+}
+
+/* ── Right-to-left (Hebrew) ─────────────────────────────────────────────── */
+/* Layout uses logical properties (inline-start/end), so most of the UI mirrors
+   on its own when <html dir="rtl">. These cover what logical props can't. */
+[dir='rtl'] .rtl-flip {
+  transform: scaleX(-1);
+}
+
+[dir='rtl'] .prefs-sheet__switch.is-on::after {
+  transform: translateX(-20px);
 }

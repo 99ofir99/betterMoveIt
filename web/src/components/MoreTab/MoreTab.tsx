@@ -21,6 +21,7 @@ import {
   SettingsIcon,
 } from '../shared/icons';
 import type { MoreTabProps } from './types';
+import { t } from '../../lib/i18n';
 
 export function MoreTab({ onReplayTrip, onOpenSearch }: MoreTabProps) {
   const s = useMoreTab();
@@ -59,35 +60,35 @@ export function MoreTab({ onReplayTrip, onOpenSearch }: MoreTabProps) {
       <div className="more-menu-group">
         <MenuToggle
           icon={<MapLayersIcon />}
-          label="Live buses on map"
+          label={t("Live buses on map")}
           checked={s.settings.showLiveBuses}
           onChange={(v) => s.patch('showLiveBuses', v)}
         />
         <MenuItem
           icon={<AccessibilityIcon />}
-          label="Accessibility"
+          label={t("Accessibility")}
           onClick={() => s.setPanel('settings')}
           accessory={
             <span className={`more-toggle-pill${s.settings.wheelchair ? ' is-on' : ''}`}>
-              {s.settings.wheelchair ? 'On' : 'Off'}
+              {s.settings.wheelchair ? t('On') : t('Off')}
             </span>
           }
         />
         <MenuItem
           icon={<SettingsIcon />}
-          label="Settings"
+          label={t("Settings")}
           onClick={() => s.setPanel('settings')}
         />
       </div>
 
-      <p className="more-menu-section">Payment for Public Transit</p>
+      <p className="more-menu-section">{t("Payment for Public Transit")}</p>
       <div className="more-menu-group">
         <MenuItem
           icon={<CardsIcon />}
-          label="Tickets & payment"
+          label={t("Tickets & payment")}
           onClick={() =>
             window.alert(
-              'BetterMoovit does not process payments. Use Rav-Kav, HopOn, or the operator app.'
+              t('BetterMoovit does not process payments. Use Rav-Kav, HopOn, or the operator app.')
             )
           }
         />
@@ -96,7 +97,7 @@ export function MoreTab({ onReplayTrip, onOpenSearch }: MoreTabProps) {
       <div className="more-menu-group">
         <MenuItem
           icon={<BellIcon />}
-          label="Service alerts"
+          label={t("Service alerts")}
           onClick={() => s.setPanel('alerts')}
           accessory={
             !s.alertsLoading && s.alerts.length > 0 ? (
@@ -106,10 +107,10 @@ export function MoreTab({ onReplayTrip, onOpenSearch }: MoreTabProps) {
         />
         <MenuItem
           icon={<HistoryIcon />}
-          label="Trip history"
+          label={t("Trip history")}
           onClick={() => s.setPanel('history')}
         />
-        <MenuItem icon={<InfoIcon />} label="About" onClick={() => s.setPanel('about')} />
+        <MenuItem icon={<InfoIcon />} label={t("About")} onClick={() => s.setPanel('about')} />
       </div>
     </div>
   );

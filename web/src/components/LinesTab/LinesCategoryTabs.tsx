@@ -1,8 +1,9 @@
 import type { LinesCategoryTabsProps } from './types';
+import { t } from '../../lib/i18n';
 
 export function LinesCategoryTabs({ tabs, active, onSelect }: LinesCategoryTabsProps) {
   return (
-    <div className="lines-categories" role="tablist" aria-label="Line type">
+    <div className="lines-categories" role="tablist" aria-label={t("Line type")}>
       {tabs.map(({ id, label }) => (
         <button
           key={id}
@@ -12,7 +13,7 @@ export function LinesCategoryTabs({ tabs, active, onSelect }: LinesCategoryTabsP
           className={`lines-categories__chip ${active === id ? 'is-active' : ''}`}
           onClick={() => onSelect(id)}
         >
-          {label}
+          {t(label)}
         </button>
       ))}
     </div>

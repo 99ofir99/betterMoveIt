@@ -19,6 +19,7 @@ import { loadHistory } from '../../lib/history';
 import { useStableLatLon } from '../../lib/useStableLatLon';
 import type { LatLon, Line, Place, SearchResult, Stop } from '../../types';
 import type { SearchTarget } from './types';
+import { t } from '../../lib/i18n';
 
 function isLocationFavored(place: Place): boolean {
   if (place.stopId && isFavoriteStop(place.stopId)) return true;
@@ -70,10 +71,10 @@ export function useGlobalSearch(bias: LatLon | null, target: SearchTarget) {
 
   const placeholder =
     target === 'from'
-      ? 'Choose starting point'
+      ? t('Choose starting point')
       : target === 'to'
-        ? 'Where to?'
-        : 'Search stops, lines, places…';
+        ? t('Where to?')
+        : t('Search stops, lines, places…');
 
   useEffect(() => {
     const trimmed = q.trim();
@@ -84,7 +85,7 @@ export function useGlobalSearch(bias: LatLon | null, target: SearchTarget) {
       return;
     }
     const ctrl = new AbortController();
-    const t = setTimeout(async () => {
+    const timer = setTimeout(async () => {
       setLoading(true);
       setError(null);
       try {
@@ -109,14 +110,14 @@ export function useGlobalSearch(bias: LatLon | null, target: SearchTarget) {
         setResults(dedupeSearchResults(merged));
       } catch (e) {
         if (ctrl.signal.aborted || (e as Error).name === 'AbortError') return;
-        setError('Search failed. Try again.');
+        setError(t('Search failed. Try again.'));
         setResults([]);
       } finally {
         if (!ctrl.signal.aborted) setLoading(false);
       }
     }, 160);
     return () => {
-      clearTimeout(t);
+      clearTimeout(timer);
       ctrl.abort();
     };
   }, [q, stableBias?.lat, stableBias?.lon, target]);

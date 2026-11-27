@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import type { DepartTimeFormProps } from './types';
+import { t } from '../../lib/i18n';
 
 function todayIso(): string {
   const d = new Date();
@@ -21,21 +22,21 @@ export function DepartTimeForm({ mode, onBack, onApply }: DepartTimeFormProps) {
   return (
     <>
       <h2 className="depart-sheet__title">
-        {mode === 'depart' ? 'Set departure time' : 'Set desired arrival time'}
+        {mode === 'depart' ? t('Set departure time') : t('Set desired arrival time')}
       </h2>
       <div className="depart-sheet__form">
         <label className="depart-sheet__field">
-          <span>Date</span>
+          <span>{t("Date")}</span>
           <input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
         </label>
         <label className="depart-sheet__field">
-          <span>Time</span>
+          <span>{t("Time")}</span>
           <input type="time" value={time} onChange={(e) => setTime(e.target.value)} />
         </label>
       </div>
       <div className="depart-sheet__form-actions">
         <button type="button" className="depart-sheet__secondary" onClick={onBack}>
-          Back
+          {t("Back")}
         </button>
         <button
           type="button"
@@ -46,7 +47,7 @@ export function DepartTimeForm({ mode, onBack, onApply }: DepartTimeFormProps) {
             )
           }
         >
-          Apply
+          {t("Apply")}
         </button>
       </div>
     </>

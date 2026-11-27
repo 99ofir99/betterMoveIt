@@ -4,6 +4,7 @@
 
 import type { FavoriteItemProps } from './types';
 import { ChevronRightIcon, HomeIcon, StarIcon, WorkIcon } from '../shared/icons';
+import { t } from '../../lib/i18n';
 
 function FavoriteKindIcon({ kind }: { kind: FavoriteItemProps['fav']['kind'] }) {
   if (kind === 'home') return <HomeIcon size={22} />;
@@ -12,8 +13,8 @@ function FavoriteKindIcon({ kind }: { kind: FavoriteItemProps['fav']['kind'] }) 
 }
 
 function slotTitle(fav: FavoriteItemProps['fav']): string {
-  if (fav.kind === 'home') return 'Home';
-  if (fav.kind === 'work') return 'Work';
+  if (fav.kind === 'home') return t('Home');
+  if (fav.kind === 'work') return t('Work');
   return fav.label;
 }
 

@@ -7,6 +7,7 @@ import { useState } from 'react';
 import { loadSettings, saveSettings, type TransportPrefs } from '../../lib/settings';
 import { Icon } from '../icons/Icon';
 import type { PreferencesSheetProps, RouteOption, TransportOption } from './types';
+import { t } from '../../lib/i18n';
 
 const ROUTE_OPTS: RouteOption[] = [
   { mode: 'fastest', label: 'Fastest route', icon: 'trophy' },
@@ -41,17 +42,17 @@ export function PreferencesSheet({
   };
 
   return (
-    <div className="prefs-sheet" role="dialog" aria-label="Preferences">
+    <div className="prefs-sheet" role="dialog" aria-label={t("Preferences")}>
       <header className="prefs-sheet__head">
-        <button type="button" className="icon-button icon-button--ghost" onClick={onClose} aria-label="Back">
+        <button type="button" className="icon-button icon-button--ghost" onClick={onClose} aria-label={t("Back")}>
           <Icon name="arrow-back" />
         </button>
-        <h1 className="prefs-sheet__title">Preferences</h1>
+        <h1 className="prefs-sheet__title">{t("Preferences")}</h1>
       </header>
 
       <section className="prefs-sheet__section">
-        <h2 className="prefs-sheet__section-title">Route Preference</h2>
-        <ul className="prefs-sheet__list" role="radiogroup" aria-label="Route preference">
+        <h2 className="prefs-sheet__section-title">{t("Route Preference")}</h2>
+        <ul className="prefs-sheet__list" role="radiogroup" aria-label={t("Route preference")}>
           {ROUTE_OPTS.map(({ mode, label, icon }) => (
             <li key={mode}>
               <button
@@ -62,7 +63,7 @@ export function PreferencesSheet({
                 onClick={() => onSortMode(mode)}
               >
                 <Icon name={icon} size={24} className="prefs-sheet__icon" />
-                <span className="prefs-sheet__label">{label}</span>
+                <span className="prefs-sheet__label">{t(label)}</span>
                 <span
                   className={`prefs-sheet__radio ${sortMode === mode ? 'is-on' : ''}`}
                   aria-hidden="true"
@@ -74,22 +75,22 @@ export function PreferencesSheet({
       </section>
 
       <section className="prefs-sheet__section">
-        <h2 className="prefs-sheet__section-title">Transport Type Preferences</h2>
+        <h2 className="prefs-sheet__section-title">{t("Transport Type Preferences")}</h2>
         <p className="prefs-sheet__caption">
-          The selected transport types will get higher priority in your suggested routes.
+          {t("The selected transport types will get higher priority in your suggested routes.")}
         </p>
         <ul className="prefs-sheet__list">
           {TRANSPORT_OPTS.map(({ key, label, icon }) => (
             <li key={key}>
               <div className="prefs-sheet__row prefs-sheet__row--static">
                 <Icon name={icon} size={24} className="prefs-sheet__icon" />
-                <span className="prefs-sheet__label">{label}</span>
+                <span className="prefs-sheet__label">{t(label)}</span>
                 <button
                   type="button"
                   role="switch"
                   className={`prefs-sheet__switch ${transport[key] ? 'is-on' : ''}`}
                   aria-checked={transport[key]}
-                  aria-label={label}
+                  aria-label={t(label)}
                   onClick={() => toggle(key)}
                 />
               </div>

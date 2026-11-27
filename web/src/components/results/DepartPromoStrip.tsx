@@ -1,6 +1,7 @@
 /** Purple "See when your trip is fastest" promo strip (visual only). */
 
 import { ClockIcon } from '../icons';
+import { t } from '../../lib/i18n';
 
 export function DepartPromoStrip() {
   return (
@@ -9,8 +10,8 @@ export function DepartPromoStrip() {
         <ClockIcon size={22} />
       </span>
       <span className="depart-sheet__promo-text">
-        <span className="depart-sheet__promo-title">See when your trip is fastest</span>
-        <span className="depart-sheet__promo-sub">Compare trip durations</span>
+        <span className="depart-sheet__promo-title">{t("See when your trip is fastest")}</span>
+        <span className="depart-sheet__promo-sub">{t("Compare trip durations")}</span>
       </span>
     </div>
   );

@@ -9,6 +9,7 @@ import { FrequentDestinationCard } from './FrequentDestinationCard';
 import { FavoriteItem } from './FavoriteItem';
 import { HeroArt } from './HeroArt';
 import { HamburgerIcon, SearchIcon } from '../shared/icons';
+import { t } from '../../lib/i18n';
 
 export function HomeScreen({
   frequentDest,
@@ -32,20 +33,20 @@ export function HomeScreen({
             type="button"
             className="home-hero__menu-btn"
             onClick={onOpenMore}
-            aria-label="Open menu"
+            aria-label={t("Open menu")}
           >
             <HamburgerIcon />
           </button>
-          <span className="home-hero__country">Israel</span>
+          <span className="home-hero__country">{t("Israel")}</span>
         </div>
 
         <button
           type="button"
           className="home-search-pill"
           onClick={onOpenSearch}
-          aria-label="Search destination"
+          aria-label={t("Search destination")}
         >
-          <span className="home-search-pill__text">Where do you want to go?</span>
+          <span className="home-search-pill__text">{t("Where do you want to go?")}</span>
           <span className="home-search-pill__icon" aria-hidden="true">
             <SearchIcon size={20} />
           </span>
@@ -66,22 +67,22 @@ export function HomeScreen({
       )}
 
       {/* ── Favourites section ─────────────────────────────────────────── */}
-      <section className="home-section" aria-label="Favourites">
+      <section className="home-section" aria-label={t("Favourites")}>
         <div className="home-section__header">
-          <h2 className="home-section__title">Favourites</h2>
+          <h2 className="home-section__title">{t("Favourites")}</h2>
           <button
             type="button"
             className="home-section__action"
             onClick={onAddFavorite}
-            aria-label="Add favourite"
+            aria-label={t("Add favourite")}
           >
-            Add
+            {t("Add")}
           </button>
         </div>
 
         {favorites.length === 0 ? (
           <p className="muted home-section__empty">
-            Save places you go often for quick access.
+            {t("Save places you go often for quick access.")}
           </p>
         ) : (
           <ul className="home-fav-list">
@@ -98,9 +99,9 @@ export function HomeScreen({
           type="button"
           className="home-plan-link__btn"
           onClick={onPlanManually}
-          aria-label="Open From and To planner"
+          aria-label={t("Open From and To planner")}
         >
-          From · To planner
+          {t("From · To planner")}
         </button>
       </div>
     </div>

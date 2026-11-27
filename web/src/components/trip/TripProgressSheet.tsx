@@ -29,6 +29,7 @@ import { useTripShare } from './useTripShare';
 import { useWaitOptions } from './useWaitOptions';
 import type { RouteInfo, TransitLeg, WalkLeg } from '../../types';
 import type { TripProgressSheetProps } from './types';
+import { t } from '../../lib/i18n';
 
 export type { TripProgressSheetProps } from './types';
 
@@ -43,14 +44,14 @@ function WalkStage({
   return (
     <div className="ld-walk">
       <div className="ld-ride__strip" data-sheet-drag>
-        <span>Walk {Math.round(leg.distanceM)} m</span>
-        <span className="ld-ride__strip-time">{mins} min</span>
+        <span>{t('Walk {n} m', { n: Math.round(leg.distanceM) })}</span>
+        <span className="ld-ride__strip-time">{t('{n} min', { n: mins })}</span>
       </div>
       <div className="ld-walk__body">
         <div className="ld-walk__title">
-          {leg.toName ? `Walk to ${leg.toName}` : 'Walk'}
+          {leg.toName ? t('Walk to {name}', { name: leg.toName }) : t('Walk')}
         </div>
-        {nextLine && <div className="ld-walk__sub">Then take {nextLine}</div>}
+        {nextLine && <div className="ld-walk__sub">{t('Then take {line}', { line: nextLine })}</div>}
       </div>
     </div>
   );
@@ -288,7 +289,7 @@ export function TripProgressSheet({
           .join(' ')}
         style={bind.style}
         role="complementary"
-        aria-label="Trip progress"
+        aria-label={t("Trip progress")}
         data-snap={bind['data-snap']}
         data-dragging={bind['data-dragging']}
         onPointerDown={bind.onPointerDown}
@@ -299,7 +300,7 @@ export function TripProgressSheet({
           {!gpsAllowed && !isDone && (
             <div className="trip-progress__gps-warn">
               <PinIcon size={14} />
-              Using schedule · GPS unavailable
+              {t("Using schedule · GPS unavailable")}
             </div>
           )}
 

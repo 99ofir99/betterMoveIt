@@ -5,6 +5,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { api } from '../../lib/api';
 import type { LatLon, NearbyStopBoard } from '../../types';
+import { t } from '../../lib/i18n';
 
 /** ~100m — ignore GPS jitter so watchPosition doesn't refetch every tick. */
 const FETCH_DELTA = 0.0009;
@@ -51,7 +52,7 @@ export function useNearbyTab(center: LatLon, locating: boolean) {
       }
     } catch (e) {
       if (!(e instanceof DOMException && e.name === 'AbortError')) {
-        setError((e as Error).message ?? 'Failed to load nearby stops');
+        setError((e as Error).message ?? t('Failed to load nearby stops'));
       }
     } finally {
       setLoading(false);

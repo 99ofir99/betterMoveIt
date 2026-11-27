@@ -6,6 +6,7 @@ import { useState } from 'react';
 import { DepartPromoStrip } from './DepartPromoStrip';
 import { DepartTimeForm } from './DepartTimeForm';
 import type { DepartAtAction, DepartAtSheetProps, DepartSheetMode } from './types';
+import { t } from '../../lib/i18n';
 
 export type { DepartAtAction } from './types';
 
@@ -39,7 +40,7 @@ export function DepartAtSheet({ onClose, onSelect }: DepartAtSheetProps) {
     <div
       className="depart-sheet"
       role="dialog"
-      aria-label={mode === 'menu' ? 'Departure options' : 'Set time'}
+      aria-label={mode === 'menu' ? t('Departure options') : t('Set time')}
     >
       <div className="depart-sheet__backdrop" onClick={onClose} aria-hidden="true" />
       <div className="depart-sheet__panel">
@@ -55,7 +56,7 @@ export function DepartAtSheet({ onClose, onSelect }: DepartAtSheetProps) {
                     className="depart-sheet__row"
                     onClick={() => handleItem(item)}
                   >
-                    {item.label}
+                    {t(item.label)}
                   </button>
                 </li>
               ))}

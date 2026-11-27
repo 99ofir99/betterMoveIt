@@ -5,6 +5,7 @@
  */
 
 import type { TabName } from "../types";
+import { t } from '../lib/i18n';
 
 interface BottomNavigationProps {
   activeTab: TabName;
@@ -13,30 +14,30 @@ interface BottomNavigationProps {
 
 export function BottomNavigation({ activeTab, onTabChange }: BottomNavigationProps) {
   return (
-    <nav className="bottom-nav" role="navigation" aria-label="Main navigation">
+    <nav className="bottom-nav" role="navigation" aria-label={t("Main navigation")}>
       <NavTab
         id="directions"
-        label="Directions"
+        label={t("Directions")}
         active={activeTab === "directions"}
         onPress={onTabChange}
       >
         <DirectionsIcon />
       </NavTab>
-      <NavTab id="nearby" label="Stations" active={activeTab === "nearby"} onPress={onTabChange}>
+      <NavTab id="nearby" label={t("Stations")} active={activeTab === "nearby"} onPress={onTabChange}>
         <StationsIcon />
       </NavTab>
-      <NavTab id="lines" label="Lines" active={activeTab === "lines"} onPress={onTabChange}>
+      <NavTab id="lines" label={t("Lines")} active={activeTab === "lines"} onPress={onTabChange}>
         <LinesIcon />
       </NavTab>
       <NavTab
         id="favorites"
-        label="Favourites"
+        label={t("Favourites")}
         active={activeTab === "favorites"}
         onPress={onTabChange}
       >
         <FavouritesIcon active={activeTab === "favorites"} />
       </NavTab>
-      <NavTab id="more" label="More" active={activeTab === "more"} onPress={onTabChange}>
+      <NavTab id="more" label={t("More")} active={activeTab === "more"} onPress={onTabChange}>
         <MoreIcon />
       </NavTab>
     </nav>

@@ -5,6 +5,7 @@
 
 import { Icon } from '../icons/Icon';
 import type { ResultsHeaderProps } from './types';
+import { t } from '../../lib/i18n';
 
 export function ResultsHeader({
   from,
@@ -21,27 +22,27 @@ export function ResultsHeader({
   return (
     <div className="results-header">
       <div className="results-header__top">
-        <button type="button" className="icon-button icon-button--ghost" onClick={onBack} aria-label="Back">
+        <button type="button" className="icon-button icon-button--ghost" onClick={onBack} aria-label={t("Back")}>
           <Icon name="arrow-back" />
         </button>
         <div className="results-header__fields">
           <button type="button" className="results-header__field" onClick={onEditFrom}>
             <span className="results-header__dot" aria-hidden="true" />
             <span className="results-header__field-text">
-              {fromIsCurrentLocation ? 'Current location' : from?.label || 'Choose origin'}
+              {fromIsCurrentLocation ? t('Current location') : from?.label || t('Choose origin')}
             </span>
           </button>
           <button type="button" className="results-header__field results-header__field--to" onClick={onEditTo}>
             <span className="results-header__pin" aria-hidden="true" />
             <span className="results-header__field-text">
-              {to?.label || 'Where to?'}
+              {to?.label || t('Where to?')}
             </span>
           </button>
           <button
             type="button"
             className="results-header__swap"
             onClick={onSwap}
-            aria-label="Swap origin and destination"
+            aria-label={t("Swap origin and destination")}
           >
             <Icon name="swap-vert" size={18} />
           </button>
@@ -50,7 +51,7 @@ export function ResultsHeader({
           type="button"
           className="icon-button icon-button--ghost results-header__prefs"
           onClick={onOpenPreferences}
-          aria-label={showBadge ? `Preferences, ${prefsBadgeCount} active` : 'Preferences'}
+          aria-label={showBadge ? t('Preferences, {n} active', { n: prefsBadgeCount }) : t('Preferences')}
         >
           <Icon name="sliders" />
           {showBadge && (

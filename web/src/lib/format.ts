@@ -1,5 +1,7 @@
 /** Formatting and colour helpers shared by the UI. */
 
+import { getLocale, t } from './i18n';
+
 /**
  * Moovit Arrival Time Accuracy Guide: definitive clock when ETA > 1 hour.
  * (Kept here and re-exported from arrivalAccuracy.ts for shared use.)
@@ -14,26 +16,28 @@ export function formatClock(seconds: number): string {
 
 /** 12-hour clock for journey result cards (e.g. `11:09 pm`). */
 export function formatClock12h(seconds: number): string {
+  // Hebrew UI uses the 24-hour clock (as Moovit does in Israel).
+  if (getLocale() === 'he') return formatClock(seconds);
   const h24 = Math.floor(seconds / 3600) % 24;
   const m = Math.floor((seconds % 3600) / 60);
   const ampm = h24 >= 12 ? 'pm' : 'am';
   let h12 = h24 % 12;
   if (h12 === 0) h12 = 12;
-  return `${h12}:${String(m).padStart(2, '0')} ${ampm}`;
+  return `${h12}:${String(m).padStart(2, '0')} ${t(ampm)}`;
 }
 
 export function formatDuration(seconds: number): string {
   const mins = Math.round(seconds / 60);
-  if (mins < 60) return `${mins} min`;
+  if (mins < 60) return t('{n} min', { n: mins });
   const h = Math.floor(mins / 60);
   const m = mins % 60;
-  return m ? `${h} hr ${m} min` : `${h} hr`;
+  return m ? t('{h} hr {m} min', { h, m }) : t('{h} hr', { h });
 }
 
 /** Short duration label for Moovit-style cards (`42 mins`). */
 export function formatDurationMins(seconds: number): string {
   const mins = Math.round(seconds / 60);
-  return `${mins} min${mins === 1 ? '' : 's'}`;
+  return mins === 1 ? t('1 min') : t('{n} mins', { n: mins });
 }
 
 export function secondsSinceLocalMidnight(d = new Date()): number {
@@ -80,10 +84,10 @@ export function formatLeaveMinutes(
   minutes: number,
   opts?: { nextDay?: boolean; departureSec?: number; live?: boolean }
 ): string {
-  if (!opts?.nextDay && minutes <= 0) return 'now';
-  if (!opts?.nextDay && minutes <= RELATIVE_ETA_MAX_MIN) return `${minutes} min`;
+  if (!opts?.nextDay && minutes <= 0) return t('now');
+  if (!opts?.nextDay && minutes <= RELATIVE_ETA_MAX_MIN) return t('{n} min', { n: minutes });
   if (opts?.departureSec != null) return formatClock(opts.departureSec);
-  return `${minutes} min`;
+  return t('{n} min', { n: minutes });
 }
 
 /** Whether an ETA should render as relative minutes vs a clock time. */
@@ -118,15 +122,15 @@ export function formatLeaveEntries(
 }
 
 export function formatDistance(meters: number): string {
-  if (meters < 1000) return `${Math.round(meters)} m`;
-  return `${(meters / 1000).toFixed(1)} km`;
+  if (meters < 1000) return t('{n} m', { n: Math.round(meters) });
+  return t('{n} km', { n: (meters / 1000).toFixed(1) });
 }
 
 export function relativeMinutes(seconds: number): string {
   const mins = Math.round(seconds / 60);
-  if (mins <= 0) return 'now';
-  if (mins === 1) return '1 min';
-  return `${mins} min`;
+  if (mins <= 0) return t('now');
+  if (mins === 1) return t('1 min');
+  return t('{n} min', { n: mins });
 }
 
 /** Format board minutes already provided by the API (live or schedule). */
@@ -134,12 +138,12 @@ export function relativeBoardMinutes(
   minutes: number,
   opts?: { departureSec?: number; nextDay?: boolean }
 ): string {
-  if (!opts?.nextDay && minutes <= 0) return 'now';
+  if (!opts?.nextDay && minutes <= 0) return t('now');
   if (shouldShowRelativeEta(minutes, opts?.nextDay)) {
-    return minutes === 1 ? '1 min' : `${minutes} min`;
+    return minutes === 1 ? t('1 min') : t('{n} min', { n: minutes });
   }
   if (opts?.departureSec != null) return formatClock(opts.departureSec);
-  return `${minutes} min`;
+  return t('{n} min', { n: minutes });
 }
 
 /**

@@ -56,8 +56,11 @@ import {
   prioritizeVehicles,
 } from "./lib/prioritizeVehicles";
 import { LiveStatusChip } from "./components/live";
+import { t, useLocale } from './lib/i18n';
 
 export default function App() {
+  // Re-render the whole tree when the language changes in Settings.
+  const locale = useLocale();
   const state = useAppState({ watchLocation: true });
   const {
     activeTrip,
@@ -506,10 +509,10 @@ export default function App() {
   }, [activeJourney, state.from, state.to]);
 
   const departLabel = useMemo(() => {
-    if (state.when === "now") return "Depart now";
-    if (state.departTime) return `Depart at ${state.departTime}`;
-    return "Depart at";
-  }, [state.when, state.departTime]);
+    if (state.when === "now") return t("Depart now");
+    if (state.departTime) return t("Depart at {time}", { time: state.departTime });
+    return t("Depart at");
+  }, [state.when, state.departTime, locale]);
 
   const handleDepartAction = useCallback(
     (action: DepartAtAction) => {
@@ -822,7 +825,7 @@ export default function App() {
           type="button"
           className="trip-recenter-btn"
           onClick={() => void handleTripRecenter()}
-          aria-label="Recenter map on my location"
+          aria-label={t("Recenter map on my location")}
         >
           <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" fill="currentColor">
             <path d="M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8zm8.94 3A8.994 8.994 0 0 0 13 3.06V1h-2v2.06A8.994 8.994 0 0 0 3.06 11H1v2h2.06A8.994 8.994 0 0 0 11 20.94V23h2v-2.06A8.994 8.994 0 0 0 20.94 13H23v-2h-2.06zM12 19c-3.87 0-7-3.13-7-7s3.13-7 7-7 7 3.13 7 7-3.13 7-7 7z" />
@@ -866,16 +869,16 @@ export default function App() {
             type="button"
             className="topbar__search"
             onClick={() => openSearch("any")}
-            aria-label="Search"
+            aria-label={t("Search")}
           >
-            <span className="topbar__search-text">Search stops, lines, places…</span>
+            <span className="topbar__search-text">{t("Search stops, lines, places…")}</span>
             <span aria-hidden="true">🔍</span>
           </button>
           <button
             type="button"
             className="icon-button icon-button--light"
             onClick={() => void handleLocate()}
-            aria-label="Recenter on my location"
+            aria-label={t("Recenter on my location")}
           >
             {state.locating ? "…" : "◎"}
           </button>
@@ -916,14 +919,14 @@ export default function App() {
               type="button"
               className="icon-button icon-button--ghost directions-topbar__back"
               onClick={goBack}
-              aria-label="Back"
+              aria-label={t("Back")}
             >
               <Icon name="arrow-back" />
             </button>
-            <h1 className="directions-topbar__title">Directions</h1>
+            <h1 className="directions-topbar__title">{t("Directions")}</h1>
           </header>
           <DraggableSheet
-            ariaLabel="Directions"
+            ariaLabel={t("Directions")}
             className="sheet--directions"
             withNav
             overlay
@@ -955,7 +958,7 @@ export default function App() {
         </>
       ) : showDirectionsSheet && state.panel === "journeys" ? (
         <DraggableSheet
-          ariaLabel="Trip results"
+          ariaLabel={t("Trip results")}
           withNav
           overlay
           behavior="free"
@@ -994,10 +997,10 @@ export default function App() {
               onSortMode={setSortMode}
             />
 
-            {state.plan.loading && <p className="muted">Finding the best routes…</p>}
+            {state.plan.loading && <p className="muted">{t("Finding the best routes…")}</p>}
             {state.plan.error && <p className="error-text">{state.plan.error}</p>}
             {!state.plan.loading && !state.plan.error && journeys.length === 0 && (
-              <p className="muted">No route found. Try a different departure time.</p>
+              <p className="muted">{t("No route found. Try a different departure time.")}</p>
             )}
 
             {journeys.length >= 2 && !bestTimeDismissed && (
@@ -1026,7 +1029,7 @@ export default function App() {
       ) : showDirectionsSheet ? (
         <section
           className={`sheet sheet--with-nav${state.panel === "stop" ? " sheet--stop-detail" : ""}`}
-          aria-label="Trip planner"
+          aria-label={t("Trip planner")}
         >
           {state.panel === "stop" && state.selectedStop ? (
             <div className="sheet-stop-host">
@@ -1085,7 +1088,7 @@ export default function App() {
 
       {activeTab === "nearby" && state.panel !== "stop" && (
         <DraggableSheet
-          ariaLabel="Nearby stations"
+          ariaLabel={t("Nearby stations")}
           className="sheet--stations"
           withNav
           overlay
@@ -1110,7 +1113,7 @@ export default function App() {
       {activeTab === "nearby" && state.panel === "stop" && state.selectedStop && (
         <section
           className="sheet sheet--overlay sheet--with-nav sheet--stop-detail"
-          aria-label="Stop"
+          aria-label={t("Stop")}
         >
           <div className="sheet__grabber" aria-hidden="true" />
           <StopPanel
@@ -1152,7 +1155,7 @@ export default function App() {
       {activeTab === "lines" && selectedLineId && (
         <section
           className={`sheet sheet--overlay sheet--with-nav sheet--line-detail${lineSheetPeek ? " is-live-peek" : ""}`}
-          aria-label="Line detail"
+          aria-label={t("Line detail")}
           // Any touch on the lowered sheet brings the stop list back up.
           onPointerDown={() => lineSheetPeek && setLineSheetPeek(false)}
         >
@@ -1366,24 +1369,24 @@ function PlanForm({
           type="button"
           className="icon-button icon-button--ghost planner__back"
           onClick={onBack}
-          aria-label="Back to home"
+          aria-label={t("Back to home")}
         >
           <Icon name="arrow-back" />
         </button>
       )}
 
       <button type="button" className="planner__hero-search" onClick={onOpenSearch}>
-        <span>Where to?</span>
+        <span>{t("Where to?")}</span>
         <span aria-hidden="true">🔍</span>
       </button>
 
       <div className="planner__fields">
         <PlaceField
           id="from-field"
-          label="From"
+          label={t("From")}
           accent="origin"
           value={state.from}
-          placeholder="Where are you starting?"
+          placeholder={t("Where are you starting?")}
           query={fromQuery}
           onQueryChange={setFromQuery}
           results={fromResults}
@@ -1401,17 +1404,17 @@ function PlanForm({
           type="button"
           className="planner__swap"
           onClick={state.swapEnds}
-          aria-label="Swap origin and destination"
-          title="Swap"
+          aria-label={t("Swap origin and destination")}
+          title={t("Swap")}
         >
           ⇅
         </button>
         <PlaceField
           id="to-field"
-          label="To"
+          label={t("To")}
           accent="destination"
           value={state.to}
-          placeholder="Where to?"
+          placeholder={t("Where to?")}
           query={toQuery}
           onQueryChange={setToQuery}
           results={toResults}
@@ -1423,20 +1426,20 @@ function PlanForm({
       </div>
 
       <div className="planner__when">
-        <div className="segmented" role="group" aria-label="Departure timing">
+        <div className="segmented" role="group" aria-label={t("Departure timing")}>
           <button
             type="button"
             className={state.when === "now" ? "is-active" : ""}
             onClick={() => state.setWhen("now")}
           >
-            Leave now
+            {t("Leave now")}
           </button>
           <button
             type="button"
             className={state.when === "leave" ? "is-active" : ""}
             onClick={() => state.setWhen("leave")}
           >
-            Depart at
+            {t("Depart at")}
           </button>
         </div>
         {state.when === "leave" && (
@@ -1446,14 +1449,14 @@ function PlanForm({
               type="date"
               value={state.planDate}
               onChange={(e) => state.setPlanDate(e.target.value)}
-              aria-label="Travel date"
+              aria-label={t("Travel date")}
             />
             <input
               className="time-input"
               type="time"
               value={state.departTime}
               onChange={(e) => state.setDepartTime(e.target.value)}
-              aria-label="Departure time"
+              aria-label={t("Departure time")}
             />
           </div>
         )}
@@ -1465,13 +1468,13 @@ function PlanForm({
         onClick={() => setShowAdvanced((v) => !v)}
         aria-expanded={showAdvanced}
       >
-        {showAdvanced ? "▾" : "▸"} Advanced options
+        {showAdvanced ? "▾" : "▸"} {t("Advanced options")}
       </button>
 
       {showAdvanced && (
         <div className="advanced">
           <label className="advanced__row">
-            <span>Maximum walking</span>
+            <span>{t("Maximum walking")}</span>
             <input
               type="range"
               min={300}
@@ -1480,7 +1483,7 @@ function PlanForm({
               value={maxWalk}
               onChange={(e) => setMaxWalk(Number(e.target.value))}
             />
-            <span className="advanced__value">{maxWalk} m</span>
+            <span className="advanced__value">{t('{n} m', { n: maxWalk })}</span>
           </label>
         </div>
       )}
@@ -1491,7 +1494,7 @@ function PlanForm({
         disabled={!state.from || !state.to || state.plan.loading}
         onClick={onPlan}
       >
-        {state.plan.loading ? "Planning…" : "Find routes"}
+        {state.plan.loading ? t("Planning…") : t("Find routes")}
       </button>
 
       {state.plan.error && <p className="error-text">{state.plan.error}</p>}

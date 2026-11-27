@@ -4,6 +4,7 @@
  */
 
 import type { ServiceAlert } from '../types';
+import { t } from '../lib/i18n';
 
 const SEVERITY_ICON: Record<ServiceAlert['severity'], string> = {
   info: 'ℹ️',
@@ -39,7 +40,7 @@ export function ServiceAlertsBanner({ alerts, onDismiss }: ServiceAlertsBannerPr
             type="button"
             className="alerts-banner__dismiss"
             onClick={() => onDismiss(alert.id)}
-            aria-label={`Dismiss: ${alert.title}`}
+            aria-label={t('Dismiss: {title}', { title: alert.title })}
           >
             ×
           </button>

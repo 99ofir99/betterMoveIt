@@ -6,6 +6,7 @@ import { Icon } from './icons/Icon';
 import { PlaceSuggestionRow } from './PlaceField/PlaceSuggestionRow';
 import { usePlaceFavorites } from './PlaceField/usePlaceFavorites';
 import type { PlaceFieldProps } from './PlaceField/types';
+import { t } from '../lib/i18n';
 
 export function PlaceField({
   id,
@@ -44,7 +45,7 @@ export function PlaceField({
           inputMode="search"
         />
         {value && !open && (
-          <button className="place-field__clear" onClick={onClear} aria-label={`Clear ${label}`} type="button">
+          <button className="place-field__clear" onClick={onClear} aria-label={t('Clear {name}', { name: label })} type="button">
             <Icon name="close" size={16} />
           </button>
         )}
@@ -53,7 +54,7 @@ export function PlaceField({
             className="place-field__locate"
             onClick={onUseMyLocation}
             type="button"
-            aria-label="Use my location"
+            aria-label={t("Use my location")}
             disabled={locating}
           >
             {locating ? '…' : '◎'}
@@ -62,8 +63,8 @@ export function PlaceField({
 
         {open && (
           <ul className="suggestions" role="listbox" aria-label={`${label} suggestions`}>
-            {searchLoading && <li className="suggestions__status">Searching…</li>}
-            {!searchLoading && results.length === 0 && <li className="suggestions__status">No results found</li>}
+            {searchLoading && <li className="suggestions__status">{t("Searching…")}</li>}
+            {!searchLoading && results.length === 0 && <li className="suggestions__status">{t("No results found")}</li>}
             {results.slice(0, 12).map((r) => {
               if (r.lat == null || r.lon == null) return null;
               const place: Place = {
@@ -87,7 +88,7 @@ export function PlaceField({
             })}
             {results.length === 0 && recent.length > 0 && (
               <>
-                <li className="suggestions__heading">Recent</li>
+                <li className="suggestions__heading">{t("Recent")}</li>
                 {dedupePlaces(recent)
                   .slice(0, 4)
                   .map((p) => {

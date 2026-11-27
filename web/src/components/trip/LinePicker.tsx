@@ -8,6 +8,7 @@ import { isHeavyRailRoute, railTrainNumber } from '../../lib/railLabel';
 import { RouteBadge } from '../common/RouteBadge';
 import { Icon } from '../icons/Icon';
 import type { RouteInfo } from '../../types';
+import { t } from '../../lib/i18n';
 
 export interface LinePickerProps {
   alternatives: RouteInfo[];
@@ -30,22 +31,22 @@ export function LinePicker({ alternatives, onPick, onClose }: LinePickerProps) {
         className="ld-line-picker"
         role="dialog"
         aria-modal="true"
-        aria-label="Choose your line"
+        aria-label={t("Choose your line")}
         onClick={(e) => e.stopPropagation()}
       >
         <div className="ld-line-picker__header">
-          <span className="ld-line-picker__title">What line are you on?</span>
+          <span className="ld-line-picker__title">{t("What line are you on?")}</span>
           <button
             type="button"
             className="ld-line-picker__close"
-            aria-label="Close line picker"
+            aria-label={t("Close line picker")}
             onClick={onClose}
           >
             <Icon name="close" size={18} />
           </button>
         </div>
 
-        <ul className="ld-line-picker__list" role="listbox" aria-label="Available lines">
+        <ul className="ld-line-picker__list" role="listbox" aria-label={t("Available lines")}>
           {alternatives.map((route) => (
             <li
               key={`${route.index}-${route.shortName}`}

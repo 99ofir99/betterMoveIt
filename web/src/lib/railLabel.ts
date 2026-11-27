@@ -7,6 +7,7 @@
 import { formatRailFinalCity } from './lineCategory';
 import { modeFamilyForRoute } from './transportMode';
 import type { RouteInfo } from '../types';
+import { t } from './i18n';
 
 type RailRouteRef = Pick<RouteInfo, 'type' | 'typeName' | 'longName' | 'shortName' | 'displayName'>;
 
@@ -37,7 +38,7 @@ export function railTrainNumber(route: RailRouteRef, headsign?: string): string 
   const hs = (headsign || '').trim();
   if (isRailTrainNumber(hs)) return hs;
 
-  return display && !looksLikeCorridor(display) ? display : hs || 'Train';
+  return display && !looksLikeCorridor(display) ? display : hs || t('Train');
 }
 
 function looksLikeCorridor(label: string): boolean {

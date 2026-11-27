@@ -5,6 +5,7 @@
 
 import { formatClock12h } from '../../lib/format';
 import type { LineStopRowProps } from './types';
+import { t } from '../../lib/i18n';
 
 export function LineStopRow({
   stop,
@@ -41,10 +42,10 @@ export function LineStopRow({
         onClick={() => onSelect(index)}
         aria-label={
           isBoard
-            ? `${stop.name}, boarding stop`
+            ? t('{name}, boarding stop', { name: stop.name })
             : pickingDestination
-              ? `Get off at ${stop.name}`
-              : `Select ${stop.name}`
+              ? t('Get off at {name}', { name: stop.name })
+              : t('Select {name}', { name: stop.name })
         }
       >
         <span className="lnd-stop__rail" aria-hidden>
@@ -59,8 +60,8 @@ export function LineStopRow({
                   {stop.name}
                 </span>
                 <span className="lnd-stop__meta">
-                  {stop.code ? <span>ID {stop.code}</span> : null}
-                  {isBoard ? <span className="lnd-stop__pill">Starting here</span> : null}
+                  {stop.code ? <span>{t("ID")} {stop.code}</span> : null}
+                  {isBoard ? <span className="lnd-stop__pill">{t("Starting here")}</span> : null}
                 </span>
               </span>
               {primary && (
@@ -92,7 +93,7 @@ export function LineStopRow({
                     onLiveLocation(stop);
                   }}
                 >
-                  Live location
+                  {t("Live location")}
                 </span>
               </span>
             )}
@@ -102,7 +103,7 @@ export function LineStopRow({
             <span className="lnd-stop__name" dir="auto">
               {stop.name}
             </span>
-            {isBoard && <span className="lnd-stop__pill">Starting here</span>}
+            {isBoard && <span className="lnd-stop__pill">{t("Starting here")}</span>}
           </span>
         )}
       </button>

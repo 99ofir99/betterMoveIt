@@ -18,6 +18,7 @@ import { RouteBadge } from '../common/RouteBadge';
 import { LiveSignalIcon } from '../icons';
 import type { DepartureGroup, DepartureNext } from '../../types';
 import type { OptionRowProps } from './types';
+import { t } from '../../lib/i18n';
 
 function EtaPillContent({ next }: { next: DepartureNext | null | undefined }) {
   const minutes = next != null ? Math.max(0, next.minutes) : null;
@@ -33,14 +34,14 @@ function EtaPillContent({ next }: { next: DepartureNext | null | undefined }) {
         <LiveSignalIcon size={12} className="ld-signal-icon" />
       )}
       {confidence === 'off_route' && (
-        <span className="ld-option__warn" aria-label="Off route">
+        <span className="ld-option__warn" aria-label={t("Off route")}>
           !
         </span>
       )}
       {minutes != null && showRelative && minutes > 0 && !label.includes(':') ? (
         <>
           <span className="ld-option__minutes">{minutes}</span>
-          <span className="ld-option__unit">min</span>
+          <span className="ld-option__unit">{t("min")}</span>
         </>
       ) : (
         <span
@@ -84,7 +85,7 @@ function LineInfo({
       />
       <div className="ld-option__info">
         <div className="ld-option__headline">
-          {group.platform && <span>Platform: {group.platform}</span>}
+          {group.platform && <span>{t("Platform:")} {group.platform}</span>}
           {group.platform && destination && (
             <span className="ld-option__dot" aria-hidden="true">
               •
@@ -146,14 +147,14 @@ function HitWrap({
         className="ld-option__hit"
         onClick={onSelect}
         aria-pressed={highlighted === true}
-        aria-label={`Select line ${label}`}
+        aria-label={t('Select line {line}', { line: label })}
       >
         {children}
       </button>
     );
   }
   return (
-    <div className="ld-option__hit" aria-label={`Line ${label}`}>
+    <div className="ld-option__hit" aria-label={t('Line {line}', { line: label })}>
       {children}
     </div>
   );
@@ -208,7 +209,7 @@ export function DepartureOptionRow({ group, highlighted, onSelect }: OptionRowPr
             )}${accuracyOpen ? ' is-expanded' : ''}`}
             onClick={() => setAccuracyOpen((v) => !v)}
             aria-expanded={accuracyOpen}
-            aria-label="Show arrival accuracy for next arrivals"
+            aria-label={t("Show arrival accuracy for next arrivals")}
           >
             <EtaPillContent next={first} />
           </button>
@@ -225,9 +226,9 @@ export function DepartureOptionRow({ group, highlighted, onSelect }: OptionRowPr
       </div>
 
       {accuracyOpen && (
-        <div className="ld-acc-detail" role="region" aria-label="Arrival accuracy">
+        <div className="ld-acc-detail" role="region" aria-label={t("Arrival accuracy")}>
           <p className="ld-acc-detail__intro">
-            Accuracy for the next arrivals of this line
+            {t("Accuracy for the next arrivals of this line")}
           </p>
           <ul className="ld-acc-detail__list">
             {group.next.map((n, i) => (

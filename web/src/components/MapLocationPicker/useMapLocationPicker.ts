@@ -6,10 +6,11 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { api } from '../../lib/api';
 import type { LatLon, Place } from '../../types';
 import type { UseMapLocationPickerArgs } from './types';
+import { t } from '../../lib/i18n';
 
 export function useMapLocationPicker({ initialCenter, onConfirm }: UseMapLocationPickerArgs) {
   const [center, setCenter] = useState<LatLon>(initialCenter);
-  const [label, setLabel] = useState('Choosing location…');
+  const [label, setLabel] = useState(t('Choosing location…'));
   const [resolving, setResolving] = useState(false);
   const geocodeSeq = useRef(0);
 

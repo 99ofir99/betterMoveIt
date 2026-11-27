@@ -6,6 +6,7 @@
 import { useEffect, useRef, useState } from 'react';
 import type { RecentHeaderProps } from './types';
 import { KebabIcon, TrashIcon } from '../shared/icons';
+import { t } from '../../lib/i18n';
 
 export function RecentHeader({ onClear }: RecentHeaderProps) {
   const [open, setOpen] = useState(false);
@@ -22,11 +23,11 @@ export function RecentHeader({ onClear }: RecentHeaderProps) {
 
   return (
     <div className="lines-recent__header" ref={rootRef}>
-      <h2 className="lines-recent__title">Recent</h2>
+      <h2 className="lines-recent__title">{t("Recent")}</h2>
       <button
         type="button"
         className="lines-recent__menu-btn"
-        aria-label="Recent lines options"
+        aria-label={t("Recent lines options")}
         aria-haspopup="menu"
         aria-expanded={open}
         onClick={() => setOpen((v) => !v)}
@@ -45,7 +46,7 @@ export function RecentHeader({ onClear }: RecentHeaderProps) {
             }}
           >
             <TrashIcon size={18} />
-            Clear recent
+            {t("Clear recent")}
           </button>
         </div>
       )}

@@ -8,13 +8,14 @@ import { ShowMoreOptionsLink } from './ShowMoreOptionsLink';
 import { UpcomingArrivalsModal } from './UpcomingArrivalsModal';
 import { visibleWaitOptions, waitOptionsHiddenCount } from './waitOptionsCollapse';
 import type { WaitOptionsCardProps } from './types';
+import { t } from '../../lib/i18n';
 
 function waitCountdownLabel(sec: number | undefined): string {
   if (sec == null) return '';
-  if (sec <= 0) return 'now';
+  if (sec <= 0) return t('now');
   const m = Math.max(0, Math.round(sec / 60));
-  if (m === 0) return '<1 min';
-  return `${m} min`;
+  if (m === 0) return t('<1 min');
+  return t('{n} min', { n: m });
 }
 
 export function WaitOptionsCard({
@@ -36,7 +37,7 @@ export function WaitOptionsCard({
     <>
       <div className="ld-wait">
         <div className="ld-ride__strip" data-sheet-drag>
-          <span>Wait for {waitForLabel}</span>
+          <span>{t('Wait for {line}', { line: waitForLabel })}</span>
           {timeLabel ? <span className="ld-ride__strip-time">{timeLabel}</span> : null}
         </div>
         {fromName && toName ? (
@@ -44,7 +45,7 @@ export function WaitOptionsCard({
             <LegEndpoints from={fromName} to={toName} onSwitch={onSwitch} />
           </div>
         ) : null}
-        <div className="ld-wait__title">Wait for one of these options</div>
+        <div className="ld-wait__title">{t("Wait for one of these options")}</div>
         {options.length > 0 ? (
           <>
             {visible.map((g, i) => {
@@ -66,7 +67,7 @@ export function WaitOptionsCard({
             />
           </>
         ) : (
-          <div className="ld-wait__loading">Loading departures…</div>
+          <div className="ld-wait__loading">{t("Loading departures…")}</div>
         )}
       </div>
 

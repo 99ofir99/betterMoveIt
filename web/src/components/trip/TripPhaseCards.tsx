@@ -6,15 +6,16 @@ import { RouteBadge } from '../common/RouteBadge';
 import { CheckCircleIcon, WalkIcon } from '../icons';
 import type { TransitLeg, WalkLeg } from '../../types';
 import type { LegPreviewCardProps, TripPhaseCardProps } from './types';
+import { t } from '../../lib/i18n';
 
 function countdownLabel(sec: number): string {
-  if (sec <= 0) return 'now';
+  if (sec <= 0) return t('now');
   const m = Math.floor(sec / 60);
   const s = sec % 60;
   // Long waits (hours until first bus) — don't show mm:ss.
-  if (m >= 60) return `${Math.round(sec / 60)} min`;
-  if (m === 0) return `${s}s`;
-  if (s === 0 || m >= 10) return `${m} min`;
+  if (m >= 60) return t('{n} min', { n: Math.round(sec / 60) });
+  if (m === 0) return t('{n}s', { n: s });
+  if (s === 0 || m >= 10) return t('{n} min', { n: m });
   return `${m}:${String(s).padStart(2, '0')}`;
 }
 
@@ -37,7 +38,7 @@ export function WalkPhaseCard({ state }: TripPhaseCardProps) {
         ? walkLeg.durationSec
         : null;
   const timeLabel =
-    walkSec != null ? `${Math.max(1, Math.round(walkSec / 60))} min` : '';
+    walkSec != null ? t('{n} min', { n: Math.max(1, Math.round(walkSec / 60)) }) : '';
 
   // Destination name: use the leg's toName directly for a clean display.
   const toName = walkLeg?.toName ?? '';
@@ -48,7 +49,7 @@ export function WalkPhaseCard({ state }: TripPhaseCardProps) {
       <div className="ld-ride__strip" data-sheet-drag>
         <span className="ld-walk__strip-label">
           <WalkIcon size={14} className="ld-walk__strip-icon" />
-          Walk{distM != null ? ` ${distM} m` : ''}
+          {distM != null ? t('Walk {n} m', { n: distM }) : t('Walk')}
         </span>
         <span className="ld-ride__strip-time">{timeLabel}</span>
       </div>
@@ -85,7 +86,7 @@ export function TransitPhaseCard({ state }: TripPhaseCardProps) {
       <div className="trip-progress__title">{nextAction.title}</div>
       {nextAction.countdownSec != null && (
         <div className="trip-progress__countdown">
-          ~{countdownLabel(nextAction.countdownSec)} remaining
+          {t('~{time} remaining', { time: countdownLabel(nextAction.countdownSec) })}
         </div>
       )}
     </div>
@@ -115,9 +116,9 @@ export function LegPreviewCard({ leg, isPast }: LegPreviewCardProps) {
     <div className="ld-phase ld-phase--preview">
       {leg.mode === 'walk' ? (
         <>
-          <div className="trip-progress__title">Walk {formatDistance(leg.distanceM)}</div>
+          <div className="trip-progress__title">{t('Walk {dist}', { dist: formatDistance(leg.distanceM) })}</div>
           <div className="trip-progress__subtitle">
-            {Math.max(1, Math.round(leg.durationSec / 60))} min{leg.toName ? ` · to ${leg.toName}` : ''}
+            {t('{n} min', { n: Math.max(1, Math.round(leg.durationSec / 60)) })}{leg.toName ? ` · ${t('to {name}', { name: leg.toName })}` : ''}
           </div>
         </>
       ) : (
@@ -134,10 +135,10 @@ export function LegPreviewCard({ leg, isPast }: LegPreviewCardProps) {
           <div className="trip-progress__subtitle">
             {leg.fromName} {formatClock12h(leg.departure)} → {leg.toName} {formatClock12h(leg.arrival)}
           </div>
-          <div className="trip-progress__subtitle">{formatDuration(leg.durationSec)} ride</div>
+          <div className="trip-progress__subtitle">{t('{time} ride', { time: formatDuration(leg.durationSec) })}</div>
         </>
       )}
-      <div className="ld-phase__hint">{isPast ? 'Completed step' : 'Upcoming step'}</div>
+      <div className="ld-phase__hint">{isPast ? t('Completed step') : t('Upcoming step')}</div>
     </div>
   );
 }

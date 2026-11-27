@@ -1,5 +1,6 @@
 import type { Line } from '../types';
 import type { LineCategoryFilter } from '../components/LinesTab/types';
+import { t } from './i18n';
 
 /** GTFS extended route types that count as bus-like or rail-like for UI filtering. */
 export function lineMatchesCategory(line: Line, filter: LineCategoryFilter): boolean {
@@ -63,7 +64,7 @@ function splitEndpoints(longName: string): [string, string] | null {
 
 /** Moovit Lines rows: "StartCity ↔ EndCity" only. */
 export function formatLineLongName(longName: string | undefined): string {
-  if (!longName) return 'Transit line';
+  if (!longName) return t('Transit line');
   const trimmed = longName.trim();
   if (trimmed.includes('↔') && !trimmed.includes('/') && !/<->/.test(trimmed)) {
     // Already city-styled

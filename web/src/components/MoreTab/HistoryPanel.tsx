@@ -4,20 +4,21 @@ import { PanelHeader } from './PanelHeader';
 import type { HistoryPanelProps } from './types';
 import type { TripHistoryEntry } from '../../lib/history';
 import type { Place } from '../../types';
+import { getLocale, t, tn } from '../../lib/i18n';
 
 export function HistoryPanel({ history, onReplay, onRemove, onNewTrip, onBack }: HistoryPanelProps) {
   return (
     <div className="more-panel">
-      <PanelHeader title="Trip history" onBack={onBack} />
+      <PanelHeader title={t("Trip history")} onBack={onBack} />
 
       <div className="more-panel__actions">
         <button type="button" className="fav-section__action" onClick={onNewTrip}>
-          + New trip
+          {t("+ New trip")}
         </button>
       </div>
 
       {history.length === 0 ? (
-        <p className="fav-empty">No trips yet — plan your first journey.</p>
+        <p className="fav-empty">{t("No trips yet — plan your first journey.")}</p>
       ) : (
         <ul className="more-history-list">
           {history.slice(0, 12).map((entry) => (
@@ -39,10 +40,10 @@ function HistoryRow({
   onRemove: (id: string) => void;
 }) {
   const meta = [
-    new Date(entry.createdAt).toLocaleDateString(),
-    entry.durationSec != null ? `${Math.round(entry.durationSec / 60)} min` : '',
+    new Date(entry.createdAt).toLocaleDateString(getLocale() === 'he' ? 'he-IL' : undefined),
+    entry.durationSec != null ? t('{n} min', { n: Math.round(entry.durationSec / 60) }) : '',
     entry.transfers != null
-      ? `${entry.transfers} change${entry.transfers !== 1 ? 's' : ''}`
+      ? tn(entry.transfers, '1 change', '{n} changes')
       : '',
   ]
     .filter(Boolean)
@@ -54,7 +55,7 @@ function HistoryRow({
         type="button"
         className="more-history-row__main"
         onClick={() => onReplay(entry.from, entry.to)}
-        aria-label={`Replay trip from ${entry.from.label} to ${entry.to.label}`}
+        aria-label={t('Replay trip from {from} to {to}', { from: entry.from.label, to: entry.to.label })}
       >
         <span className="more-history-row__route">
           {entry.from.label} → {entry.to.label}
@@ -65,7 +66,7 @@ function HistoryRow({
         type="button"
         className="fav-row__overflow"
         onClick={() => onRemove(entry.id)}
-        aria-label="Remove from history"
+        aria-label={t("Remove from history")}
       >
         ×
       </button>

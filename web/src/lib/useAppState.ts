@@ -25,6 +25,7 @@ import type {
   Stop,
   TransitLeg,
 } from '../types';
+import { t } from './i18n';
 
 export type Panel = 'plan' | 'journeys' | 'stop';
 
@@ -112,7 +113,7 @@ export function useAppState(opts?: { watchLocation?: boolean }) {
 
   const locate = useCallback(async () => {
     if (!navigator.geolocation) {
-      setPlan((p) => ({ ...p, error: 'Location is not available on this device.' }));
+      setPlan((p) => ({ ...p, error: t('Location is not available on this device.') }));
       return null;
     }
     setLocating(true);
@@ -131,7 +132,7 @@ export function useAppState(opts?: { watchLocation?: boolean }) {
       setGpsAllowed(true);
       return loc;
     } catch {
-      setPlan((p) => ({ ...p, error: 'Could not get your location. Check permissions.' }));
+      setPlan((p) => ({ ...p, error: t('Could not get your location. Check permissions.') }));
       return null;
     } finally {
       setLocating(false);
@@ -143,7 +144,7 @@ export function useAppState(opts?: { watchLocation?: boolean }) {
     const loc = userLocation ?? (await locate());
     if (!loc) return null;
     const name = await api.reverseGeocode(loc.lat, loc.lon);
-    const place: Place = { label: name || 'My location', lat: loc.lat, lon: loc.lon };
+    const place: Place = { label: name || t('My location'), lat: loc.lat, lon: loc.lon };
     setFrom(place);
     rememberPlace(place);
     return place;

@@ -2,18 +2,19 @@
 
 import { Icon } from '../icons/Icon';
 import type { StopHeaderProps } from './types';
+import { t } from '../../lib/i18n';
 
 export function StopHeader({ name, code, onClose }: StopHeaderProps) {
   return (
     <header className="stp-header">
-      <button type="button" className="stp-header__back" onClick={onClose} aria-label="Back">
+      <button type="button" className="stp-header__back" onClick={onClose} aria-label={t("Back")}>
         <Icon name="arrow-back" size={22} />
       </button>
       <div className="stp-header__titles">
         <h2 className="stp-header__name" dir="auto">
           {name}
         </h2>
-        {code ? <div className="stp-header__meta">Stop {code}</div> : null}
+        {code ? <div className="stp-header__meta">{t("Stop")} {code}</div> : null}
       </div>
     </header>
   );

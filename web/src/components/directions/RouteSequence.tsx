@@ -5,11 +5,12 @@ import { BundledLineBadge } from '../common/BundledLineBadge';
 import { SwipeRail } from '../common/SwipeRail';
 import { WalkIcon, ChevronRightIcon } from '../icons';
 import type { RouteSequenceProps } from './types';
+import { t } from '../../lib/i18n';
 
 export function RouteSequence({ legs, transitAlternatives }: RouteSequenceProps) {
   let transitIdx = 0;
   return (
-    <SwipeRail className="directions__timeline" aria-label="Route legs">
+    <SwipeRail className="directions__timeline" aria-label={t("Route legs")}>
       {legs.map((leg, i) => {
         const arrow =
           i > 0 ? <ChevronRightIcon size={16} className="directions__timeline-arrow" /> : null;
@@ -18,7 +19,7 @@ export function RouteSequence({ legs, transitAlternatives }: RouteSequenceProps)
           return (
             <span key={i} className="directions__timeline-item">
               {arrow}
-              <span className="directions__chip-walk" role="img" aria-label="Walk">
+              <span className="directions__chip-walk" role="img" aria-label={t("Walk")}>
                 <WalkIcon size={20} />
               </span>
             </span>

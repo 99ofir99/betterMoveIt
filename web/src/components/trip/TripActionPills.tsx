@@ -3,6 +3,7 @@
 import { ActionPill } from '../common/ActionPill';
 import { LiveBusIcon, ShareIcon, StopSquareIcon } from '../icons';
 import type { TripActionPillsProps } from './types';
+import { t } from '../../lib/i18n';
 
 export function TripActionPills({
   onStop,
@@ -14,16 +15,16 @@ export function TripActionPills({
     <div className="ld-pills">
       <ActionPill
         tone="red"
-        label="Stop"
-        ariaLabel="End trip"
+        label={t("Stop trip")}
+        ariaLabel={t("End trip")}
         icon={<StopSquareIcon size={20} />}
         onClick={onStop}
       />
       {onToggleLiveBuses && (
         <ActionPill
           tone="blue"
-          label="Live location"
-          ariaLabel="Toggle live location"
+          label={t("Live location")}
+          ariaLabel={t("Toggle live location")}
           icon={<LiveBusIcon size={22} />}
           onClick={onToggleLiveBuses}
           pressed={liveBusesActive}
@@ -31,8 +32,8 @@ export function TripActionPills({
       )}
       <ActionPill
         tone="blue"
-        label="Share"
-        ariaLabel="Share trip"
+        label={t("Share")}
+        ariaLabel={t("Share trip")}
         icon={<ShareIcon size={18} />}
         onClick={onShare}
       />
