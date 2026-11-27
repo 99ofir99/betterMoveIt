@@ -14,8 +14,95 @@
     <link rel="icon" href="/icon.svg" type="image/svg+xml" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <title>betterMoveIt</title>
+    <style>
+      /* Splash ("location ripples"): shown before the JS bundle runs, removed by main.tsx. */
+      html, body { background: #000; margin: 0; }
+      #splash { position: fixed; inset: 0; z-index: 99999; background: #000; display: flex; flex-direction: column;
+        align-items: center; justify-content: center; gap: 10px; transition: opacity .35s ease;
+        font-family: "Heebo", "Segoe UI", system-ui, -apple-system, Arial, sans-serif; color: #f2f2f4; }
+      #splash.splash-out { opacity: 0; pointer-events: none; }
+      #splash .splash-art { width: min(62vw, 260px); animation: splash-pop .35s cubic-bezier(.3,1.5,.5,1) both; }
+      #splash svg { display: block; width: 100%; height: auto; overflow: visible; }
+      #splash .splash-word { font-weight: 800; font-size: 1.25rem; letter-spacing: .01em; direction: ltr; }
+      #splash .splash-word span { color: #ffb27a; }
+      #splash .splash-msg { min-height: 1.3em; font-size: .9rem; color: #8e8e96; opacity: 0; transition: opacity .45s; }
+      #splash .splash-msg.on { opacity: 1; }
+      #splash .rip { transform-box: fill-box; transform-origin: center; animation: splash-rip 2.4s cubic-bezier(.2,.6,.4,1) infinite; }
+      #splash .rip.d1 { animation-delay: -.8s; } #splash .rip.d2 { animation-delay: -1.6s; }
+      #splash .float { animation: splash-float 2.6s ease-in-out infinite; }
+      #splash .blink { transform-origin: 0px -14px; animation: splash-blink 4.2s infinite; }
+      #splash .glance { animation: splash-glance 6s ease-in-out infinite; }
+      @keyframes splash-pop { from { transform: scale(.85); opacity: 0; } }
+      @keyframes splash-rip { 0% { transform: scale(.35); opacity: .8; } 100% { transform: scale(1); opacity: 0; } }
+      @keyframes splash-float { 50% { transform: translateY(-5px); } }
+      @keyframes splash-blink { 0%, 90%, 100% { transform: scaleY(1); } 93% { transform: scaleY(.1); } 96% { transform: scaleY(1); } }
+      @keyframes splash-glance { 0%, 30% { transform: translateX(0); } 38%, 52% { transform: translateX(-7px); } 60%, 78% { transform: translateX(6px); } 86%, 100% { transform: translateX(0); } }
+      @media (prefers-reduced-motion: reduce) { #splash * { animation-duration: 6s !important; } }
+    </style>
   </head>
   <body>
+    <div id="splash" role="status" aria-label="Loading">
+      <div class="splash-art">
+        <svg viewBox="0 0 240 240" aria-hidden="true">
+          <defs><linearGradient id="splash-g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ffb27a"/><stop offset="1" stop-color="#ff8a5c"/></linearGradient></defs>
+          <circle class="rip" cx="120" cy="120" r="112" fill="none" stroke="#ffb27a" stroke-width="3"/>
+          <circle class="rip d1" cx="120" cy="120" r="112" fill="none" stroke="#ff9a68" stroke-width="3"/>
+          <circle class="rip d2" cx="120" cy="120" r="112" fill="rgba(255,138,92,.10)" stroke="#ff8a5c" stroke-width="3"/>
+          <circle cx="120" cy="120" r="46" fill="url(#splash-g)" opacity=".9"/>
+          <g class="float"><g transform="translate(120 120) scale(.3)">
+            <circle r="120" fill="#fff"/>
+            <circle cx="-66" cy="28" r="13" fill="#ff8a7a" opacity=".55"/>
+            <circle cx="66" cy="28" r="13" fill="#ff8a7a" opacity=".55"/>
+            <g class="glance"><g class="blink">
+              <ellipse cx="-38" cy="-14" rx="15" ry="19" fill="#2b2f3a"/>
+              <ellipse cx="38" cy="-14" rx="15" ry="19" fill="#2b2f3a"/>
+              <circle cx="-33" cy="-21" r="5" fill="#fff"/>
+              <circle cx="43" cy="-21" r="5" fill="#fff"/>
+            </g></g>
+            <path d="M-36 26 Q0 58 36 26" fill="none" stroke="#2b2f3a" stroke-width="13" stroke-linecap="round"/>
+          </g></g>
+        </svg>
+      </div>
+      <div class="splash-word">better<span>MoveIt</span></div>
+      <div class="splash-msg" id="splash-msg"></div>
+    </div>
+    <script>
+      // Splash: wake the API (Render free tier cold-starts) and rotate status lines on long loads.
+      // main.tsx calls window.__bmiAppReady() after the first render; the splash leaves once
+      // the app has rendered AND the API answered (or failed), capped at 20 s.
+      (function () {
+        var he = false;
+        try { he = (JSON.parse(localStorage.getItem('bmi.settings.v1') || '{}').locale === 'he'); } catch (e) {}
+        var el = document.getElementById('splash');
+        var msg = document.getElementById('splash-msg');
+        if (he) { el.dir = 'rtl'; el.setAttribute('aria-label', 'טוען'); }
+        var lines = he
+          ? ['מחפשים את הקווים…', 'בודקים זמני הגעה…', 'מאתרים אוטובוסים בזמן אמת…', 'עוד רגע…']
+          : ['Finding your lines…', 'Checking arrival times…', 'Locating buses live…', 'Almost there…'];
+        var k = 0, timers = [];
+        timers.push(setTimeout(function () {
+          msg.textContent = lines[0]; msg.className = 'splash-msg on';
+          timers.push(setInterval(function () {
+            msg.className = 'splash-msg';
+            setTimeout(function () { k = (k + 1) % lines.length; msg.textContent = lines[k]; msg.className = 'splash-msg on'; }, 450);
+          }, 2400));
+        }, 2500));
+        var appReady = false, apiReady = false, done = false;
+        function finish() {
+          if (done) return; done = true;
+          timers.forEach(function (t) { clearTimeout(t); clearInterval(t); });
+          el.className = 'splash-out';
+          setTimeout(function () { if (el.parentNode) el.parentNode.removeChild(el); }, 400);
+        }
+        function check() { if (appReady && apiReady) finish(); }
+        window.__bmiAppReady = function () { appReady = true; check(); };
+        try {
+          fetch('/api/health', { headers: { Accept: 'application/json' } })
+            .then(function () { apiReady = true; check(); }, function () { apiReady = true; check(); });
+        } catch (e) { apiReady = true; }
+        setTimeout(finish, 20000);
+      })();
+    </script>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
