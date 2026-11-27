@@ -14,7 +14,7 @@ import { normalizeJourneyTiming } from './journeyTiming';
 import { sortJourneys } from './sort';
 import { bestBoardingMinutes } from './boardingEta';
 import { minutesUntilDepart, secondsSinceLocalMidnight } from './format';
-import { journeyHasDeparted } from './journeyStale';
+import { journeyHasDeparted, plannedRideMinMinutes } from './journeyStale';
 import type { Journey, LatLon, Place, TransitLeg } from '../types';
 import type { FrequentDestResult } from '../components/home/types';
 import { getLocale } from './i18n';
@@ -213,7 +213,12 @@ export function useFrequentDestination(
           try {
             const board = await api.stopDepartures(firstTransit.from.stopId, ctrl.signal);
             if (!ctrl.signal.aborted) {
-              const best = bestBoardingMinutes(board.departures, firstTransit);
+              const best = bestBoardingMinutes(
+                board.departures,
+                firstTransit,
+                undefined,
+                plannedRideMinMinutes(firstTransit.departure)
+              );
               if (best) boardLeave = best;
             }
           } catch {
@@ -250,7 +255,12 @@ export function useFrequentDestination(
       void api
         .stopDepartures(firstTransit.from.stopId)
         .then((board) => {
-          const best = bestBoardingMinutes(board.departures, firstTransit);
+          const best = bestBoardingMinutes(
+                board.departures,
+                firstTransit,
+                undefined,
+                plannedRideMinMinutes(firstTransit.departure)
+              );
           if (best == null) return;
           setResult((prev) =>
             prev && prev.journey

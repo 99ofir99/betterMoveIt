@@ -201,7 +201,10 @@ export function useSheetDrag(options: UseSheetDragOptions = {}): {
   heightRef.current = heightPx;
   heightsRef.current = heights;
 
-  const publishHeight = useCallback((next: number, nextSnap: SheetSnap, notifySnap: boolean) => {
+    // notifySnap 'always': tell the owner even when the zone didn't change on release.
+  // A slow drag already moved the zone during pointermove (no notify there), so a
+  // controlled sheet never heard about it and yanked itself back to the old snap.
+  const publishHeight = useCallback((next: number, nextSnap: SheetSnap, notifySnap: boolean | 'always') => {
     const snaps = heightsRef.current;
     const clamped = Math.max(snaps.peek * 0.85, Math.min(snaps.full, next));
     heightRef.current = clamped;
@@ -212,11 +215,13 @@ export function useSheetDrag(options: UseSheetDragOptions = {}): {
       snapRef.current = nextSnap;
       setSnapState(nextSnap);
       if (notifySnap) onSnapChangeRef.current?.(nextSnap);
+    } else if (notifySnap === 'always') {
+      onSnapChangeRef.current?.(nextSnap);
     }
   }, []);
 
   const setSnap = useCallback(
-    (next: SheetSnap, notify = true, force = false) => {
+    (next: SheetSnap, notify: boolean = true, force = false) => {
       if (userPinnedRef.current && !force) return;
       const h = heightsRef.current[next];
       publishHeight(h, next, notify);
@@ -278,10 +283,10 @@ export function useSheetDrag(options: UseSheetDragOptions = {}): {
           projected = Math.max(projected, snaps.full * 0.92);
         }
         const clamped = Math.max(snaps.peek, Math.min(snaps.full, projected));
-        publishHeight(clamped, softZone(clamped, snaps), true);
+        publishHeight(clamped, softZone(clamped, snaps), 'always');
       } else {
         const next = snapFromRelease(delta, session.velocityY, snaps, session.startHeight);
-        publishHeight(snaps[next], next, true);
+        publishHeight(snaps[next], next, 'always');
       }
       setDragging(false);
     },
@@ -406,7 +411,8 @@ export function useSheetDrag(options: UseSheetDragOptions = {}): {
     const onUp = (e: PointerEvent) => {
       const session = dragRef.current;
       if (!session || session.pointerId !== e.pointerId) return;
-      endDrag(e.clientY);
+      // pointercancel may carry no coordinates; settle where the finger last was.
+      endDrag(e.type === 'pointercancel' ? session.lastY : e.clientY);
     };
 
     window.addEventListener('pointermove', onMove, { passive: false });

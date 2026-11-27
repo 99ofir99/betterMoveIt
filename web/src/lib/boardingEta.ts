@@ -18,6 +18,8 @@ export interface LeaveEtaEntry {
   confidence?: ArrivalConfidence;
   source?: ArrivalSource;
   nextDay?: boolean;
+  /** The planned bus has already left (shown as "Departed", never "now"). */
+  departed?: boolean;
 }
 
 /** Match a departure group to planned / alternative routes. */
@@ -65,10 +67,11 @@ export function leaveEtasFromBoard(
 export function bestBoardingMinutes(
   groups: DepartureGroup[],
   leg: TransitLeg,
-  altRoutes?: RouteInfo[]
+  altRoutes?: RouteInfo[],
+  minMinutes = 0
 ): LeaveEtaEntry | null {
   const routes = altRoutes?.length ? altRoutes : [leg.route];
-  const etas = leaveEtasFromBoard(groups, routes, 1);
+  const etas = leaveEtasFromBoard(groups, routes, 1, minMinutes);
   return etas[0] ?? null;
 }
 

@@ -17,10 +17,12 @@ export function TransitLegEtaBadge({ eta }: TransitLegEtaBadgeProps) {
   const confidence = eta.confidence ?? (eta.live ? 'high' : 'none');
   const source = eta.source ?? (eta.live ? 'live' : 'schedule');
   const live = isLiveConfidence(confidence);
-  const label = formatEtaLabel(eta.minutes, {
-    departureSec: eta.departure,
-    nextDay: eta.nextDay,
-  });
+  const label = eta.departed
+    ? t('Departed')
+    : formatEtaLabel(eta.minutes, {
+        departureSec: eta.departure,
+        nextDay: eta.nextDay,
+      });
 
   return (
     <div
