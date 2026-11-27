@@ -1,7 +1,7 @@
 /**
  * Short answer after pressing "Live location": how many buses of the tracked
- * lines are now on the map, or that none is transmitting. Small, one line,
- * dismisses itself — the bus markers themselves are the live display.
+ * lines are now on the map, or that none is transmitting. Two short lines (status + which lines),
+ * never truncated, dismisses itself — the bus markers themselves are the live display.
  */
 
 import { useEffect } from 'react';
@@ -18,15 +18,25 @@ export function LiveToast({ toast, lines, onDismiss, onTurnOff }: LiveToastProps
   }, [toast, onDismiss]);
 
   if (!toast) return null;
-  const line = lines.slice(0, 3).join(', ');
-  const text =
-    toast.count == null
-      ? t('Looking for buses…')
-      : toast.count === 0
-        ? t('No line {line} bus is sending its location right now', { line })
-        : toast.count === 1
-          ? t('1 bus of line {line} on the map', { line })
-          : t('{n} buses of line {line} on the map', { n: toast.count, line });
+  const shown = lines.slice(0, 3).join(', ');
+  const many = lines.length > 1;
+  const linesLabel = shown ? (many ? t('Lines {lines}', { lines: shown }) : t('Line {line}', { line: shown })) : '';
+  let title: string;
+  let detail = linesLabel;
+  if (toast.count == null) {
+    title = t('Looking for live buses…');
+  } else if (toast.count === 0) {
+    title = t('No live location right now');
+    detail = shown
+      ? many
+        ? t('Lines {lines} are not sending their location', { lines: shown })
+        : t('Line {line} is not sending its location', { line: shown })
+      : '';
+  } else if (toast.count === 1) {
+    title = t('1 live bus on the map');
+  } else {
+    title = t('{n} live buses on the map', { n: toast.count });
+  }
 
   return (
     <div
@@ -36,7 +46,10 @@ export function LiveToast({ toast, lines, onDismiss, onTurnOff }: LiveToastProps
       aria-live="polite"
     >
       <span className="live-toast__dot" aria-hidden="true" />
-      <span className="live-toast__text">{text}</span>
+      <span className="live-toast__text">
+        <span className="live-toast__title">{title}</span>
+        {detail ? <span className="live-toast__detail">{detail}</span> : null}
+      </span>
       <button type="button" className="live-toast__off" onClick={onTurnOff}>
         {t('Turn off')}
       </button>
