@@ -14,6 +14,7 @@ import {
   upsertPlace,
   type FavoritesState,
 } from '../../lib/favorites';
+import { t } from '../../lib/i18n';
 
 export function useFavoritesTab() {
   const [favs, setFavs] = useState<FavoritesState>(() => loadFavorites());
@@ -51,7 +52,7 @@ export function useFavoritesTab() {
     setSettingKind(null);
 
     if (!navigator.geolocation) {
-      window.alert('Location is not available on this device.');
+      window.alert(t('Location is not available on this device.'));
       return;
     }
 
@@ -68,7 +69,7 @@ export function useFavoritesTab() {
           setFavs(upsertPlace(kind, place, labelDefault));
         });
       },
-      () => window.alert('Could not get your location. Check permissions.')
+      () => window.alert(t('Could not get your location. Check permissions.'))
     );
   }, [settingKind]);
 

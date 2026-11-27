@@ -12,6 +12,7 @@ import { LineDirectionHeader } from './LineDirectionHeader';
 import { LineStopList } from './LineStopList';
 import type { LineDetailPanelProps } from './types';
 import { useLineDetail } from './useLineDetail';
+import { t } from '../../lib/i18n';
 
 function agencyLabel(agency: string | undefined): string {
   if (!agency) return '';
@@ -44,7 +45,7 @@ export function LineDetailPanel({
   return (
     <div className="line-detail">
       <div className="lnd-header">
-        <button type="button" className="lnd-header__back" onClick={onClose} aria-label="Back">
+        <button type="button" className="lnd-header__back" onClick={onClose} aria-label={t("Back")}>
           <Icon name="arrow-back" size={22} />
         </button>
         {s.line && (
@@ -75,7 +76,7 @@ export function LineDetailPanel({
       )}
 
       {s.error && !s.data && <p className="error-text">{s.error}</p>}
-      {!s.data && !s.error && <p className="muted lnd-loading">Loading line…</p>}
+      {!s.data && !s.error && <p className="muted lnd-loading">{t("Loading line…")}</p>}
 
       {s.data && (
         <LineStopList

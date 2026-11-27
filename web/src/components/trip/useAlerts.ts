@@ -11,6 +11,7 @@
  */
 import { useEffect, useRef } from 'react';
 import type { ActiveTripState } from './types';
+import { t } from '../../lib/i18n';
 
 const APPROACHING_STOPS_THRESHOLD = 1;
 
@@ -60,7 +61,7 @@ export function useAlerts(
         firedRef.current.add(key);
         void requestPermission().then((granted) => {
           if (granted || 'vibrate' in navigator) {
-            sendAlert('Approaching your stop', 'Get ready to get off soon');
+            sendAlert(t('Approaching your stop'), t('Get ready to get off soon'));
           }
         });
       }
@@ -73,7 +74,7 @@ export function useAlerts(
         firedRef.current.add(key);
         void requestPermission().then((granted) => {
           if (granted || 'vibrate' in navigator) {
-            sendAlert('Get off now! 🚨', nextAction.title || 'Get off at this stop');
+            sendAlert(t('Get off now! 🚨'), nextAction.title || t('Get off at this stop'));
           }
         });
       }

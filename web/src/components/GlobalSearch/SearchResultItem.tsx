@@ -5,6 +5,7 @@ import { contrastText, modeIcon, routeColor } from '../../lib/format';
 import { formatRailFinalCity } from '../../lib/lineCategory';
 import { isHeavyRailRoute, railTrainNumber } from '../../lib/railLabel';
 import { SearchFavButton } from './SearchFavButton';
+import { t } from '../../lib/i18n';
 
 interface SearchResultItemProps {
   result: SearchResult;
@@ -54,8 +55,8 @@ export function SearchResultItem({
     const rail = isHeavyRailRoute(line);
     const badgeLabel = rail ? railTrainNumber(line) : line.displayName;
     const subtitle = rail
-      ? formatRailFinalCity(line.longName) || line.longName || 'Line'
-      : line.longName || 'Line';
+      ? formatRailFinalCity(line.longName) || line.longName || t('Line')
+      : line.longName || t('Line');
     return (
       <li className="search-result-row">
         <button type="button" className="suggestions__row" onClick={() => onPickLine(line)}>
@@ -114,7 +115,7 @@ export function SearchResultItem({
               <span className="suggestions__meta">
                 {r.nameEn}
                 {r.nameEn && r.code ? ' · ' : ''}
-                {r.code ? `Stop ${r.code}` : ''}
+                {r.code ? t('Stop {code}', { code: r.code }) : ''}
               </span>
             )}
           </span>

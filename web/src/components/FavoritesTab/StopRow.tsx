@@ -2,6 +2,7 @@
 
 import { ChevronRightIcon, StarIcon } from '../shared/icons';
 import type { StopRowProps } from './types';
+import { t } from '../../lib/i18n';
 
 export function StopRow({ item, onOpen, onRemove }: StopRowProps) {
   return (
@@ -12,7 +13,7 @@ export function StopRow({ item, onOpen, onRemove }: StopRowProps) {
         </span>
         <span className="fav-row__body">
           <span className="fav-row__name">{item.stop.name}</span>
-          {item.stop.code && <span className="fav-row__meta">Stop {item.stop.code}</span>}
+          {item.stop.code && <span className="fav-row__meta">{t("Stop")} {item.stop.code}</span>}
         </span>
         <ChevronRightIcon size={16} className="fav-row__chevron" />
       </button>
@@ -20,7 +21,7 @@ export function StopRow({ item, onOpen, onRemove }: StopRowProps) {
         type="button"
         className="fav-row__star is-on"
         onClick={onRemove}
-        aria-label="Remove favourite stop"
+        aria-label={t("Remove favourite stop")}
       >
         <StarIcon size={20} filled />
       </button>

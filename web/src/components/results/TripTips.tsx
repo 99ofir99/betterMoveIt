@@ -2,6 +2,7 @@
 
 import type { TripInsightLabel } from '../../lib/types';
 import { Icon } from '../icons/Icon';
+import { t } from '../../lib/i18n';
 
 interface TripTipsProps {
   labels: readonly TripInsightLabel[];
@@ -14,7 +15,7 @@ export function TripTips({ labels }: TripTipsProps) {
       {labels.map((label) => (
         <span key={label} className="journey-card__tip">
           <Icon name="sparkle" size={12} />
-          {label}
+          {t(label)}
         </span>
       ))}
     </div>

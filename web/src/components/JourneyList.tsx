@@ -21,10 +21,11 @@ import { WalkIcon } from './icons';
 import { TripStartBar } from './trip/TripStartBar';
 import { TripTips } from './results/TripTips';
 import type { JourneyDetailProps, JourneyListProps } from './types';
+import { t, tn } from '../lib/i18n';
 
 export function JourneyList({ journeys, selected, onSelect, departNow, insights }: JourneyListProps) {
   return (
-    <ul className="journey-list" role="listbox" aria-label="Journey options">
+    <ul className="journey-list" role="listbox" aria-label={t("Journey options")}>
       {journeys.map((card, i) => {
         const j = card.journey;
         return (
@@ -74,7 +75,7 @@ function ClampedRouteSequence({
 }) {
   let transitIdx = 0;
   return (
-    <SwipeRail className="journey-card__legs" aria-label="Route legs">
+    <SwipeRail className="journey-card__legs" aria-label={t("Route legs")}>
       {journey.legs.map((leg, li) => {
         const sep =
           li > 0 ? (
@@ -116,9 +117,9 @@ function WalkChip({ distanceM }: { distanceM: number }) {
   return (
     <span
       className="leg-chip leg-chip--moovit-walk"
-      title={`Walk ${formatDistance(distanceM)}`}
+      title={t('Walk {dist}', { dist: formatDistance(distanceM) })}
       role="img"
-      aria-label={`Walk ${formatDistance(distanceM)}`}
+      aria-label={t('Walk {dist}', { dist: formatDistance(distanceM) })}
     >
       <WalkIcon size={20} />
     </span>
@@ -211,7 +212,7 @@ function JourneyCardFooter({
   if (!departNow) {
     return (
       <p className="journey-card__footer">
-        Departs {formatClock12h(journey.departSeconds)} from {stop}
+        {t('Departs {time} from {stop}', { time: formatClock12h(journey.departSeconds), stop })}
       </p>
     );
   }
@@ -240,7 +241,7 @@ function JourneyCardFooter({
 
   return (
     <p className="journey-card__footer">
-      Leaves{' '}
+      {t("Leaves")}{' '}
       <strong
         className={`journey-card__footer-live is-acc-${confidence}${isLive ? ' is-live' : ''}`}
       >
@@ -251,12 +252,12 @@ function JourneyCardFooter({
           </span>
         )}
         {confidence === 'off_route' && (
-          <span className="journey-card__off-route" aria-label="Off route">
+          <span className="journey-card__off-route" aria-label={t("Off route")}>
             !
           </span>
         )}
       </strong>
-      {nextDay ? ' (next day)' : ''} from {stop}
+      {nextDay ? t(' (next day)') : ''} {t('from {stop}', { stop })}
     </p>
   );
 }
@@ -285,11 +286,11 @@ export function JourneyDetail({
           <div className="journey-detail__summary">
             {formatDuration(journey.durationSec)} ·{' '}
             {journey.transfers === 0
-              ? 'direct'
-              : `${journey.transfers} change${journey.transfers > 1 ? 's' : ''}`}
+              ? t('direct')
+              : tn(journey.transfers, '1 change', '{n} changes')}
           </div>
         </div>
-        <button className="icon-button" onClick={onClose} aria-label="Back to journey list" type="button">
+        <button className="icon-button" onClick={onClose} aria-label={t("Back to journey list")} type="button">
           ×
         </button>
       </div>
@@ -302,10 +303,10 @@ export function JourneyDetail({
                 <div className="leg__row">
                   <span className="leg__rail leg__rail--walk" aria-hidden="true" />
                   <div>
-                    <div className="leg__title">Walk {formatDistance(leg.distanceM)}</div>
+                    <div className="leg__title">{t('Walk {dist}', { dist: formatDistance(leg.distanceM) })}</div>
                     <div className="leg__sub">
-                      {leg.fromName ?? 'Start'} → {leg.toName}
-                      <span className="leg__aside"> · {Math.round(leg.durationSec / 60)} min</span>
+                      {leg.fromName ?? t('Start')} → {leg.toName}
+                      <span className="leg__aside"> · {t('{n} min', { n: Math.round(leg.durationSec / 60) })}</span>
                     </div>
                   </div>
                 </div>
@@ -344,8 +345,7 @@ export function JourneyDetail({
 
                     <details className="leg__intermediate">
                       <summary>
-                        {Math.max(0, leg.intermediateStops.length - 2)} stop
-                        {leg.intermediateStops.length - 2 === 1 ? '' : 's'}
+                        {tn(Math.max(0, leg.intermediateStops.length - 2), '1 stop', '{n} stops')}
                       </summary>
                       <ol>
                         {leg.intermediateStops.slice(1, -1).map((s, si) => (
@@ -376,7 +376,7 @@ export function JourneyDetail({
                   </div>
 
                   <div className="leg__footnote">
-                    {leg.route.agency} · {Math.round(leg.durationSec / 60)} min ride
+                    {leg.route.agency} · {t('{n} min ride', { n: Math.round(leg.durationSec / 60) })}
                   </div>
                 </div>
               </div>

@@ -12,6 +12,7 @@ import { LinesCategoryTabs } from './LinesTab/LinesCategoryTabs';
 import { RecentHeader } from './LinesTab/RecentHeader';
 import { LINES_TABS, useLinesTab } from './LinesTab/useLinesTab';
 import type { LinesTabProps } from './LinesTab/types';
+import { t } from '../lib/i18n';
 
 interface LineListProps {
   lines: Line[];
@@ -69,26 +70,26 @@ export function LinesTab({ onOpenLine }: LinesTabProps) {
 
         {searching && s.loading && !s.isFavouritesTab && (
           <div className="lines-empty">
-            <p className="lines-empty__text">Searching…</p>
+            <p className="lines-empty__text">{t("Searching…")}</p>
           </div>
         )}
 
         {s.isFavouritesTab && noResults && (
           <div className="lines-empty">
             <p className="lines-empty__text">
-              {searching ? 'No favourite lines match' : 'No favourite lines yet — tap the star on a line to save it'}
+              {searching ? t('No favourite lines match') : t('No favourite lines yet — tap the star on a line to save it')}
             </p>
           </div>
         )}
 
         {!s.isFavouritesTab && searching && noResults && (
           <div className="lines-empty">
-            <p className="lines-empty__text">No lines found</p>
+            <p className="lines-empty__text">{t("No lines found")}</p>
           </div>
         )}
 
         {s.showRecent && (
-          <section className="lines-recent" aria-label="Recent lines">
+          <section className="lines-recent" aria-label={t("Recent lines")}>
             <RecentHeader onClear={s.clearRecent} />
             <LineList
               lines={s.filteredRecent}
@@ -102,11 +103,11 @@ export function LinesTab({ onOpenLine }: LinesTabProps) {
 
         {mainLines.length > 0 && (
           <>
-            {s.isFavouritesTab && <p className="lines-section-label">Favourites</p>}
+            {s.isFavouritesTab && <p className="lines-section-label">{t("Favourites")}</p>}
             {!s.isFavouritesTab && s.isPopular && !searching && (
-              <p className="lines-section-label">Popular lines</p>
+              <p className="lines-section-label">{t("Popular lines")}</p>
             )}
-            {!s.isFavouritesTab && searching && <p className="lines-section-label">Results</p>}
+            {!s.isFavouritesTab && searching && <p className="lines-section-label">{t("Results")}</p>}
             <LineList
               lines={mainLines}
               favouriteIds={s.favouriteIds}

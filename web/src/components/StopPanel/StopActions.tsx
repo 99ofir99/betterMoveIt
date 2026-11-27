@@ -1,6 +1,7 @@
 /** Moovit bottom quick actions: From here · To here · Favorite. */
 
 import type { StopActionsProps } from './types';
+import { t } from '../../lib/i18n';
 
 export function StopActions({
   favored,
@@ -11,19 +12,19 @@ export function StopActions({
   return (
     <div className="stp-actions">
       <button type="button" className="stp-actions__primary" onClick={onFromHere}>
-        From here
+        {t("From here")}
       </button>
       <button type="button" className="stp-actions__secondary" onClick={onToHere}>
-        To here
+        {t("To here")}
       </button>
       <button
         type="button"
         className={`stp-actions__fav${favored ? ' is-on' : ''}`}
         onClick={onToggleFavourite}
-        aria-label={favored ? 'Unfavorite' : 'Favorite'}
+        aria-label={favored ? t('Unfavorite') : t('Favorite')}
       >
         <span aria-hidden>{favored ? '★' : '☆'}</span>
-        Favorite
+        {t("Favorite")}
       </button>
     </div>
   );

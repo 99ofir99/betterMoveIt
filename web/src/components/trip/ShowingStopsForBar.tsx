@@ -6,6 +6,7 @@
 import { BundledLineBadge } from '../common/BundledLineBadge';
 import { SwipeRail } from '../common/SwipeRail';
 import type { ShowingStopsForBarProps } from './types';
+import { t } from '../../lib/i18n';
 
 export function ShowingStopsForBar({
   route,
@@ -15,15 +16,15 @@ export function ShowingStopsForBar({
   return (
     <div className="ld-ride__line-block ld-wait-stack__showing">
       <div className="ld-ride__line-head">
-        <span className="ld-ride__line-label">Showing stops for</span>
+        <span className="ld-ride__line-label">{t("Showing stops for")}</span>
         {onSwitch ? (
           <button
             type="button"
             className="ld-ride__change ld-ride__change--active"
             onClick={onSwitch}
-            aria-label="Switch line"
+            aria-label={t("Switch line")}
           >
-            Switch
+            {t("Switch")}
           </button>
         ) : null}
       </div>

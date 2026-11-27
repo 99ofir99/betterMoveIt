@@ -4,6 +4,7 @@
  * Matches the existing .modal/.modal__card shell used by other overlays.
  */
 import type { ConfirmReplaceTripProps } from './types';
+import { t } from '../../lib/i18n';
 
 export function ConfirmReplaceTrip({ onConfirm, onCancel }: ConfirmReplaceTripProps) {
   return (
@@ -18,9 +19,9 @@ export function ConfirmReplaceTrip({ onConfirm, onCancel }: ConfirmReplaceTripPr
       >
         <div className="modal__head">
           <div>
-            <h2 id="trip-confirm-title">Start a new trip?</h2>
+            <h2 id="trip-confirm-title">{t("Start a new trip?")}</h2>
             <p id="trip-confirm-desc" className="modal__head-desc">
-              Starting a new trip will end the current one
+              {t("Starting a new trip will end the current one")}
             </p>
           </div>
         </div>
@@ -31,14 +32,14 @@ export function ConfirmReplaceTrip({ onConfirm, onCancel }: ConfirmReplaceTripPr
             className="trip-confirm__btn trip-confirm__btn--primary"
             onClick={onConfirm}
           >
-            Start
+            {t("Start")}
           </button>
           <button
             type="button"
             className="trip-confirm__btn trip-confirm__btn--ghost"
             onClick={onCancel}
           >
-            Cancel
+            {t("Cancel")}
           </button>
         </div>
       </div>

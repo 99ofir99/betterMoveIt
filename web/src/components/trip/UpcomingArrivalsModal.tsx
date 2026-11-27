@@ -10,6 +10,7 @@ import { Icon } from '../icons/Icon';
 import { DepartureOptionRow } from './DepartureOptionRow';
 import { LegEndpoints } from './LegEndpoints';
 import type { UpcomingArrivalsModalProps } from './types';
+import { t } from '../../lib/i18n';
 
 export function UpcomingArrivalsModal({
   open,
@@ -50,13 +51,13 @@ export function UpcomingArrivalsModal({
         className="ld-arrivals"
         role="dialog"
         aria-modal="true"
-        aria-label="Details and timetables"
+        aria-label={t("Details and timetables")}
         onClick={(e) => e.stopPropagation()}
       >
         <div className="ld-arrivals__grabber" aria-hidden="true" />
         <header className="ld-arrivals__header">
           <div className="ld-arrivals__titles">
-            <h2 className="ld-arrivals__title">Details &amp; Timetables</h2>
+            <h2 className="ld-arrivals__title">{t("Details & Timetables")}</h2>
             {subtitle ? (
               <p className="ld-arrivals__subtitle" dir="auto">
                 {subtitle}
@@ -66,7 +67,7 @@ export function UpcomingArrivalsModal({
           <button
             type="button"
             className="ld-arrivals__close"
-            aria-label="Close"
+            aria-label={t("Close")}
             onClick={onClose}
           >
             <Icon name="close" size={18} />
@@ -79,10 +80,10 @@ export function UpcomingArrivalsModal({
           </div>
         ) : null}
 
-        <div className="ld-arrivals__section-title">Upcoming Arrivals</div>
+        <div className="ld-arrivals__section-title">{t("Upcoming Arrivals")}</div>
         <div className="ld-arrivals__list">
           {options.length === 0 ? (
-            <div className="ld-arrivals__empty">No upcoming arrivals at this stop.</div>
+            <div className="ld-arrivals__empty">{t("No upcoming arrivals at this stop.")}</div>
           ) : (
             options.map((g, i) => {
               const highlighted = selectedRoute

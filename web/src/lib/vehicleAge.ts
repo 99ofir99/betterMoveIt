@@ -1,6 +1,7 @@
 /** Format how stale a live vehicle position is (Moovit Live Location "last updated"). */
 
 import type { ArrivalConfidence } from '../types';
+import { t } from './i18n';
 
 /** Keep in sync with arrivalAccuracy.ts / server arrivalAccuracy.js */
 const GPS_HIGH_SEC = 45;
@@ -8,13 +9,13 @@ const GPS_MEDIUM_SEC = 120;
 const GPS_LOW_SEC = 240;
 
 export function formatVehicleAge(timestampMs: number, nowMs = Date.now()): string {
-  if (!Number.isFinite(timestampMs) || timestampMs <= 0) return 'no signal';
+  if (!Number.isFinite(timestampMs) || timestampMs <= 0) return t('no signal');
   const ageSec = Math.max(0, Math.round((nowMs - timestampMs) / 1000));
-  if (ageSec < 5) return 'just now';
-  if (ageSec < 60) return `${ageSec}s ago`;
+  if (ageSec < 5) return t('just now');
+  if (ageSec < 60) return t('{n}s ago', { n: ageSec });
   const ageMin = Math.floor(ageSec / 60);
-  if (ageMin < 60) return `${ageMin}m ago`;
-  return `${Math.floor(ageMin / 60)}h ago`;
+  if (ageMin < 60) return t('{n}m ago', { n: ageMin });
+  return t('{n}h ago', { n: Math.floor(ageMin / 60) });
 }
 
 /** Fresh enough to treat as a live tracking ping (green tier). */

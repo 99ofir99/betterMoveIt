@@ -4,6 +4,7 @@
  */
 
 import type { LegEndpointsProps } from './types';
+import { t } from '../../lib/i18n';
 
 export function LegEndpoints({ from, to, onSwitch }: LegEndpointsProps) {
   return (
@@ -21,7 +22,7 @@ export function LegEndpoints({ from, to, onSwitch }: LegEndpointsProps) {
       </div>
       {onSwitch ? (
         <button type="button" className="ld-endpoints__switch" onClick={onSwitch}>
-          Switch
+          {t("Switch")}
         </button>
       ) : null}
     </div>

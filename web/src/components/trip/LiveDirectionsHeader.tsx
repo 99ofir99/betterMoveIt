@@ -2,6 +2,7 @@
 
 import { ArrowBackIcon, BellIcon } from '../icons';
 import type { LiveDirectionsHeaderProps } from './types';
+import { t } from '../../lib/i18n';
 
 export function LiveDirectionsHeader({
   subtitle,
@@ -11,20 +12,20 @@ export function LiveDirectionsHeader({
 }: LiveDirectionsHeaderProps) {
   return (
     <div className="ld-header">
-      <button type="button" className="ld-header__back" onClick={onBack} aria-label="Back">
+      <button type="button" className="ld-header__back" onClick={onBack} aria-label={t("Back")}>
         <ArrowBackIcon size={24} />
       </button>
       <div className="ld-header__center">
-        <div className="ld-header__title">Live Directions</div>
+        <div className="ld-header__title">{t("Live Directions")}</div>
         <div className="ld-header__subtitle">{subtitle}</div>
       </div>
       <button
         type="button"
         className={['ld-header__bell', alertsEnabled ? 'is-active' : ''].filter(Boolean).join(' ')}
         onClick={onToggleAlerts}
-        aria-label={alertsEnabled ? 'Disable trip alerts' : 'Enable trip alerts'}
+        aria-label={alertsEnabled ? t('Disable trip alerts') : t('Enable trip alerts')}
         aria-pressed={alertsEnabled}
-        title={alertsEnabled ? 'Alerts on' : 'Alerts off'}
+        title={alertsEnabled ? t('Alerts on') : t('Alerts off')}
       >
         <BellIcon size={22} />
       </button>

@@ -66,6 +66,7 @@ Endpoints: `health`, `search`, `nearby`, `stop/:id`, `stop/:id/departures`, `lin
 - `components/` — presentation; each tab is a folder with `X.tsx` + `useX.ts` + `types.ts`
   (`NearbyTab`, `LinesTab`, `FavoritesTab`, `MoreTab`, `StopPanel`, `LineDetailPanel`, …);
   `trip/` live-trip UI, `directions/` + `results/` planner UI, `MapCanvas.tsx` MapLibre.
+- i18n: `lib/i18n.ts` — `t('English source {name}', { name })`, Hebrew in `lib/i18n.he.ts` keyed by the English text (missing key → English). Locale comes from Settings (`settings.locale`); `useLocale()` in `App` re-renders the tree and `<html dir>` flips to `rtl`. CSS uses logical properties (`inset-inline-*`, `padding-inline`, `text-align: start`) so RTL mirrors; direction glyphs get `.rtl-flip`. Add every new UI string through `t()` and to `i18n.he.ts` (`i18n.test.ts` checks placeholder parity).
 - Shared types: `web/src/types.ts`. Tests sit next to the module (`foo.ts` + `foo.test.ts`).
 - PWA service worker is off in dev (`PWA_DEV=1` to enable); `main.tsx` unregisters stale SWs.
 

@@ -2,6 +2,7 @@
 
 import { GlobalSearch } from '../GlobalSearch';
 import type { SetPlacePickerProps } from './types';
+import { t } from '../../lib/i18n';
 
 export function SetPlacePicker({
   kind,
@@ -11,15 +12,15 @@ export function SetPlacePicker({
   onPickCurrentLocation,
   onChooseOnMap,
 }: SetPlacePickerProps) {
-  const title = kind === 'home' ? 'Set Home' : 'Set Work';
+  const title = kind === 'home' ? t('Set Home') : t('Set Work');
 
   return (
     <GlobalSearch
       bias={bias}
       target="from"
       title={title}
-      placeholder="Search for an address or place"
-      currentLocationLabel="Use current location"
+      placeholder={t("Search for an address or place")}
+      currentLocationLabel={t("Use current location")}
       onClose={onClose}
       onPickPlace={onPickPlace}
       onPickCurrentLocation={onPickCurrentLocation}

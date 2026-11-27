@@ -3,12 +3,13 @@
 import { ChevronLeftIcon, ChevronRightIcon } from '../icons';
 import type { JourneyStage } from './journeyStages';
 import type { LegPagerProps } from './types';
+import { t } from '../../lib/i18n';
 
 function stageLabel(stage: JourneyStage | undefined, fallbackIndex: number): string {
-  if (!stage) return `Step ${fallbackIndex + 1}`;
-  if (stage.kind === 'walk') return 'walk';
-  if (stage.kind === 'wait') return 'wait for bus';
-  return 'ride';
+  if (!stage) return t('Step {n}', { n: fallbackIndex + 1 });
+  if (stage.kind === 'walk') return t('walk');
+  if (stage.kind === 'wait') return t('wait for bus');
+  return t('ride');
 }
 
 export function LegPager({
@@ -28,13 +29,13 @@ export function LegPager({
   const canNext = viewIndex < count - 1;
 
   return (
-    <div className="ld-pager" role="group" aria-label="Journey steps">
+    <div className="ld-pager" role="group" aria-label={t("Journey steps")}>
       <button
         type="button"
         className={['ld-pager__chev', !canPrev ? 'ld-pager__chev--hidden' : ''].filter(Boolean).join(' ')}
         onClick={onPrev}
         disabled={!canPrev}
-        aria-label="Previous step"
+        aria-label={t("Previous step")}
         aria-hidden={!canPrev}
         tabIndex={canPrev ? 0 : -1}
       >
@@ -59,7 +60,7 @@ export function LegPager({
                 .filter(Boolean)
                 .join(' ')}
               onClick={() => onSelect(i)}
-              aria-label={`Step ${i + 1} of ${count}: ${stageLabel(stage, i)}`}
+              aria-label={t('Step {n} of {count}: {label}', { n: i + 1, count, label: stageLabel(stage, i) })}
               aria-current={isViewed ? 'step' : undefined}
             />
           );
@@ -71,7 +72,7 @@ export function LegPager({
         className={['ld-pager__chev', !canNext ? 'ld-pager__chev--hidden' : ''].filter(Boolean).join(' ')}
         onClick={onNext}
         disabled={!canNext}
-        aria-label="Next step"
+        aria-label={t("Next step")}
         aria-hidden={!canNext}
         tabIndex={canNext ? 0 : -1}
       >

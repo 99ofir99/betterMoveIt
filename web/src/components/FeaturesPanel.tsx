@@ -7,6 +7,7 @@
 
 import { ALL_FEATURES, type FeatureStatus } from '../lib/features';
 import { Icon } from './icons/Icon';
+import { t } from '../lib/i18n';
 
 export function FeaturesPanel({ onClose }: { onClose: () => void }) {
   const grouped = new Map<string, typeof ALL_FEATURES>();
@@ -17,21 +18,21 @@ export function FeaturesPanel({ onClose }: { onClose: () => void }) {
   }
 
   return (
-    <div className="modal" role="dialog" aria-modal="true" aria-label="Features">
+    <div className="modal" role="dialog" aria-modal="true" aria-label={t("Features")}>
       <div className="modal__backdrop" onClick={onClose} />
       <div className="modal__card">
         <div className="modal__head">
           <div>
-            <h2>Core Features</h2>
+            <h2>{t("Core Features")}</h2>
             <p className="muted">
-              Essential transit tools. No ads, no AI, no subscriptions.
+              {t("Essential transit tools. No ads, no AI, no subscriptions.")}
             </p>
           </div>
           <button
             type="button"
             className="icon-button icon-button--ghost"
             onClick={onClose}
-            aria-label="Close"
+            aria-label={t("Close")}
           >
             <Icon name="close" />
           </button>
@@ -64,10 +65,10 @@ export function FeaturesPanel({ onClose }: { onClose: () => void }) {
 function statusLabel(s: FeatureStatus): string {
   switch (s) {
     case 'live':
-      return 'Live';
+      return t('Live');
     case 'partial':
-      return 'Partial';
+      return t('Partial');
     default:
-      return 'Planned';
+      return t('Planned');
   }
 }

@@ -13,6 +13,7 @@ import type {
   ItineraryTransitRowProps,
   ItineraryWalkRowProps,
 } from './types';
+import { t } from '../../lib/i18n';
 
 interface Endpoint {
   name: string;
@@ -30,11 +31,11 @@ function cleanPlaceName(name: string | undefined | null): string | undefined {
 
 function originOf(legs: Leg[]): Endpoint {
   const first = legs[0];
-  if (!first) return { name: 'Starting point' };
+  if (!first) return { name: t('Starting point') };
 
   if (first.mode === 'transit') {
     return {
-      name: cleanPlaceName(first.fromName) ?? 'Boarding stop',
+      name: cleanPlaceName(first.fromName) ?? t('Boarding stop'),
       stopId: first.from.stopId,
     };
   }
@@ -46,25 +47,25 @@ function originOf(legs: Leg[]): Endpoint {
   const board = legs.find((l): l is Extract<Leg, { mode: 'transit' }> => l.mode === 'transit');
   if (board) {
     return {
-      name: cleanPlaceName(board.fromName) ?? 'Starting point',
+      name: cleanPlaceName(board.fromName) ?? t('Starting point'),
       stopId: board.from.stopId,
     };
   }
 
-  return { name: 'Starting point', stopId: first.from?.stopId };
+  return { name: t('Starting point'), stopId: first.from?.stopId };
 }
 
 function destinationOf(leg: Leg | undefined): string {
-  if (!leg) return 'Destination';
-  return leg.toName ?? 'Destination';
+  if (!leg) return t('Destination');
+  return leg.toName ?? t('Destination');
 }
 
 function WalkRow({ leg }: ItineraryWalkRowProps) {
   return (
     <>
-      <div className="itin__title">Walk {formatDistance(leg.distanceM)}</div>
+      <div className="itin__title">{t('Walk {dist}', { dist: formatDistance(leg.distanceM) })}</div>
       <div className="itin__sub">
-        {Math.max(1, Math.round(leg.durationSec / 60))} min
+        {t('{n} min', { n: Math.max(1, Math.round(leg.durationSec / 60)) })}
         {leg.toName ? ` · to ${leg.toName}` : ''}
       </div>
     </>
@@ -103,7 +104,7 @@ function TransitRow({ leg, hideBoardStop, onStopClick, alternatives }: Itinerary
       {middle.length > 0 && (
         <details className="itin__mids">
           <summary>
-            {middle.length} stop{middle.length === 1 ? '' : 's'}
+            {middle.length === 1 ? t('1 stop') : t('{n} stops', { n: middle.length })}
           </summary>
           <ol>
             {middle.map((s, i) => (
@@ -131,7 +132,7 @@ function TransitRow({ leg, hideBoardStop, onStopClick, alternatives }: Itinerary
         <span>{formatClock12h(leg.arrival)}</span>
       </button>
       <div className="itin__sub">
-        {leg.route.agency} · {formatDuration(leg.durationSec)} ride
+        {leg.route.agency} · {t('{time} ride', { time: formatDuration(leg.durationSec) })}
       </div>
     </>
   );
@@ -147,16 +148,16 @@ export function ItineraryTimeline({ journey, transitAlternatives, onStopClick }:
   let transitIdx = 0;
 
   return (
-    <ol className="itin" aria-label="Itinerary">
+    <ol className="itin" aria-label={t("Itinerary")}>
       <ItineraryRow node="origin" connector={firstIsTransit ? 'solid' : 'dotted'}>
         <div className="itin__head">
           <div>
             <div className="itin__place">{origin.name}</div>
-            {origin.stopId && <div className="itin__id">ID {origin.stopId}</div>}
+            {origin.stopId && <div className="itin__id">{t("ID")} {origin.stopId}</div>}
           </div>
           <div className="itin__when">
             <div className="itin__clock">{formatClock12h(journey.departSeconds)}</div>
-            <div className="itin__when-label">Leave at</div>
+            <div className="itin__when-label">{t("Leave at")}</div>
           </div>
         </div>
       </ItineraryRow>
@@ -188,7 +189,7 @@ export function ItineraryTimeline({ journey, transitAlternatives, onStopClick }:
           <div className="itin__place">{destinationOf(last)}</div>
           <div className="itin__when">
             <div className="itin__clock">{formatClock12h(journey.arrivalSeconds)}</div>
-            <div className="itin__when-label">Arrive</div>
+            <div className="itin__when-label">{t("Arrive")}</div>
           </div>
         </div>
       </ItineraryRow>

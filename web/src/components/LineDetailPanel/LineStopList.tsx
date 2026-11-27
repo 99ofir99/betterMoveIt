@@ -2,6 +2,7 @@
 
 import { LineStopRow } from './LineStopRow';
 import type { LineStopListProps } from './types';
+import { t } from '../../lib/i18n';
 
 export function LineStopList({
   stops,
@@ -11,7 +12,7 @@ export function LineStopList({
   onSelectStop,
 }: LineStopListProps) {
   return (
-    <ol className="lnd-stops" aria-label="Stops along this line">
+    <ol className="lnd-stops" aria-label={t("Stops along this line")}>
       {stops.map((stop, i) => {
         const isBoard = boardIndex === i;
         const beforeBoard = pickingDestination && boardIndex != null && i < boardIndex;

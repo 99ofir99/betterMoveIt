@@ -13,6 +13,7 @@
 import type { ArrivalConfidence, ArrivalSource, DepartureNext } from '../types';
 import { formatArrivalClock } from './format';
 import { formatVehicleAge } from './vehicleAge';
+import { t } from './i18n';
 
 export type { ArrivalConfidence, ArrivalSource };
 
@@ -46,18 +47,18 @@ export function accuracyCaption(
 ): string {
   switch (confidence) {
     case 'high':
-      return 'Arrival time is accurate';
+      return t('Arrival time is accurate');
     case 'medium':
-      return 'Arrival time is fairly accurate';
+      return t('Arrival time is fairly accurate');
     case 'low':
-      return 'Arrival time may not be accurate';
+      return t('Arrival time may not be accurate');
     case 'off_route':
-      return 'Line may have left its route';
+      return t('Line may have left its route');
     case 'none':
     default:
       return source === 'historical'
-        ? 'Based on previous arrivals'
-        : 'Based on schedule';
+        ? t('Based on previous arrivals')
+        : t('Based on schedule');
   }
 }
 
@@ -94,19 +95,19 @@ export function formatEtaLabel(
   minutes: number,
   opts?: { departureSec?: number; nextDay?: boolean }
 ): string {
-  if (!opts?.nextDay && minutes <= 0) return 'now';
+  if (!opts?.nextDay && minutes <= 0) return t('now');
   if (shouldShowRelativeEta(minutes, opts?.nextDay)) {
-    return minutes === 1 ? '1 min' : `${minutes} min`;
+    return minutes === 1 ? t('1 min') : t('{n} min', { n: minutes });
   }
   return formatArrivalClock(minutes, opts?.departureSec);
 }
 
 export function formatSignalUpdated(next?: DepartureNext | null): string | null {
   if (!next?.lastUpdated && next?.signalAgeSec == null) return null;
-  if (next.lastUpdated) return `Updated ${formatVehicleAge(next.lastUpdated)}`;
+  if (next.lastUpdated) return t('Updated {age}', { age: formatVehicleAge(next.lastUpdated) });
   if (next.signalAgeSec != null) {
     const fakeTs = Date.now() - next.signalAgeSec * 1000;
-    return `Updated ${formatVehicleAge(fakeTs)}`;
+    return t('Updated {age}', { age: formatVehicleAge(fakeTs) });
   }
   return null;
 }
@@ -114,6 +115,6 @@ export function formatSignalUpdated(next?: DepartureNext | null): string | null 
 /** Delay caption when aimed vs expected differ by ≥2 min. */
 export function formatDelayLabel(delayMin: number | undefined): string | null {
   if (delayMin == null || Math.abs(delayMin) < 2) return null;
-  if (delayMin > 0) return `${delayMin} min late`;
-  return `${Math.abs(delayMin)} min early`;
+  if (delayMin > 0) return t('{n} min late', { n: delayMin });
+  return t('{n} min early', { n: Math.abs(delayMin) });
 }

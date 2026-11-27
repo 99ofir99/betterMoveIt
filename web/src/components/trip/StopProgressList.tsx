@@ -7,6 +7,7 @@ import { useEffect, useRef } from 'react';
 import { formatClock12h } from '../../lib/format';
 import type { IntermediateStop } from '../../types';
 import type { StopProgressListProps } from './types';
+import { t } from '../../lib/i18n';
 
 export function StopProgressList({
   stops,
@@ -42,7 +43,7 @@ export function StopProgressList({
     <ol
       ref={listRef}
       className="ld-stops"
-      aria-label="Stops on this ride"
+      aria-label={t("Stops on this ride")}
       style={{ ['--ld-stop-progress' as string]: `${progressPct}%` }}
     >
       {stops.map((stop: IntermediateStop, i) => {
@@ -72,7 +73,7 @@ export function StopProgressList({
             <span className="ld-stops__name">
               {stop.name}
               {isCurrent && !isAlight ? (
-                <span className="ld-stops__live-tag">Now</span>
+                <span className="ld-stops__live-tag">{t("Now")}</span>
               ) : null}
             </span>
             {showArrivalOnAlight && isAlight ? (

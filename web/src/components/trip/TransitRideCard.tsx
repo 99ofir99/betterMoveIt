@@ -9,6 +9,7 @@ import { ShowingStopsForBar } from './ShowingStopsForBar';
 import { StopProgressList } from './StopProgressList';
 import type { TransitLeg } from '../../types';
 import type { TransitRideCardProps } from './types';
+import { t } from '../../lib/i18n';
 
 function secondsNow(): number {
   const d = new Date();
@@ -42,12 +43,12 @@ export function TransitRideCard({
   const isOnboard = live && (phase === 'onboard' || phase === 'alight');
 
   const rideLabel = isWaiting
-    ? 'Waiting to board'
+    ? t('Waiting to board')
     : isAlighting && stopsLeft <= 0
-      ? 'Get off now'
+      ? t('Get off now')
       : stopsLeft <= 1
-        ? 'Ride 1 stop to'
-        : `Ride ${stopsLeft} stops to`;
+        ? t('Ride 1 stop to')
+        : t('Ride {n} stops to', { n: stopsLeft });
 
   // Will-board focuses the boarding stop; onboard focuses the alight stop.
   const heroName = isWaiting ? leg.fromName : leg.toName;
@@ -81,14 +82,13 @@ export function TransitRideCard({
           <div className="ld-ride__hero">
             <div className="ld-ride__hero-main">
               <div className="ld-ride__stop-name">{heroName}</div>
-              {heroStopId && <div className="ld-ride__stop-id">ID {heroStopId}</div>}
+              {heroStopId && <div className="ld-ride__stop-id">{t("ID")} {heroStopId}</div>}
             </div>
           </div>
 
           {changeClickable && isOnboard && (
             <p className="ld-ride__hint">
-              To make sure you receive the correct get-off alerts, choose the line
-              you&apos;re on.
+              {t("To make sure you receive the correct get-off alerts, choose the line you're on.")}
             </p>
           )}
 

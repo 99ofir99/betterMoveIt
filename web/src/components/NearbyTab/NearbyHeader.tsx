@@ -2,6 +2,7 @@
 
 import { Icon } from '../icons/Icon';
 import type { NearbyHeaderProps } from './types';
+import { t } from '../../lib/i18n';
 
 export function NearbyHeader({
   stopCount,
@@ -14,10 +15,10 @@ export function NearbyHeader({
   return (
     <div className="nearby-tab__head">
       <div className="nearby-tab__titles">
-        <h2 className="nearby-tab__title">Nearby</h2>
+        <h2 className="nearby-tab__title">{t("Nearby")}</h2>
         {!loading && (
           <p className="nearby-tab__subtitle">
-            {stopCount} stop{stopCount !== 1 ? 's' : ''} around you
+            {stopCount === 1 ? t('1 stop around you') : t('{n} stops around you', { n: stopCount })}
           </p>
         )}
       </div>
@@ -29,17 +30,17 @@ export function NearbyHeader({
             className={`nearby-tab__map-pill${mapPeek ? ' is-active' : ''}`}
             onClick={onToggleMapView}
             aria-pressed={mapPeek}
-            aria-label={mapPeek ? 'Show station list' : 'Show map'}
+            aria-label={mapPeek ? t('Show station list') : t('Show map')}
           >
             <Icon name={mapPeek ? 'list' : 'map'} size={16} />
-            <span>{mapPeek ? 'List' : 'Map'}</span>
+            <span>{mapPeek ? t('List') : t('Map')}</span>
           </button>
         )}
         <button
           type="button"
           className="icon-button icon-button--ghost nearby-tab__locate"
           onClick={onLocate}
-          aria-label="Update my location"
+          aria-label={t("Update my location")}
         >
           {locating ? <span className="nearby-tab__locate-dot">…</span> : <LocateIcon />}
         </button>

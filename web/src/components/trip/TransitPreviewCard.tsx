@@ -16,6 +16,7 @@ import { UpcomingArrivalsModal } from './UpcomingArrivalsModal';
 import { useStopDepartures } from './useStopDepartures';
 import { visibleWaitOptions, waitOptionsHiddenCount } from './waitOptionsCollapse';
 import type { TransitPreviewCardProps } from './types';
+import { t } from '../../lib/i18n';
 
 export function TransitPreviewCard({
   leg,
@@ -71,9 +72,9 @@ export function TransitPreviewCard({
 
         {showBoard && (
           <div className="ld-preview__alts">
-            <div className="ld-preview__alts-title">Wait for one of these options</div>
+            <div className="ld-preview__alts-title">{t("Wait for one of these options")}</div>
             {options.length === 0 ? (
-              <div className="ld-wait__loading">Loading departures…</div>
+              <div className="ld-wait__loading">{t("Loading departures…")}</div>
             ) : (
               <>
                 {visible.map((g, i) => (

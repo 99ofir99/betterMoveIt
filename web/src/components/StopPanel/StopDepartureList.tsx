@@ -2,10 +2,11 @@
 
 import { DepartureOptionRow } from '../trip/DepartureOptionRow';
 import type { StopDepartureListProps } from './types';
+import { t } from '../../lib/i18n';
 
 export function StopDepartureList({ departures, onOpenLine }: StopDepartureListProps) {
   if (departures.length === 0) {
-    return <p className="stp-empty muted">No more departures today from this stop.</p>;
+    return <p className="stp-empty muted">{t("No more departures today from this stop.")}</p>;
   }
 
   return (

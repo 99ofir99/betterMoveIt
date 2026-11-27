@@ -6,6 +6,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import type { LatLon } from '../types';
+import { t } from './i18n';
 
 export interface WatchLocationResult {
   location: LatLon | null;
@@ -30,7 +31,7 @@ export function useWatchLocation(active: boolean): WatchLocationResult {
     }
 
     if (!('geolocation' in navigator)) {
-      setError('Geolocation not supported on this device.');
+      setError(t('Geolocation not supported on this device.'));
       setAllowed(false);
       return;
     }

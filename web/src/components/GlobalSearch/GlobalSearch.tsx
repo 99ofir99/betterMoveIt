@@ -9,13 +9,14 @@ import { RecentPlaceRow } from './RecentPlaceRow';
 import { SearchResultItem } from './SearchResultItem';
 import { useGlobalSearch } from './useGlobalSearch';
 import type { GlobalSearchProps } from './types';
+import { t } from '../../lib/i18n';
 
 export function GlobalSearch({
   bias,
   target = 'any',
   title,
   placeholder: placeholderProp,
-  currentLocationLabel = 'Current location',
+  currentLocationLabel,
   onClose,
   onPickStop,
   onPickPlace,
@@ -27,13 +28,13 @@ export function GlobalSearch({
   const placeholder = placeholderProp ?? s.placeholder;
 
   return (
-    <div className="global-search" role="dialog" aria-label={title || 'Search'}>
+    <div className="global-search" role="dialog" aria-label={title || t('Search')}>
       <div className="global-search__bar">
         <button
           type="button"
           className="icon-button icon-button--ghost"
           onClick={onClose}
-          aria-label="Back"
+          aria-label={t("Back")}
         >
           <Icon name="arrow-back" />
         </button>
@@ -53,7 +54,7 @@ export function GlobalSearch({
               type="button"
               className="global-search__clear"
               onClick={() => s.setQ('')}
-              aria-label="Clear"
+              aria-label={t("Clear")}
             >
               <Icon name="close" size={18} />
             </button>
@@ -67,8 +68,8 @@ export function GlobalSearch({
               onChooseOnMap();
               onClose();
             }}
-            aria-label="Choose on map"
-            title="Choose on map"
+            aria-label={t("Choose on map")}
+            title={t("Choose on map")}
           >
             <Icon name="map" />
           </button>
@@ -91,18 +92,18 @@ export function GlobalSearch({
                   ◎
                 </span>
                 <span className="suggestions__text">
-                  <span className="suggestions__name">{currentLocationLabel}</span>
-                  <span className="suggestions__meta">Use GPS</span>
+                  <span className="suggestions__name">{currentLocationLabel ?? t('Current location')}</span>
+                  <span className="suggestions__meta">{t("Use GPS")}</span>
                 </span>
               </button>
             )}
 
             {(s.favs.places.length > 0 || s.favs.stops.length > 0) && (
               <section className="global-search__section">
-                <h3>Favorites</h3>
+                <h3>{t("Favorites")}</h3>
                 {s.favs.places.map((p) => {
                   const slotName =
-                    p.kind === 'home' ? 'Home' : p.kind === 'work' ? 'Work' : p.label;
+                    p.kind === 'home' ? t('Home') : p.kind === 'work' ? t('Work') : p.label;
                   const address = p.place.label?.trim();
                   return (
                     <button
@@ -147,7 +148,7 @@ export function GlobalSearch({
 
             {s.recentPlaces.length > 0 && (
               <section className="global-search__section">
-                <h3>Recent</h3>
+                <h3>{t("Recent")}</h3>
                 {s.recentPlaces.map((place) => (
                   <RecentPlaceRow
                     key={placeDedupeKey(place)}
@@ -165,10 +166,10 @@ export function GlobalSearch({
           </>
         )}
 
-        {s.q.trim() && s.loading && <p className="global-search__status">Searching…</p>}
+        {s.q.trim() && s.loading && <p className="global-search__status">{t("Searching…")}</p>}
         {s.error && <p className="global-search__status global-search__status--err">{s.error}</p>}
         {s.q.trim() && !s.loading && !s.error && s.results.length === 0 && (
-          <p className="global-search__status">No results</p>
+          <p className="global-search__status">{t("No results")}</p>
         )}
 
         <ul className="global-search__results">
@@ -215,7 +216,7 @@ export function GlobalSearch({
 
         {onChooseOnMap && (
           <div className="global-search__find-map">
-            <p className="global-search__find-map-hint">Didn&apos;t find what you&apos;re looking for?</p>
+            <p className="global-search__find-map-hint">{t("Didn't find what you're looking for?")}</p>
             <button
               type="button"
               className="global-search__find-map-btn"
@@ -225,7 +226,7 @@ export function GlobalSearch({
               }}
             >
               <Icon name="map" size={18} />
-              Find on Map
+              {t("Find on Map")}
             </button>
           </div>
         )}

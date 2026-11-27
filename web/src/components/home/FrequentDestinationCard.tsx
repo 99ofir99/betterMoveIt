@@ -21,13 +21,14 @@ import {
   LiveSignalIcon,
   WalkIcon,
 } from '../shared/icons';
+import { t } from '../../lib/i18n';
 
 // ── Leg chip renderers ───────────────────────────────────────────────────────
 
 function WalkChip({ leg }: { leg: WalkLeg }) {
   const mins = leg.durationSec ? Math.round(leg.durationSec / 60) : null;
   return (
-    <span className="fdcard__walk-chip" aria-label={`Walk${mins ? ` ${mins} min` : ''}`}>
+    <span className="fdcard__walk-chip" aria-label={mins ? t('Walk {n} min', { n: mins }) : t('Walk')}>
       <WalkIcon size={16} />
       {mins !== null && mins > 0 && <span>{mins}</span>}
     </span>
@@ -58,7 +59,7 @@ function TransitChip({ leg }: { leg: TransitLeg }) {
 
 function LegChips({ journey }: { journey: Journey }) {
   return (
-    <div className="fdcard__legs" aria-label="Route legs">
+    <div className="fdcard__legs" aria-label={t("Route legs")}>
       {journey.legs.map((leg, i) => (
         <span key={i} className="fdcard__legs-group">
           {i > 0 && <ChevronRightIcon size={14} className="fdcard__arrow" />}
@@ -96,9 +97,9 @@ export function FrequentDestinationCard({ dest, onTap }: FrequentDestinationCard
   const accClass = confidenceClass(leavesConfidence);
 
   return (
-    <button type="button" className="fdcard" onClick={onTap} aria-label={`Quick trip to ${place.label}`}>
+    <button type="button" className="fdcard" onClick={onTap} aria-label={t('Quick trip to {name}', { name: place.label })}>
       <div className="fdcard__header">
-        <span className="fdcard__label">My Frequent Destination</span>
+        <span className="fdcard__label">{t("My Frequent Destination")}</span>
         <span className="fdcard__chips" aria-hidden="true">
           <span className="fdcard__chip">
             <ClockIcon size={16} />
@@ -113,20 +114,20 @@ export function FrequentDestinationCard({ dest, onTap }: FrequentDestinationCard
 
       <div className="fdcard__body">
         <p className="fdcard__destination" dir="auto">
-          <span className="fdcard__to-prefix">To: </span>
+          <span className="fdcard__to-prefix">{t("To:")} </span>
           <span className="fdcard__to-name">{place.label}</span>
         </p>
 
         {loading && !journey && (
-          <p className="fdcard__loading muted">Planning route…</p>
+          <p className="fdcard__loading muted">{t("Planning route…")}</p>
         )}
 
         {journey && (
           <>
             <p className="fdcard__time">
-              {durationMin !== null && <strong>{durationMin} min</strong>}
+              {durationMin !== null && <strong>{t('{n} min', { n: durationMin })}</strong>}
               {arriveLabel && (
-                <span className="fdcard__arrive"> · Arrive at {arriveLabel}</span>
+                <span className="fdcard__arrive"> · {t('Arrive at {time}', { time: arriveLabel })}</span>
               )}
             </p>
 
@@ -138,13 +139,13 @@ export function FrequentDestinationCard({ dest, onTap }: FrequentDestinationCard
                   {leaveLabel != null ? (
                     <>
                       <span className="fdcard__leaves-label">
-                        {relativeLeave ? 'Leaves in' : 'Leaves at'}
+                        {relativeLeave ? t('Leaves in') : t('Leaves at')}
                       </span>
                       {leavesLive && leavesConfidence !== 'off_route' && (
                         <LiveSignalIcon size={14} className={`fdcard__live-icon ${accClass}`} />
                       )}
                       {leavesConfidence === 'off_route' && (
-                        <span className="fdcard__off-route" aria-label="Off route">
+                        <span className="fdcard__off-route" aria-label={t("Off route")}>
                           !
                         </span>
                       )}
@@ -153,10 +154,10 @@ export function FrequentDestinationCard({ dest, onTap }: FrequentDestinationCard
                       </span>
                     </>
                   ) : (
-                    <span className="fdcard__leaves-label">Departs soon</span>
+                    <span className="fdcard__leaves-label">{t("Departs soon")}</span>
                   )}
                   {boardingStop && (
-                    <span className="fdcard__boarding" dir="auto">from {boardingStop}</span>
+                    <span className="fdcard__boarding" dir="auto">{t('from {stop}', { stop: boardingStop })}</span>
                   )}
                 </p>
                 <p className={`fdcard__acc-caption ${accClass}`}>
@@ -168,7 +169,7 @@ export function FrequentDestinationCard({ dest, onTap }: FrequentDestinationCard
         )}
 
         {!loading && !journey && (
-          <p className="fdcard__tap-hint muted">Tap to plan a trip</p>
+          <p className="fdcard__tap-hint muted">{t("Tap to plan a trip")}</p>
         )}
       </div>
     </button>

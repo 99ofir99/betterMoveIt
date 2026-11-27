@@ -6,6 +6,7 @@ import { formatLineLongName, formatRailFinalCity } from '../../lib/lineCategory'
 import { isHeavyRailRoute, railTrainNumber } from '../../lib/railLabel';
 import { isLightRailRoute } from '../../lib/transportMode';
 import type { LineRowProps } from './types';
+import { t } from '../../lib/i18n';
 
 function favLineMode(line: LineRowProps['item']['line']): 'bus' | 'rail' | 'tram' {
   if (isLightRailRoute(line)) return 'tram';
@@ -36,7 +37,7 @@ export function LineFavRow({ item, onOpen, onRemove }: LineRowProps) {
         type="button"
         className="fav-row__star is-on"
         onClick={onRemove}
-        aria-label="Remove favourite line"
+        aria-label={t("Remove favourite line")}
       >
         <StarIcon size={20} filled />
       </button>

@@ -3,6 +3,7 @@
 import { formatClock12h, formatDuration } from '../../lib/format';
 import { StarIcon } from '../icons';
 import type { DirectionsSummaryProps } from './types';
+import { t } from '../../lib/i18n';
 
 export function DirectionsSummary({
   durationSec,
@@ -18,7 +19,7 @@ export function DirectionsSummary({
         <span className="directions__sep" aria-hidden="true">
           |
         </span>
-        <span>Arrival time: {formatClock12h(arrivalSeconds)}</span>
+        <span>{t("Arrival time:")} {formatClock12h(arrivalSeconds)}</span>
         {fare && (
           <>
             <span className="directions__sep" aria-hidden="true">
@@ -32,7 +33,7 @@ export function DirectionsSummary({
         type="button"
         className={`directions__fav${saved ? ' is-saved' : ''}`}
         onClick={onToggleSaved}
-        aria-label={saved ? 'Remove saved trip' : 'Save trip'}
+        aria-label={saved ? t('Remove saved trip') : t('Save trip')}
         aria-pressed={saved}
       >
         <StarIcon size={20} filled={saved} />

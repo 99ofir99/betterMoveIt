@@ -19,6 +19,7 @@ import {
   saveTripSession,
   type TripSessionSnapshot,
 } from './tripSession';
+import { t } from './i18n';
 
 const ALERTS_STORAGE_KEY = 'bmi_trip_alerts_enabled';
 
@@ -85,7 +86,7 @@ export function useActiveTrip(
   const [legIndex, setLegIndex] = useState(0);
   const [phase, setPhase] = useState<TripPhase>(initial ? 'walking' : 'idle');
   const [progress, setProgress] = useState(0);
-  const [nextAction, setNextAction] = useState<NextAction>({ title: 'Locating…', subtitle: '' });
+  const [nextAction, setNextAction] = useState<NextAction>({ title: t('Locating…'), subtitle: '' });
   const [alertsEnabled, setAlertsEnabledState] = useState<boolean>(
     () => initial?.alertsEnabled ?? loadAlertsEnabled()
   );
@@ -206,7 +207,7 @@ export function useActiveTrip(
     setPhase('idle');
     setLegIndex(0);
     setProgress(0);
-    setNextAction({ title: 'Locating…', subtitle: '' });
+    setNextAction({ title: t('Locating…'), subtitle: '' });
     setTransitAlternatives(undefined);
     setCorridorMembers([]);
     setMinimizedState(false);

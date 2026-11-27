@@ -1,5 +1,6 @@
 import { Icon } from '../icons/Icon';
 import type { ResultsToolbarProps, SortChip } from './types';
+import { t } from '../../lib/i18n';
 
 const SORT_CHIPS: SortChip[] = [
   { mode: 'fastest', label: 'Fastest', icon: 'sliders' },
@@ -31,13 +32,13 @@ export function ResultsToolbar({
           className={`results-toolbar__pill results-toolbar__pill--map ${mapPeek ? 'is-active' : ''}`}
           onClick={onToggleMapView}
           aria-pressed={mapPeek}
-          aria-label={mapPeek ? 'Show journey list' : 'Show map'}
+          aria-label={mapPeek ? t('Show journey list') : t('Show map')}
         >
           <Icon name={mapPeek ? 'list' : 'map'} size={18} />
-          <span>{mapPeek ? 'List' : 'Map'}</span>
+          <span>{mapPeek ? t('List') : t('Map')}</span>
         </button>
       </div>
-      <div className="results-toolbar__chips" role="group" aria-label="Sort journeys">
+      <div className="results-toolbar__chips" role="group" aria-label={t("Sort journeys")}>
         {SORT_CHIPS.map(({ mode, label, icon }) => (
           <button
             key={mode}
@@ -47,7 +48,7 @@ export function ResultsToolbar({
             onClick={() => onSortMode(mode)}
           >
             <Icon name={icon} size={16} className="results-toolbar__chip-icon" />
-            {label}
+            {t(label)}
           </button>
         ))}
       </div>

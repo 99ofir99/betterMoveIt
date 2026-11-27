@@ -10,6 +10,7 @@ import { LineFavRow } from './LineFavRow';
 import { SetPlacePicker } from './SetPlacePicker';
 import { useFavoritesTab } from './useFavoritesTab';
 import type { FavoritesTabProps } from './types';
+import { t } from '../../lib/i18n';
 
 export function FavoritesTab({
   onPlanTo,
@@ -24,15 +25,15 @@ export function FavoritesTab({
   return (
     <div className="fav-tab">
       <header className="fav-tab__header">
-        <h1 className="fav-tab__title">Favourites</h1>
+        <h1 className="fav-tab__title">{t("Favourites")}</h1>
       </header>
 
-      <section className="fav-section" aria-label="Places">
+      <section className="fav-section" aria-label={t("Places")}>
         <SectionHeader
-          title="Places"
-          actionLabel="Add"
+          title={t("Places")}
+          actionLabel={t("Add")}
           onAction={onAddPlace ?? onGoDirections}
-          actionAriaLabel="Add favourite place"
+          actionAriaLabel={t("Add favourite place")}
         />
         <div className="fav-list">
           <PlaceRow
@@ -63,10 +64,10 @@ export function FavoritesTab({
         </div>
       </section>
 
-      <section className="fav-section" aria-label="Favourite stops">
-        <SectionHeader title="Stops" />
+      <section className="fav-section" aria-label={t("Favourite stops")}>
+        <SectionHeader title={t("Stops")} />
         {s.stops.length === 0 ? (
-          <p className="fav-empty">Search for a stop and tap the star to save it here.</p>
+          <p className="fav-empty">{t("Search for a stop and tap the star to save it here.")}</p>
         ) : (
           <div className="fav-list">
             {s.stops.map((item) => (
@@ -81,10 +82,10 @@ export function FavoritesTab({
         )}
       </section>
 
-      <section className="fav-section" aria-label="Favourite lines">
-        <SectionHeader title="Lines" />
+      <section className="fav-section" aria-label={t("Favourite lines")}>
+        <SectionHeader title={t("Lines")} />
         {s.lines.length === 0 ? (
-          <p className="fav-empty">Search for a line and tap the star to save it here.</p>
+          <p className="fav-empty">{t("Search for a line and tap the star to save it here.")}</p>
         ) : (
           <div className="fav-list">
             {s.lines.map((item) => (

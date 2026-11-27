@@ -6,6 +6,7 @@
 import type { Journey, LatLon, TransitLeg, WalkLeg } from '../types';
 import type { TripPhase, NextAction } from '../components/trip/types';
 import { formatClock12h } from './format';
+import { t } from './i18n';
 
 /** Geofence radius used to decide "user has reached a point". */
 export const GEOFENCE_M = 55;
@@ -286,7 +287,7 @@ export function buildNextAction(
         ? (lastLeg as TransitLeg).toName
         : (lastLeg as WalkLeg).toName ?? ''
       : '';
-    return { title: "You're here!", subtitle: destName };
+    return { title: t("You're here!"), subtitle: destName };
   }
 
   const leg = legs[legIndex];
@@ -303,12 +304,12 @@ export function buildNextAction(
       Math.round(walkLeg.durationSec * (1 - Math.min(1, Math.max(0, progress))))
     );
     return {
-      title: `Walk ${Math.round(walkLeg.distanceM)} m to ${toName}`,
+      title: t('Walk {m} m to {name}', { m: Math.round(walkLeg.distanceM), name: toName }),
       subtitle: nextLeg
         ? nextLeg.mode === 'transit'
-          ? `Then take ${(nextLeg as TransitLeg).route.displayName}`
-          : 'Then continue'
-        : 'Your destination',
+          ? t('Then take {line}', { line: (nextLeg as TransitLeg).route.displayName })
+          : t('Then continue')
+        : t('Your destination'),
       countdownSec,
     };
   }
@@ -316,7 +317,7 @@ export function buildNextAction(
   if (phase === 'waiting') {
     const transitLeg = leg as TransitLeg;
     return {
-      title: `Wait for ${transitLeg.route.displayName}`,
+      title: t('Wait for {line}', { line: transitLeg.route.displayName }),
       subtitle: `→ ${transitLeg.headsign}`,
       countdownSec: Math.max(0, transitLeg.departure - nowSec),
       routeColor: transitLeg.route.color,
@@ -332,10 +333,10 @@ export function buildNextAction(
     // Moovit: strip says "Ride N stops to"; body title is the alight stop name.
     const rideLabel =
       stopsToAlight <= 0
-        ? 'Get off now'
+        ? t('Get off now')
         : stopsToAlight === 1
-          ? 'Ride 1 stop to'
-          : `Ride ${stopsToAlight} stops to`;
+          ? t('Ride 1 stop to')
+          : t('Ride {n} stops to', { n: stopsToAlight });
     return {
       title: transitLeg.toName,
       subtitle: rideLabel,
@@ -347,7 +348,7 @@ export function buildNextAction(
     };
   }
 
-  return { title: 'Locating…', subtitle: '' };
+  return { title: t('Locating…'), subtitle: '' };
 }
 
 // ── Minimized PiP chip (Moovit multi_leg_nav_pip_layout) ──────────────────────
@@ -381,8 +382,8 @@ function remainingWalkMeters(
 
 function formatArriveRelative(sec: number): string {
   const mins = Math.max(0, Math.round(sec / 60));
-  if (mins <= 0) return 'now';
-  return `${mins} min`;
+  if (mins <= 0) return t('now');
+  return t('{n} min', { n: mins });
 }
 
 /**
@@ -402,7 +403,7 @@ export function buildPipContent(
   const footer = { arriveClock, arriveRelative };
 
   if (phase === 'done' || legIndex >= journey.legs.length) {
-    return { kind: 'done', title: "You're here!", detail: '', ...footer };
+    return { kind: 'done', title: t("You're here!"), detail: '', ...footer };
   }
 
   const leg = journey.legs[legIndex]!;
@@ -413,12 +414,12 @@ export function buildPipContent(
     const toName =
       walk.toName ??
       (nextLeg?.mode === 'transit' ? (nextLeg as TransitLeg).fromName : '') ??
-      'destination';
+      t('destination');
     const meters = remainingWalkMeters(walk, pos, progress);
     return {
       kind: 'walk',
-      title: `Walk to ${toName}`,
-      detail: `${meters} m`,
+      title: t('Walk to {name}', { name: toName }),
+      detail: t('{n} m', { n: meters }),
       ...footer,
     };
   }
@@ -428,7 +429,7 @@ export function buildPipContent(
     const waitSec = Math.max(0, transit.departure - nowSec);
     return {
       kind: 'wait',
-      title: `Wait for ${transit.route.displayName}`,
+      title: t('Wait for {line}', { line: transit.route.displayName }),
       detail: formatArriveRelative(waitSec),
       routeColor: transit.route.color,
       ...footer,
@@ -441,10 +442,10 @@ export function buildPipContent(
   const rideSec = Math.max(0, transit.arrival - nowSec);
   const title =
     stops <= 0
-      ? 'Get off now'
+      ? t('Get off now')
       : stops === 1
-        ? `Ride 1 stop to ${transit.toName}`
-        : `Ride ${stops} stops to ${transit.toName}`;
+        ? t('Ride 1 stop to {name}', { name: transit.toName })
+        : t('Ride {n} stops to {name}', { n: stops, name: transit.toName });
   return {
     kind: 'ride',
     title,

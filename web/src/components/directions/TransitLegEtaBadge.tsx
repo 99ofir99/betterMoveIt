@@ -11,6 +11,7 @@ import {
 } from '../../lib/arrivalAccuracy';
 import { LiveSignalIcon } from '../icons';
 import type { TransitLegEtaBadgeProps } from './types';
+import { t } from '../../lib/i18n';
 
 export function TransitLegEtaBadge({ eta }: TransitLegEtaBadgeProps) {
   const confidence = eta.confidence ?? (eta.live ? 'high' : 'none');
@@ -32,7 +33,7 @@ export function TransitLegEtaBadge({ eta }: TransitLegEtaBadgeProps) {
           <LiveSignalIcon size={11} className="itin__eta-signal" />
         )}
         {confidence === 'off_route' && (
-          <span className="itin__eta-warn" aria-label="Off route">
+          <span className="itin__eta-warn" aria-label={t("Off route")}>
             !
           </span>
         )}

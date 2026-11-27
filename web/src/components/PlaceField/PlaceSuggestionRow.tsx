@@ -2,6 +2,7 @@
 
 import { SearchFavButton } from '../GlobalSearch/SearchFavButton';
 import type { PlaceSuggestionRowProps } from './types';
+import { t } from '../../lib/i18n';
 
 export function PlaceSuggestionRow({
   result: r,
@@ -19,7 +20,7 @@ export function PlaceSuggestionRow({
             <span className="suggestions__meta">
               {r.nameEn}
               {r.nameEn && r.code ? ' · ' : ''}
-              {r.code ? `Stop ${r.code}` : ''}
+              {r.code ? t('Stop {code}', { code: r.code }) : ''}
             </span>
           )}
         </span>

@@ -19,6 +19,7 @@ import type {
   LineScheduleResponse,
   LineScheduleStop,
 } from '../../types';
+import { t } from '../../lib/i18n';
 
 export function useLineDetail(
   lineId: string,
@@ -139,7 +140,7 @@ export function useLineDetail(
     const dest = clean(destRaw);
     const origin = clean(displayStops[0]?.name ?? '');
     if (dest && origin) return `${dest} ← ${origin}`;
-    return dest || origin || 'Line';
+    return dest || origin || t('Line');
   }, [displayStops, feedDestination, reversed]);
 
   const multiGtfs = directionOptions.length > 1;

@@ -16,6 +16,7 @@ import { bestBoardingMinutes } from './boardingEta';
 import { minutesUntilDepart } from './format';
 import type { Journey, LatLon, Place, TransitLeg } from '../types';
 import type { FrequentDestResult } from '../components/home/types';
+import { getLocale } from './i18n';
 
 /** ~50m — ignore GPS jitter so we don't abort / re-plan on every watch tick. */
 const REPLAN_DELTA = 0.00045;
@@ -30,6 +31,7 @@ function nowSeconds(): number {
 function fmtArrival(secs: number): string {
   const h = Math.floor(secs / 3600) % 24;
   const m = Math.floor((secs % 3600) / 60);
+  if (getLocale() === 'he') return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
   const period = h >= 12 ? 'PM' : 'AM';
   const h12 = h % 12 || 12;
   return `${h12}:${String(m).padStart(2, '0')} ${period}`;

@@ -8,6 +8,7 @@ import { StopDepartureList } from './StopDepartureList';
 import { StopHeader } from './StopHeader';
 import type { StopPanelProps } from './types';
 import { useStopPanel } from './useStopPanel';
+import { t } from '../../lib/i18n';
 
 export function StopPanel({
   stopId,
@@ -27,10 +28,10 @@ export function StopPanel({
       <StopHeader name={name} code={code} onClose={onClose} />
 
       <div className="stop-panel__body">
-        <div className="stp-section-title">Upcoming Arrivals</div>
+        <div className="stp-section-title">{t("Upcoming Arrivals")}</div>
 
         {s.error && <p className="error-text">{s.error}</p>}
-        {s.loading && <p className="muted stp-loading">Loading departures…</p>}
+        {s.loading && <p className="muted stp-loading">{t("Loading departures…")}</p>}
 
         {s.data && (
           <StopDepartureList departures={s.data.departures} onOpenLine={onOpenLine} />

@@ -16,6 +16,7 @@ import { buildPipContent } from '../../lib/tripGuidance';
 import { secondsSinceLocalMidnight } from '../../lib/format';
 import { usePipDrag } from './usePipDrag';
 import type { ActiveTripPipProps } from './types';
+import { t } from '../../lib/i18n';
 
 function PipIcon({ kind, color }: { kind: string; color?: string | null }) {
   if (kind === 'walk') {
@@ -193,7 +194,7 @@ export function ActiveTripPip({ state, onExpand, onClose }: ActiveTripPipProps) 
       onPointerDown={handleRootPointerDown}
       onPointerUp={handleRootPointerUp}
       role="dialog"
-      aria-label={`Active trip: ${pip.title}. ${pip.detail}. Arrive ${pip.arriveRelative}`}
+      aria-label={t('Active trip: {title}. {detail}. Arrive {time}', { title: pip.title, detail: pip.detail, time: pip.arriveRelative })}
     >
       <div className="trip-pip__card">
         <div className="trip-pip__body">
@@ -212,7 +213,7 @@ export function ActiveTripPip({ state, onExpand, onClose }: ActiveTripPipProps) 
           </span>
           <span className="trip-pip__clock">{pip.arriveClock}</span>
           <span className="trip-pip__arrive">
-            Arrive <strong>{pip.arriveRelative}</strong>
+            {t("Arrive")} <strong>{pip.arriveRelative}</strong>
           </span>
         </div>
 
@@ -223,7 +224,7 @@ export function ActiveTripPip({ state, onExpand, onClose }: ActiveTripPipProps) 
               type="button"
               data-pip-action="close"
               className="trip-pip__action trip-pip__action--close"
-              aria-label="Close floating trip"
+              aria-label={t("Close floating trip")}
               disabled={Boolean(exitMode)}
               onPointerDown={(e) => e.stopPropagation()}
               onPointerUp={(e) => {
@@ -237,7 +238,7 @@ export function ActiveTripPip({ state, onExpand, onClose }: ActiveTripPipProps) 
               type="button"
               data-pip-action="expand"
               className="trip-pip__action trip-pip__action--expand"
-              aria-label="Open full Live Directions"
+              aria-label={t("Open full Live Directions")}
               disabled={Boolean(exitMode)}
               onPointerDown={(e) => e.stopPropagation()}
               onPointerUp={(e) => {

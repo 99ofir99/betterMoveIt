@@ -2,10 +2,11 @@
 
 import { ChevronRightIcon, HomeIcon, StarIcon, WorkIcon } from '../shared/icons';
 import type { PlaceRowProps } from './types';
+import { t } from '../../lib/i18n';
 
 export function PlaceRow({ kind, place, label, onSet, onGo, onClear }: PlaceRowProps) {
   const title =
-    label ?? (kind === 'home' ? 'Home' : kind === 'work' ? 'Work' : place?.label ?? 'Place');
+    label ? t(label) : kind === 'home' ? t('Home') : kind === 'work' ? t('Work') : place?.label ?? t('Place');
   const address = place?.place.label?.trim() || null;
   const icon =
     kind === 'home' ? (
@@ -22,7 +23,7 @@ export function PlaceRow({ kind, place, label, onSet, onGo, onClear }: PlaceRowP
         <span className={`fav-row__icon fav-row__icon--${kind}`}>{icon}</span>
         <span className="fav-row__body">
           <span className="fav-row__name">{title}</span>
-          <span className="fav-row__meta">Tap to set</span>
+          <span className="fav-row__meta">{t("Tap to set")}</span>
         </span>
         <ChevronRightIcon size={16} className="fav-row__chevron" />
       </button>
@@ -43,7 +44,7 @@ export function PlaceRow({ kind, place, label, onSet, onGo, onClear }: PlaceRowP
         type="button"
         className="fav-row__overflow"
         onClick={onClear}
-        aria-label={`Clear ${title}`}
+        aria-label={t('Clear {name}', { name: title })}
       >
         ×
       </button>
