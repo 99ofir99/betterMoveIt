@@ -21,6 +21,11 @@ interface SwipeRailProps extends HTMLAttributes<HTMLDivElement> {
    * end is cut; wrong for a line row (badge + headsign), whose start is the badge.
    */
   rtlOpenAtEnd?: boolean;
+  /**
+   * A journey's leg chain reads left → right with › arrows even in Hebrew, while
+   * the row stays aligned to the start (right) side.
+   */
+  ltrSequence?: boolean;
 }
 
 function nearestVerticalScrollParent(from: HTMLElement): HTMLElement | null {
@@ -42,6 +47,7 @@ export function SwipeRail({
   onPointerDown,
   onClick,
   rtlOpenAtEnd = true,
+  ltrSequence = false,
   ...rest
 }: SwipeRailProps) {
   const railRef = useRef<HTMLDivElement>(null);
@@ -104,7 +110,8 @@ export function SwipeRail({
     <div
       {...rest}
       ref={railRef}
-      className={className}
+      className={ltrSequence ? [className, 'rail-ltr-seq'].filter(Boolean).join(' ') : className}
+      dir={ltrSequence ? 'ltr' : rest.dir}
       onPointerDown={handlePointerDown}
       onPointerMove={handlePointerMove}
       onClick={handleClick}

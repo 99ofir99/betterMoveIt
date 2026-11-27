@@ -9922,6 +9922,17 @@ button.ld-option {
   transform: scaleX(-1);
 }
 
+/* Leg chains read left → right even in Hebrew (dir="ltr" on the row): keep › as is. */
+[dir='rtl'] [dir='ltr'] .rtl-flip {
+  transform: none;
+}
+
+/* …and still hug the right (start) side. An auto margin collapses to 0 once the
+   row overflows, so nothing ends up unreachable off the left edge. */
+[dir='rtl'] .rail-ltr-seq > :first-child {
+  margin-left: auto;
+}
+
 [dir='rtl'] .prefs-sheet__switch.is-on::after {
   transform: translateX(-20px);
 }

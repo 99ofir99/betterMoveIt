@@ -79,7 +79,7 @@ function ClampedRouteSequence({
 }) {
   let transitIdx = 0;
   return (
-    <SwipeRail className="journey-card__legs" aria-label={t("Route legs")}>
+    <SwipeRail className="journey-card__legs" ltrSequence aria-label={t("Route legs")}>
       {journey.legs.map((leg, li) => {
         const sep =
           li > 0 ? (
@@ -162,7 +162,11 @@ function JourneyCardFooter({
         .then((board) => {
           if (ctrl.signal.aborted) return;
           // Only buses from the planned trip on: earlier ones belong to another card.
-          const planned = minutesUntilDepart(firstTransit.departure);
+          const planned = minutesUntilDepart(
+            firstTransit.departure,
+            undefined,
+            journey.nextDay
+          );
           const minMinutes = planned.nextDay
             ? 0
             : Math.max(0, planned.minutes - PLANNED_TRIP_SLACK_MIN);
@@ -172,7 +176,7 @@ function JourneyCardFooter({
             return;
           }
           // Schedule fallback from plan clock.
-          const { minutes, nextDay } = minutesUntilDepart(journey.departSeconds);
+          const { minutes, nextDay } = minutesUntilDepart(journey.departSeconds, undefined, journey.nextDay);
           setEtas([
             {
               minutes,
@@ -186,7 +190,7 @@ function JourneyCardFooter({
         })
         .catch(() => {
           if (ctrl.signal.aborted) return;
-          const { minutes, nextDay } = minutesUntilDepart(journey.departSeconds);
+          const { minutes, nextDay } = minutesUntilDepart(journey.departSeconds, undefined, journey.nextDay);
           setEtas([
             {
               minutes,
@@ -231,7 +235,7 @@ function JourneyCardFooter({
       ? etas
       : [
           (() => {
-            const { minutes, nextDay } = minutesUntilDepart(journey.departSeconds);
+            const { minutes, nextDay } = minutesUntilDepart(journey.departSeconds, undefined, journey.nextDay);
             return {
               minutes,
               departure: journey.departSeconds,
