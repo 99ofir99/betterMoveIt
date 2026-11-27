@@ -8,6 +8,7 @@ import { t } from '../../lib/i18n';
 export function DirectionsSummary({
   durationSec,
   arrivalSeconds,
+  nextDay,
   fare,
   saved,
   onToggleSaved,
@@ -19,7 +20,8 @@ export function DirectionsSummary({
         <span className="directions__sep" aria-hidden="true">
           |
         </span>
-        <span>{t("Arrival time:")} {formatClock12h(arrivalSeconds)}</span>
+        <span>{t("Arrival time:")} {formatClock12h(arrivalSeconds)}
+          {nextDay ? t(' (next day)') : ''}</span>
         {fare && (
           <>
             <span className="directions__sep" aria-hidden="true">

@@ -22,6 +22,7 @@ import {
   WalkIcon,
 } from '../shared/icons';
 import { t } from '../../lib/i18n';
+import { formatClock } from '../../lib/format';
 import { previewLegs } from '../../lib/previewLegs';
 
 // ── Leg chip renderers ───────────────────────────────────────────────────────
@@ -81,6 +82,7 @@ export function FrequentDestinationCard({ dest, onTap }: FrequentDestinationCard
     journey,
     loading,
     leavesInMin,
+    leavesTomorrow,
     leavesDepartureSec,
     leavesLive,
     leavesConfidence,
@@ -90,11 +92,15 @@ export function FrequentDestinationCard({ dest, onTap }: FrequentDestinationCard
     boardingStop,
   } = dest;
 
+  // Tomorrow's trip (no more service today): "Leaves tomorrow 18:39", never a countdown.
   const leaveLabel =
     leavesInMin != null
-      ? formatEtaLabel(leavesInMin, { departureSec: leavesDepartureSec ?? undefined })
+      ? leavesTomorrow && leavesDepartureSec != null
+        ? t('Tomorrow {time}', { time: formatClock(leavesDepartureSec) })
+        : formatEtaLabel(leavesInMin, { departureSec: leavesDepartureSec ?? undefined })
       : null;
-  const relativeLeave = leavesInMin != null && shouldShowRelativeEta(leavesInMin);
+  const relativeLeave =
+    !leavesTomorrow && leavesInMin != null && shouldShowRelativeEta(leavesInMin);
   const accClass = confidenceClass(leavesConfidence);
 
   return (
@@ -128,7 +134,8 @@ export function FrequentDestinationCard({ dest, onTap }: FrequentDestinationCard
             <p className="fdcard__time">
               {durationMin !== null && <strong>{t('{n} min', { n: durationMin })}</strong>}
               {arriveLabel && (
-                <span className="fdcard__arrive"> · {t('Arrive at {time}', { time: arriveLabel })}</span>
+                <span className="fdcard__arrive"> · {t('Arrive at {time}', { time: arriveLabel })}
+                  {leavesTomorrow ? t(' (next day)') : ''}</span>
               )}
             </p>
 
@@ -141,7 +148,7 @@ export function FrequentDestinationCard({ dest, onTap }: FrequentDestinationCard
                     <>
                       <span className="fdcard__leaves-label">
                         {/* "Leaves now", not "Leaves in now". */}
-                        {leavesInMin != null && leavesInMin <= 0
+                        {leavesTomorrow || (leavesInMin != null && leavesInMin <= 0)
                           ? t('Leaves')
                           : relativeLeave
                             ? t('Leaves in')

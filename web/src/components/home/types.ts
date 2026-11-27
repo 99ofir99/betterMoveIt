@@ -11,6 +11,8 @@ export interface FrequentDestResult {
   loading: boolean;
   /** Rounded minutes until departure (null if unavailable or past). */
   leavesInMin: number | null;
+  /** The planned trip runs tomorrow (no more service today). */
+  leavesTomorrow?: boolean;
   /** Seconds-from-midnight for the next boarding, for clock labels when far out. */
   leavesDepartureSec: number | null;
   /** True when boarding ETA is backed by live vehicle GPS. */
