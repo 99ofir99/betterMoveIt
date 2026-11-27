@@ -115,8 +115,8 @@ export function GlobalSearch({
                         onClose();
                       }}
                     >
-                      <span className="suggestions__icon">
-                        {p.kind === 'home' ? '🏠' : p.kind === 'work' ? '🏢' : '★'}
+                      <span className="suggestions__icon" aria-hidden="true">
+                        <Icon name={p.kind === 'home' ? 'home' : p.kind === 'work' ? 'work' : 'star'} size={18} />
                       </span>
                       <span className="suggestions__text">
                         <span className="suggestions__name">{slotName}</span>
@@ -137,7 +137,9 @@ export function GlobalSearch({
                       onClose();
                     }}
                   >
-                    <span className="suggestions__icon">🚏</span>
+                    <span className="suggestions__icon suggestions__icon--stop" aria-hidden="true">
+                      <Icon name="bus" size={18} />
+                    </span>
                     <span className="suggestions__text">
                       <span className="suggestions__name">{item.stop.name}</span>
                     </span>

@@ -474,7 +474,16 @@ select {
 .planner {
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 12px;
+}
+
+/* Same section rhythm as the search screen, flush with the sheet edges. */
+.planner__list .global-search__section {
+  padding: 8px 0 0;
+}
+
+.planner .planner__go {
+  border-radius: 999px;
 }
 
 .planner__fields {
@@ -661,10 +670,11 @@ select {
 
 .suggestions__icon {
   flex: none;
-  width: 26px;
-  height: 26px;
+  width: 32px;
+  height: 32px;
   border-radius: 999px;
-  background: var(--surface);
+  background: var(--surface-2);
+  color: var(--text-dim);
   display: inline-flex;
   align-items: center;
   justify-content: center;

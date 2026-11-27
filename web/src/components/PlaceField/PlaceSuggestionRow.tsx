@@ -1,5 +1,6 @@
 /** One planner suggestion with empty/filled favourite star — visual only. */
 
+import { Icon } from '../icons/Icon';
 import { SearchFavButton } from '../GlobalSearch/SearchFavButton';
 import type { PlaceSuggestionRowProps } from './types';
 import { t } from '../../lib/i18n';
@@ -13,7 +14,9 @@ export function PlaceSuggestionRow({
   return (
     <li className="search-result-row">
       <button type="button" className="suggestions__row" onClick={onPick}>
-        <span className="suggestions__icon">{r.kind === 'place' ? '📍' : '🚏'}</span>
+        <span className="suggestions__icon" aria-hidden="true">
+        <Icon name={r.kind === 'place' ? 'place' : 'bus'} size={18} />
+      </span>
         <span className="suggestions__text">
           <span className="suggestions__name">{r.name}</span>
           {r.kind !== 'place' && (r.nameEn || r.code) && (

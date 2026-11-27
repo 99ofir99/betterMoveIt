@@ -1,5 +1,6 @@
 /** One search hit row — locations always show an empty/filled star. Visual only. */
 
+import { Icon } from '../icons/Icon';
 import type { Line, Place, SearchResult, Stop } from '../../types';
 import { contrastText, modeIcon, routeColor } from '../../lib/format';
 import { formatRailFinalCity } from '../../lib/lineCategory';
@@ -107,7 +108,7 @@ export function SearchResultItem({
       <li className="search-result-row">
         <button type="button" className="suggestions__row" onClick={() => onPickStop(stop)}>
           <span className="suggestions__icon suggestions__icon--stop" aria-hidden="true">
-            🚏
+            <Icon name="bus" size={18} />
           </span>
           <span className="suggestions__text">
             <span className="suggestions__name">{r.name}</span>
@@ -133,7 +134,7 @@ export function SearchResultItem({
     <li className="search-result-row">
       <button type="button" className="suggestions__row" onClick={() => onPickPlace(place)}>
         <span className="suggestions__icon suggestions__icon--pin" aria-hidden="true">
-          📍
+          <Icon name="place" size={18} />
         </span>
         <span className="suggestions__text">
           <span className="suggestions__name">{r.name}</span>

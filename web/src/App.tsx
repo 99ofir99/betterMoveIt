@@ -1,7 +1,6 @@
 ﻿import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useAppState, useStopSearch, type AppState } from "./lib/useAppState";
+import { useAppState, type AppState } from "./lib/useAppState";
 import { MapCanvas } from "./components/MapCanvas";
-import { PlaceField } from "./components/PlaceField";
 import { JourneyList } from "./components/JourneyList";
 import { StopPanel } from "./components/StopPanel";
 import { BottomNavigation } from "./components/BottomNavigation";
@@ -74,8 +73,6 @@ export default function App() {
     setAlertsEnabled,
   } = useActiveTrip(state.userLocation, state.gpsAllowed);
   const [activeTab, setActiveTab] = useState<TabName>("directions");
-  const [fromQuery, setFromQuery] = useState("");
-  const [toQuery, setToQuery] = useState("");
   const [showSearch, setShowSearch] = useState(false);
   const [searchTarget, setSearchTarget] = useState<SearchTarget>("to");
   /** Moovit Choose Location — pick any map point as from/to (not only stops). */
@@ -97,11 +94,6 @@ export default function App() {
   const [nearbySnap, setNearbySnap] = useState<SheetSnap>("half");
   /** Bumped when opening / selecting a trip so the map re-fits the path before Start. */
   const [journeyFitKey, setJourneyFitKey] = useState(0);
-  const [maxWalk, setMaxWalkState] = useState(() => loadSettings().maxWalkM);
-  const setMaxWalk = useCallback((v: number) => {
-    setMaxWalkState(v);
-    saveSettings({ maxWalkM: v });
-  }, []);
   const [nearbyStops, setNearbyStops] = useState<Stop[]>([]);
   const [selectedLineId, setSelectedLineId] = useState<string | null>(null);
   /** Match tokens for the line currently open in Line Detail (shown even before favourite). */
@@ -165,8 +157,6 @@ export default function App() {
   const { visible: serviceAlerts, dismiss: dismissAlert } = useServiceAlerts(showAlerts);
 
   const searchBias = state.userLocation ?? state.center;
-  const fromSearch = useStopSearch(fromQuery, searchBias);
-  const toSearch = useStopSearch(toQuery, searchBias);
 
   // Frequent destination for the home screen card (logic in hook, visuals in FrequentDestinationCard)
   const frequentDest = useFrequentDestination(state.userLocation, favTick);
@@ -331,8 +321,6 @@ export default function App() {
     const onSettingsChanged = () => {
       const s = loadSettings();
       setLiveBuses(s.showLiveBuses);
-      // State setter only: setMaxWalk() saves settings, which re-fires this event forever.
-      setMaxWalkState(s.maxWalkM);
     };
     window.addEventListener(SETTINGS_CHANGED_EVENT, onSettingsChanged);
     return () => window.removeEventListener(SETTINGS_CHANGED_EVENT, onSettingsChanged);
@@ -686,7 +674,6 @@ export default function App() {
   const planToFavorite = useCallback(
     (place: Place) => {
       state.selectPlace(place, "to");
-      setToQuery("");
       setActiveTab("directions");
       state.setWhen("now");
       void state.useMyLocationAsOrigin();
@@ -700,8 +687,6 @@ export default function App() {
       const slot = mapPickSlot ?? "to";
       setMapPickSlot(null);
       state.selectPlace(place, slot);
-      if (slot === "from") setFromQuery("");
-      else setToQuery("");
       setActiveTab("directions");
       setShowPlanForm(true);
       if (slot === "to") {
@@ -725,7 +710,6 @@ export default function App() {
   const handlePlanFromHome = useCallback(
     async (place: Place) => {
       state.selectPlace(place, "to");
-      setToQuery("");
       setActiveTab("directions");
       // Home shortcuts always mean "go now", never an earlier depart-at time.
       state.setWhen("now");
@@ -1058,19 +1042,25 @@ export default function App() {
           ) : state.panel === "plan" && showPlanForm ? (
             <PlanForm
               state={state}
-              fromQuery={fromQuery}
-              toQuery={toQuery}
-              setFromQuery={setFromQuery}
-              setToQuery={setToQuery}
-              fromResults={fromSearch.results}
-              toResults={toSearch.results}
-              fromLoading={fromSearch.loading}
-              toLoading={toSearch.loading}
-              maxWalk={maxWalk}
-              setMaxWalk={setMaxWalk}
-              onOpenSearch={() => openSearch("any")}
-              onPlan={() => void searchRoutes()}
+              fromIsCurrentLocation={fromIsCurrentLocation}
               onBack={goBack}
+              onEditFrom={() => openSearch("from")}
+              onEditTo={() => openSearch("to")}
+              onChooseOnMap={() => setMapPickSlot(state.to ? "from" : "to")}
+              onOpenPreferences={() => setShowPreferences(true)}
+              prefsBadgeCount={prefsBadgeCount}
+              onPickRecent={(place) => {
+                const slot = state.to && !state.from ? "from" : "to";
+                state.selectPlace(place, slot);
+                const from = slot === "from" ? place : state.from;
+                const to = slot === "to" ? place : state.to;
+                if (from && to) void searchRoutes(from, to);
+                else if (to)
+                  void state.useMyLocationAsOrigin().then((origin) => {
+                    if (origin) void searchRoutes(origin, to);
+                  });
+              }}
+              onPlan={() => void searchRoutes()}
             />
           ) : null}
         </section>
@@ -1313,179 +1303,92 @@ export default function App() {
 
 interface PlanFormProps {
   state: AppState;
-  fromQuery: string;
-  toQuery: string;
-  setFromQuery: (v: string) => void;
-  setToQuery: (v: string) => void;
-  fromResults: ReturnType<typeof useStopSearch>["results"];
-  toResults: ReturnType<typeof useStopSearch>["results"];
-  fromLoading: boolean;
-  toLoading: boolean;
-  maxWalk: number;
-  setMaxWalk: (v: number) => void;
-  onOpenSearch: () => void;
+  fromIsCurrentLocation: boolean;
+  onBack: () => void;
+  onEditFrom: () => void;
+  onEditTo: () => void;
+  onChooseOnMap: () => void;
+  onOpenPreferences: () => void;
+  prefsBadgeCount: number;
+  onPickRecent: (place: Place) => void;
   onPlan: () => void;
-  onBack?: () => void;
 }
 
+/**
+ * From · To planner — same chrome as the results screen (stacked origin/destination
+ * card + swap + preferences). Fields open the shared search screen; recents below.
+ */
 function PlanForm({
   state,
-  fromQuery,
-  toQuery,
-  setFromQuery,
-  setToQuery,
-  fromResults,
-  toResults,
-  fromLoading,
-  toLoading,
-  maxWalk,
-  setMaxWalk,
-  onOpenSearch,
-  onPlan,
+  fromIsCurrentLocation,
   onBack,
+  onEditFrom,
+  onEditTo,
+  onChooseOnMap,
+  onOpenPreferences,
+  prefsBadgeCount,
+  onPickRecent,
+  onPlan,
 }: PlanFormProps) {
-  const [showAdvanced, setShowAdvanced] = useState(false);
-
-  const pick = (place: Place, slot: "from" | "to") => {
-    state.selectPlace(place, slot);
-    if (slot === "from") setFromQuery("");
-    else setToQuery("");
-  };
-
+  const recents = state.recent.filter(
+    (p) => p.label !== state.to?.label && p.label !== state.from?.label,
+  );
   return (
     <div className="planner">
-      {onBack && (
+      <ResultsHeader
+        from={state.from}
+        to={state.to}
+        fromIsCurrentLocation={fromIsCurrentLocation}
+        onBack={onBack}
+        onSwap={state.swapEnds}
+        onEditFrom={onEditFrom}
+        onEditTo={onEditTo}
+        onOpenPreferences={onOpenPreferences}
+        prefsBadgeCount={prefsBadgeCount}
+      />
+
+      {state.from && state.to ? (
         <button
           type="button"
-          className="icon-button icon-button--ghost planner__back"
-          onClick={onBack}
-          aria-label={t("Back to home")}
+          className="planner__go"
+          disabled={state.plan.loading}
+          onClick={onPlan}
         >
-          <Icon name="arrow-back" />
+          {state.plan.loading ? t("Planning…") : t("Find routes")}
         </button>
-      )}
+      ) : null}
 
-      <button type="button" className="planner__hero-search" onClick={onOpenSearch}>
-        <span>{t("Where to?")}</span>
-        <Icon name="search" size={22} />
-      </button>
-
-      <div className="planner__fields">
-        <PlaceField
-          id="from-field"
-          label={t("From")}
-          accent="origin"
-          value={state.from}
-          placeholder={t("Where are you starting?")}
-          query={fromQuery}
-          onQueryChange={setFromQuery}
-          results={fromResults}
-          searchLoading={fromLoading}
-          onPick={(p) => pick(p, "from")}
-          onClear={() => state.setFrom(null)}
-          onUseMyLocation={async () => {
-            await state.useMyLocationAsOrigin();
-            setFromQuery("");
-          }}
-          locating={state.locating}
-          recent={state.recent}
-        />
-        <button
-          type="button"
-          className="planner__swap"
-          onClick={state.swapEnds}
-          aria-label={t("Swap origin and destination")}
-          title={t("Swap")}
-        >
-          ⇅
+      <div className="planner__list">
+        <button type="button" className="suggestions__row" onClick={onChooseOnMap}>
+          <span className="suggestions__icon suggestions__icon--pin" aria-hidden="true">
+            <Icon name="map" size={18} />
+          </span>
+          <span className="suggestions__text">
+            <span className="suggestions__name">{t("Choose on map")}</span>
+          </span>
         </button>
-        <PlaceField
-          id="to-field"
-          label={t("To")}
-          accent="destination"
-          value={state.to}
-          placeholder={t("Where to?")}
-          query={toQuery}
-          onQueryChange={setToQuery}
-          results={toResults}
-          searchLoading={toLoading}
-          onPick={(p) => pick(p, "to")}
-          onClear={() => state.setTo(null)}
-          recent={state.recent}
-        />
-      </div>
 
-      <div className="planner__when">
-        <div className="segmented" role="group" aria-label={t("Departure timing")}>
-          <button
-            type="button"
-            className={state.when === "now" ? "is-active" : ""}
-            onClick={() => state.setWhen("now")}
-          >
-            {t("Leave now")}
-          </button>
-          <button
-            type="button"
-            className={state.when === "leave" ? "is-active" : ""}
-            onClick={() => state.setWhen("leave")}
-          >
-            {t("Depart at")}
-          </button>
-        </div>
-        {state.when === "leave" && (
-          <div className="planner__datetime">
-            <input
-              className="date-input"
-              type="date"
-              value={state.planDate}
-              onChange={(e) => state.setPlanDate(e.target.value)}
-              aria-label={t("Travel date")}
-            />
-            <input
-              className="time-input"
-              type="time"
-              value={state.departTime}
-              onChange={(e) => state.setDepartTime(e.target.value)}
-              aria-label={t("Departure time")}
-            />
-          </div>
+        {recents.length > 0 && (
+          <section className="global-search__section">
+            <h3>{t("Recent")}</h3>
+            {recents.map((place) => (
+              <button
+                key={`${place.label}-${place.lat}-${place.lon}`}
+                type="button"
+                className="suggestions__row"
+                onClick={() => onPickRecent(place)}
+              >
+                <span className="suggestions__icon" aria-hidden="true">
+                  <Icon name="history" size={18} />
+                </span>
+                <span className="suggestions__text">
+                  <span className="suggestions__name">{place.label}</span>
+                </span>
+              </button>
+            ))}
+          </section>
         )}
       </div>
-
-      <button
-        type="button"
-        className="planner__advanced-toggle"
-        onClick={() => setShowAdvanced((v) => !v)}
-        aria-expanded={showAdvanced}
-      >
-        {showAdvanced ? "▾" : "▸"} {t("Advanced options")}
-      </button>
-
-      {showAdvanced && (
-        <div className="advanced">
-          <label className="advanced__row">
-            <span>{t("Maximum walking")}</span>
-            <input
-              type="range"
-              min={300}
-              max={3000}
-              step={100}
-              value={maxWalk}
-              onChange={(e) => setMaxWalk(Number(e.target.value))}
-            />
-            <span className="advanced__value">{t('{n} m', { n: maxWalk })}</span>
-          </label>
-        </div>
-      )}
-
-      <button
-        type="button"
-        className="planner__go"
-        disabled={!state.from || !state.to || state.plan.loading}
-        onClick={onPlan}
-      >
-        {state.plan.loading ? t("Planning…") : t("Find routes")}
-      </button>
 
       {state.plan.error && <p className="error-text">{state.plan.error}</p>}
     </div>
