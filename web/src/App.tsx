@@ -20,6 +20,7 @@ import { ResultsToolbar } from "./components/results/ResultsToolbar";
 import { ResultsHeader } from "./components/results/ResultsHeader";
 import { PreferencesSheet } from "./components/results/PreferencesSheet";
 import { useNearestStop } from "./lib/useNearestStop";
+import { useBackTrap } from "./lib/useBackTrap";
 import { DepartAtSheet, type DepartAtAction } from "./components/results/DepartAtSheet";
 import { DirectionsSheet } from "./components/directions/DirectionsSheet";
 import { formatClock12h, secondsSinceLocalMidnight } from "./lib/format";
@@ -392,6 +393,76 @@ export default function App() {
     setMinimized,
     restoreLiveReturn,
   ]);
+
+  // ── System Back (Android button / gesture) ────────────────────────────────
+  /** Tabs visited before the current one, so Back returns to the previous page. */
+  const tabHistoryRef = useRef<TabName[]>([]);
+  const prevTabRef = useRef<TabName>(activeTab);
+  const poppingTabRef = useRef(false);
+  useEffect(() => {
+    const prev = prevTabRef.current;
+    prevTabRef.current = activeTab;
+    if (prev === activeTab) return;
+    if (poppingTabRef.current) {
+      poppingTabRef.current = false;
+      return;
+    }
+    const stack = tabHistoryRef.current.filter((tab) => tab !== activeTab && tab !== prev);
+    stack.push(prev);
+    tabHistoryRef.current = stack.slice(-8);
+  }, [activeTab]);
+
+  const closeLine = useCallback(() => {
+    setSelectedLineId(null);
+    setFocusedLineKeys([]);
+    setLineGeometry(null);
+    setLineSheetPeek(false);
+  }, []);
+
+  const inFlowBack =
+    showDepartSheet ||
+    showPreferences ||
+    showSearch ||
+    tripLive ||
+    showJourneyDetail ||
+    state.panel === "stop" ||
+    state.panel === "journeys" ||
+    showPlanForm;
+  const canGoBack =
+    mapPickSlot != null ||
+    showTripConfirm ||
+    inFlowBack ||
+    selectedLineId != null ||
+    activeTab !== "directions";
+
+  const systemBack = useCallback(() => {
+    if (mapPickSlot) {
+      setMapPickSlot(null);
+      return;
+    }
+    if (showTripConfirm) {
+      setShowTripConfirm(false);
+      setPendingLineRide(null);
+      return;
+    }
+    if (inFlowBack) {
+      goBack();
+      return;
+    }
+    if (selectedLineId) {
+      closeLine();
+      return;
+    }
+    if (activeTab !== "directions") {
+      const prev = tabHistoryRef.current.pop() ?? "directions";
+      poppingTabRef.current = true;
+      setActiveTab(prev);
+      if (prev !== "nearby") state.clearStop();
+      if (prev === "directions") setShowPlanForm(false);
+    }
+  }, [mapPickSlot, showTripConfirm, inFlowBack, goBack, selectedLineId, closeLine, activeTab, state]);
+
+  useBackTrap(canGoBack, systemBack);
 
   /** Core start logic, shared by handleStartTrip and handleConfirmReplaceTrip. */
   const doStartTrip = useCallback(() => {

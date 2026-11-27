@@ -377,12 +377,15 @@ export function useAppState(opts?: { watchLocation?: boolean }) {
 
   /** Leave results and return to the home / idle planner (keeps origin). */
   const resetPlan = useCallback(() => {
+    // A plan still in flight must not fill the results back in after Back.
+    requestRef.current?.abort();
     setPlan({ journeys: [], loading: false, error: null, elapsedMs: null });
     setPanel('plan');
   }, []);
 
   /** Clear destination and results — full reset toward a new trip. */
   const clearDestination = useCallback(() => {
+    requestRef.current?.abort();
     setTo(null);
     setPlan({ journeys: [], loading: false, error: null, elapsedMs: null });
     setPanel('plan');
