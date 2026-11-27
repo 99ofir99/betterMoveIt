@@ -17,10 +17,7 @@ interface SwipeRailProps extends HTMLAttributes<HTMLDivElement> {
   children: ReactNode;
   /**
    * A leg sequence (walk › bus › train) that reads left to right in every
-   * language, in trip order, while staying aligned to the inline end in RTL.
-   * The row is dir="ltr"; its first chip takes margin-left:auto so the chips
-   * sit on the right in Hebrew (the auto margin drops to 0 when the row
-   * overflows, so it still scrolls from the trip's start).
+   * language, in trip order, starting at the left edge (Hebrew too).
    */
   ltrSequence?: boolean;
 }
