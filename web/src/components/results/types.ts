@@ -34,6 +34,8 @@ export interface ResultsToolbarProps {
   /** Route preferences chip, first in the filter row. */
   onOpenPreferences?: () => void;
   prefsBadgeCount?: number;
+  /** Render only the time/map row, only the filter chips, or both (default). */
+  part?: 'all' | 'row' | 'chips';
 }
 
 // ── Preferences ──────────────────────────────────────────────────────────────

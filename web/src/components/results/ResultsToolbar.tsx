@@ -17,9 +17,11 @@ export function ResultsToolbar({
   onSortMode,
   onOpenPreferences,
   prefsBadgeCount = 0,
+  part = 'all',
 }: ResultsToolbarProps) {
   return (
-    <div className="results-toolbar">
+    <div className={`results-toolbar results-toolbar--${part}`}>
+      {part !== 'chips' && (
       <div className="results-toolbar__row">
         <button
           type="button"
@@ -40,6 +42,8 @@ export function ResultsToolbar({
           <span>{mapPeek ? t('List') : t('Map')}</span>
         </button>
       </div>
+      )}
+      {part !== 'row' && (
       <div className="results-toolbar__chips" role="group" aria-label={t("Sort journeys")}>
         {onOpenPreferences ? (
           <button
@@ -74,6 +78,7 @@ export function ResultsToolbar({
           </button>
         ))}
       </div>
+      )}
     </div>
   );
 }

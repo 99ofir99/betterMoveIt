@@ -16,6 +16,8 @@ export function nextCompact(current: boolean, scrollTop: number, enterPx = 120, 
 export function useCompactOnScroll(
   ref: RefObject<HTMLElement | null>,
   active: boolean,
+  /** Scroll distance at which to compact; when given, no hysteresis is needed. */
+  threshold?: () => number,
   scroller = '.sheet',
 ): boolean {
   const [compact, setCompact] = useState(false);
@@ -26,10 +28,14 @@ export function useCompactOnScroll(
     }
     const el = ref.current?.closest<HTMLElement>(scroller);
     if (!el) return;
-    const onScroll = () => setCompact((c) => nextCompact(c, el.scrollTop));
+    const onScroll = () => {
+      const at = threshold?.();
+      setCompact((c) => (at != null ? el.scrollTop > at : nextCompact(c, el.scrollTop)));
+    };
     el.addEventListener('scroll', onScroll, { passive: true });
     onScroll();
     return () => el.removeEventListener('scroll', onScroll);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- threshold reads refs
   }, [ref, active, scroller]);
   return compact;
 }

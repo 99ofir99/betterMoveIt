@@ -98,7 +98,13 @@ export default function App() {
   const apiRetrying = useApiRetrying();
   // Results open raised to the top (user request); drag down or tap Map for the map.
   const resultsRef = useRef<HTMLDivElement>(null);
-  const resultsCompact = useCompactOnScroll(resultsRef, state.panel === "journeys");
+  const resultsTopRef = useRef<HTMLDivElement>(null);
+  // Compact once the from/to card and time row have scrolled out of view.
+  const resultsCompact = useCompactOnScroll(
+    resultsRef,
+    state.panel === "journeys",
+    () => (resultsTopRef.current?.offsetHeight ?? 160) - 8,
+  );
   const [resultsSnap, setResultsSnap] = useState<SheetSnap>("full");
   /** Directions detail sheet snap — peek keeps the route path visible above Start. */
   const [detailSnap, setDetailSnap] = useState<SheetSnap>("peek");
@@ -1121,24 +1127,11 @@ export default function App() {
           onSnapChange={setResultsSnap}
         >
           <div className="results" ref={resultsRef}>
-            {/* Sticky top: full header at rest; once the list scrolls, a one-line
-                from → to summary plus the filter chips stay pinned. */}
-            <div className={`results-sticky${resultsCompact ? " is-compact" : ""}`}>
-              {resultsCompact ? (
-                <button
-                  type="button"
-                  className="results-sticky__summary"
-                  onClick={() => resultsRef.current?.closest(".sheet")?.scrollTo({ top: 0, behavior: "smooth" })}
-                >
-                  <span className="results-sticky__route" dir="auto">
-                    {fromIsCurrentLocation ? t("Current location") : displayPlaceLabel(state.from?.label)}
-                    {" ← "}
-                    {displayPlaceLabel(state.to?.label)}
-                  </span>
-                  <span className="results-sticky__when">{departLabel}</span>
-                </button>
-              ) : null}
-            <ResultsHeader
+            {/* Top of the results: the full from/to card and time row scroll away
+                normally; the filter chips pin to the top, and a one-line from → to
+                summary fades in above them. Nothing changes size, so no jump. */}
+            <div ref={resultsTopRef} className="results-top">
+              <ResultsHeader
                 from={state.from}
                 to={state.to}
                 fromIsCurrentLocation={fromIsCurrentLocation}
@@ -1154,8 +1147,35 @@ export default function App() {
                 onEditFrom={() => openSearch("from")}
                 onEditTo={() => openSearch("to")}
               />
-  
               <ResultsToolbar
+                part="row"
+                departLabel={departLabel}
+                onOpenDepartSheet={() => setShowDepartSheet(true)}
+                mapPeek={resultsSnap === "peek"}
+                onToggleMapView={() =>
+                  setResultsSnap((s) => (s === "peek" ? "full" : "peek"))
+                }
+                sortMode={sortMode}
+                onSortMode={setSortMode}
+              />
+            </div>
+            <div className={`results-sticky${resultsCompact ? " is-compact" : ""}`}>
+              <button
+                type="button"
+                className="results-sticky__summary"
+                tabIndex={resultsCompact ? 0 : -1}
+                aria-hidden={!resultsCompact}
+                onClick={() => resultsRef.current?.closest(".sheet")?.scrollTo({ top: 0, behavior: "smooth" })}
+              >
+                <span className="results-sticky__route" dir="auto">
+                  {fromIsCurrentLocation ? t("Current location") : displayPlaceLabel(state.from?.label)}
+                  {" ← "}
+                  {displayPlaceLabel(state.to?.label)}
+                </span>
+                <span className="results-sticky__when">{departLabel}</span>
+              </button>
+              <ResultsToolbar
+                part="chips"
                 departLabel={departLabel}
                 onOpenDepartSheet={() => setShowDepartSheet(true)}
                 mapPeek={resultsSnap === "peek"}

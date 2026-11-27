@@ -10366,44 +10366,59 @@ button.home-card-dots__dot {
 }
 
 
-/* Results: pinned top while the list scrolls (full header at rest, compact after). */
-.results-sticky {
-  position: sticky;
-  top: -28px; /* the sheet's top padding */
-  z-index: 1; /* under the sheet grabber (z 2) so the sheet still drags */
+/* Results: the from/to card and time row scroll away; the filter chips pin at
+   the top with a one-line from → to summary fading in above them. Nothing in
+   the flow changes size, so the list never jumps. */
+.results-top {
   display: flex;
   flex-direction: column;
   gap: 12px;
-  margin: -28px -16px 0;
-  padding: 28px 16px 8px;
+}
+.results-sticky {
+  --summary-h: 52px;
+  position: sticky;
+  /* Sheet has 28px top padding: pin the chips just below the summary band. */
+  top: calc(var(--summary-h) - 28px);
+  z-index: 1; /* under the sheet grabber (z 2) so the sheet still drags */
+  margin: 0 -16px;
+  padding: 6px 16px 8px;
   background: var(--surface);
+  transition: box-shadow 0.2s ease;
 }
 .results-sticky.is-compact {
-  gap: 8px;
-  padding-bottom: 8px;
-  border-bottom: 1px solid var(--line);
+  box-shadow: 0 6px 10px -8px rgba(0, 0, 0, 0.7);
 }
-.results-sticky.is-compact .results-header,
-.results-sticky.is-compact .results-toolbar__row {
-  display: none;
-}
-.results-sticky.is-compact .results-toolbar {
+.results-sticky .results-toolbar {
   margin: 0;
 }
 .results-sticky__summary {
+  position: absolute;
+  inset-inline: 0;
+  bottom: 100%;
+  height: calc(var(--summary-h) + 2px);
   display: flex;
   flex-direction: column;
+  justify-content: center;
   align-items: flex-start;
-  gap: 2px;
-  width: 100%;
-  padding: 8px 12px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 12px;
-  background: #0a0a0a;
+  gap: 1px;
+  padding: 0 16px;
+  border: 0;
+  background: var(--surface);
   color: inherit;
   font: inherit;
   text-align: start;
   cursor: pointer;
+  opacity: 0;
+  transform: translateY(6px);
+  pointer-events: none;
+  transition:
+    opacity 0.2s ease,
+    transform 0.2s ease;
+}
+.results-sticky.is-compact .results-sticky__summary {
+  opacity: 1;
+  transform: none;
+  pointer-events: auto;
 }
 .results-sticky__route {
   max-width: 100%;
