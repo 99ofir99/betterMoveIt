@@ -32,8 +32,9 @@ run current tool script, and a "Full stack" compound.
 - GTFS CSV is parsed by `tools/lib/csv.mjs` (ingest + filter-gtfs). MOT writes Hebrew abbreviations with a bare `"` (e.g. `ת"א`) in unquoted fields; a quote only opens a quoted field at the start of a field. The old per-line quote counting merged/dropped ~3.4% of trips.
 - `ingest.mjs --days=N [--from=YYYYMMDD]` (or `INGEST_DAYS`) keeps only trips running in that window. Measured server RSS on the 2026-11-26 MOT feed: whole feed ~800 MB peak, 14 days ~620 MB, 7 days ~495 MB (Render free tier is 512 MB). A windowed store must be rebuilt before the window runs out (`meta.json` → `serviceWindow`).
 - Binary format is written by `tools/ingest/ingest.mjs` and read by `TransitStore` in
-  `store.js` — change both together. `stop_times.bin` is unpadded typed-array columns: an **odd
-  stop_times row count misaligns the Float32 column and the server refuses to boot**.
+  `store.js` — change both together. `stop_times.bin` is unpadded typed-array columns: an odd
+  stop_times row count misaligns the Float32 column; `TransitStore` then copies that one column
+  instead of viewing it in place.
 - Sample feed: fake lines in central Tel Aviv (bus 1 E–W, bus 5 N–S crossing it, Tevel tram R1,
   rail Haifa–TLV–Airport–Jerusalem), all days 05:00–25:00. Plan e.g. `{from:{lat:32.087,lon:34.771},to:{lat:32.113,lon:34.78}}`.
 - `.env` at repo root is loaded by `server/src/env.js` (imported first in `index.js`); see `.env.example`.

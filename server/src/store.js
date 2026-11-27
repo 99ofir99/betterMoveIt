@@ -168,10 +168,15 @@ export class TransitStore {
     const take = (Ctor, count) => {
       const bytes = count * Ctor.BYTES_PER_ELEMENT;
       const byteOffset = stBuf.byteOffset + off;
+      let arr;
       if (byteOffset % Ctor.BYTES_PER_ELEMENT !== 0) {
-        throw new Error(`unaligned ${Ctor.name} view at ${byteOffset}`);
+        // An odd row count leaves the Uint16 seq column ending off a 4-byte boundary,
+        // so the Float32 column after it cannot be viewed in place: copy just that one.
+        arr = new Ctor(count);
+        new Uint8Array(arr.buffer).set(stBuf.subarray(off, off + bytes));
+      } else {
+        arr = new Ctor(stBuf.buffer, byteOffset, count);
       }
-      const arr = new Ctor(stBuf.buffer, byteOffset, count);
       off += bytes;
       return arr;
     };
