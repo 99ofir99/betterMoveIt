@@ -136,6 +136,8 @@ export const HE: Record<string, string> = {
   'Leave {time} · {n} min': 'יציאה ב-{time} · {n} דק׳',
   Leaves: 'יוצא',
   Departed: 'יצא',
+  'Choose departure time': 'בחירת שעת יציאה',
+  'Live arrivals at boarding stop': 'הגעות בזמן אמת בתחנת העלייה',
   Tomorrow: 'מחר',
   'Tomorrow {time}': 'מחר {time}',
   'Leaves at': 'יוצא ב-',

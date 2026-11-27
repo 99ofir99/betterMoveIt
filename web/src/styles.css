@@ -9995,3 +9995,16 @@ button.ld-option {
   font-weight: 700;
   color: var(--accent, #f5a623);
 }
+
+/* Home card header chips are real buttons (clock = depart-at, bus = live board). */
+button.fdcard__chip {
+  border: 0;
+  font: inherit;
+  cursor: pointer;
+}
+button.fdcard__chip:active {
+  filter: brightness(0.9);
+}
+.fdcard[role="button"] {
+  cursor: pointer;
+}
