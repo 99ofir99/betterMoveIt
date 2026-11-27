@@ -2,7 +2,8 @@
 
 import { LineBadge } from '../shared/LineBadge';
 import { StarIcon } from '../shared/icons';
-import { formatLineLongName } from '../../lib/lineCategory';
+import { formatLineLongName, formatRailFinalCity } from '../../lib/lineCategory';
+import { isHeavyRailRoute, railTrainNumber } from '../../lib/railLabel';
 import { isLightRailRoute } from '../../lib/transportMode';
 import type { LineRowProps } from './types';
 
@@ -14,7 +15,11 @@ function favLineMode(line: LineRowProps['item']['line']): 'bus' | 'rail' | 'tram
 }
 
 export function LineFavRow({ item, onOpen, onRemove }: LineRowProps) {
-  const name = item.line.displayName || item.line.shortName;
+  const rail = isHeavyRailRoute(item.line);
+  const name = rail ? railTrainNumber(item.line) : item.line.displayName || item.line.shortName;
+  const subtitle = rail
+    ? formatRailFinalCity(item.line.longName) || formatLineLongName(item.line.longName)
+    : formatLineLongName(item.line.longName);
 
   return (
     <div className="fav-row fav-row--line">
@@ -22,7 +27,7 @@ export function LineFavRow({ item, onOpen, onRemove }: LineRowProps) {
         <LineBadge label={name} mode={favLineMode(item.line)} />
         <span className="fav-row__body">
           <span className="fav-row__name" dir="auto">
-            {formatLineLongName(item.line.longName) || item.line.agency}
+            {subtitle || item.line.agency}
           </span>
           {item.stopName && <span className="fav-row__meta">{item.stopName}</span>}
         </span>

@@ -1,5 +1,6 @@
 /** Horizontal chip sequence of the journey's legs (bus badges + walk glyphs). */
 
+import { isHeavyRailRoute, transitDestinationLabel } from '../../lib/railLabel';
 import { BundledLineBadge } from '../common/BundledLineBadge';
 import { SwipeRail } from '../common/SwipeRail';
 import { WalkIcon, ChevronRightIcon } from '../icons';
@@ -26,10 +27,17 @@ export function RouteSequence({ legs, transitAlternatives }: RouteSequenceProps)
 
         const routes = transitAlternatives?.[transitIdx] ?? [leg.route];
         transitIdx += 1;
+        const railDest =
+          isHeavyRailRoute(leg.route) ? transitDestinationLabel(leg.route, leg.headsign) : '';
         return (
           <span key={i} className="directions__timeline-item">
             {arrow}
             <BundledLineBadge routes={routes} />
+            {railDest ? (
+              <span className="directions__rail-dest" dir="auto">
+                {railDest}
+              </span>
+            ) : null}
           </span>
         );
       })}

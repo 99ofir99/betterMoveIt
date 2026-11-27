@@ -3,6 +3,7 @@
  * expanded schedule card, Start → onboard ride.
  */
 
+import { railTrainNumber } from '../../lib/railLabel';
 import { RouteBadge } from '../common/RouteBadge';
 import { Icon } from '../icons/Icon';
 import { LineDestinationBar } from './LineDestinationBar';
@@ -49,7 +50,7 @@ export function LineDetailPanel({
         {s.line && (
           <RouteBadge
             className="lnd-header__badge"
-            label={s.line.displayName || s.line.shortName}
+            label={railTrainNumber(s.line)}
             typeName={s.line.typeName}
             color={s.line.color}
           />

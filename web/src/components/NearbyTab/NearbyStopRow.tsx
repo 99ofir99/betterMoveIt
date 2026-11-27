@@ -7,6 +7,7 @@ import {
   resolveConfidence,
 } from '../../lib/arrivalAccuracy';
 import { contrastText, routeColor } from '../../lib/format';
+import { railTrainNumber, transitDestinationLabel } from '../../lib/railLabel';
 import type { NearbyStopRowProps } from './types';
 
 export function NearbyStopRow({ stop, onPress, showDivider = true }: NearbyStopRowProps) {
@@ -51,6 +52,8 @@ export function NearbyStopRow({ stop, onPress, showDivider = true }: NearbyStopR
               eta == null
                 ? '—'
                 : formatEtaLabel(eta, { departureSec: next?.departure });
+            const badgeLabel = railTrainNumber(dep.route, dep.headsign);
+            const destination = transitDestinationLabel(dep.route, dep.headsign);
             return (
               <li
                 key={`${dep.route.index}-${dep.headsign}-${i}`}
@@ -60,11 +63,13 @@ export function NearbyStopRow({ stop, onPress, showDivider = true }: NearbyStopR
                   className="line-chip"
                   style={{ background: bg, color: contrastText(bg), fontSize: 11 }}
                 >
-                  {dep.route.displayName}
+                  {badgeLabel}
                 </span>
-                <span className="nearby-board__headsign" dir="auto">
-                  {dep.headsign}
-                </span>
+                {destination ? (
+                  <span className="nearby-board__headsign" dir="auto">
+                    {destination}
+                  </span>
+                ) : null}
                 <span
                   className={`nearby-board__eta ${confidenceClass(confidence)}${
                     live ? ' is-live' : ''

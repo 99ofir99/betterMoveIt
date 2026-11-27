@@ -10,6 +10,8 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { api } from '../../lib/api';
 import { buildLineRideJourney } from '../../lib/buildLineRideJourney';
 import { isFavoriteLine, toggleFavoriteLine } from '../../lib/favorites';
+import { formatRailFinalCity } from '../../lib/lineCategory';
+import { isHeavyRailRoute, isRailTrainNumber } from '../../lib/railLabel';
 import type {
   Journey,
   Line,
@@ -111,10 +113,17 @@ export function useLineDetail(
   }, [data, reversed]);
 
   const originName = displayStops[0]?.name ?? '';
-  const feedDestination =
+  const rawFeedDestination =
     data?.headsign ||
     directionOptions.find((o) => o.direction === direction)?.headsign ||
     '';
+  // Israel Railways trip_headsign is the train number — prefer city / last stop.
+  const feedDestination =
+    line && isHeavyRailRoute(line) && isRailTrainNumber(rawFeedDestination)
+      ? formatRailFinalCity(line.longName) ||
+        displayStops[displayStops.length - 1]?.name ||
+        ''
+      : rawFeedDestination;
   const destinationName = reversed
     ? originName && displayStops.length
       ? displayStops[displayStops.length - 1]?.name || feedDestination

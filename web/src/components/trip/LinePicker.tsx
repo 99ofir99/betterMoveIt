@@ -3,6 +3,8 @@
  * Rendered as an overlay inside .ld-shell when the user taps "Change" in
  * TransitRideCard. Visually matches Moovit's line-picker bottom sheet.
  */
+import { formatRailFinalCity } from '../../lib/lineCategory';
+import { isHeavyRailRoute, railTrainNumber } from '../../lib/railLabel';
 import { RouteBadge } from '../common/RouteBadge';
 import { Icon } from '../icons/Icon';
 import type { RouteInfo } from '../../types';
@@ -56,11 +58,15 @@ export function LinePicker({ alternatives, onPick, onClose }: LinePickerProps) {
                 onClick={() => onPick(route)}
               >
                 <RouteBadge
-                  label={route.displayName}
+                  label={railTrainNumber(route)}
                   typeName={route.typeName}
                   color={route.color}
                 />
-                <span className="ld-line-picker__route-name">{route.longName}</span>
+                <span className="ld-line-picker__route-name">
+                  {isHeavyRailRoute(route)
+                    ? formatRailFinalCity(route.longName) || route.longName
+                    : route.longName}
+                </span>
               </button>
             </li>
           ))}

@@ -5,6 +5,7 @@
 
 import { useMemo, useState } from 'react';
 import { formatClock12h } from '../../lib/format';
+import { transitDestinationLabel } from '../../lib/railLabel';
 import { formatBundledLineLabel } from '../common/bundledLineLabel';
 import { buildWaitOptions } from './buildWaitOptions';
 import { DepartureOptionRow } from './DepartureOptionRow';
@@ -47,6 +48,7 @@ export function TransitPreviewCard({
   const showBoard = routes.length > 1 || options.length > 1;
   const visible = visibleWaitOptions(options, false);
   const hiddenCount = waitOptionsHiddenCount(options.length);
+  const destination = transitDestinationLabel(displayRoute, leg.headsign);
 
   return (
     <>
@@ -54,7 +56,7 @@ export function TransitPreviewCard({
         <div className="ld-ride__strip" data-sheet-drag>
           <span>
             {previewLines}
-            {leg.headsign ? ` · ${leg.headsign}` : ''}
+            {destination ? ` · ${destination}` : ''}
           </span>
           <span className="ld-ride__strip-time">{formatClock12h(leg.departure)}</span>
         </div>

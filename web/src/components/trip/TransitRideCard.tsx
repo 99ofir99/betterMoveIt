@@ -3,6 +3,7 @@
  */
 
 import { formatDuration } from '../../lib/format';
+import { transitDestinationLabel } from '../../lib/railLabel';
 import { countStopsToAlight, resolveStopCursor } from '../../lib/tripGuidance';
 import { ShowingStopsForBar } from './ShowingStopsForBar';
 import { StopProgressList } from './StopProgressList';
@@ -93,7 +94,7 @@ export function TransitRideCard({
 
           <ShowingStopsForBar
             route={displayRoute}
-            headsign={leg.headsign}
+            headsign={transitDestinationLabel(displayRoute, leg.headsign) || leg.headsign}
             onSwitch={changeClickable ? onChangeRoute : undefined}
           />
         </div>

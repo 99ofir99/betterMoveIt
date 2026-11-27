@@ -2,6 +2,8 @@
 
 import type { Line, Place, SearchResult, Stop } from '../../types';
 import { contrastText, modeIcon, routeColor } from '../../lib/format';
+import { formatRailFinalCity } from '../../lib/lineCategory';
+import { isHeavyRailRoute, railTrainNumber } from '../../lib/railLabel';
 import { SearchFavButton } from './SearchFavButton';
 
 interface SearchResultItemProps {
@@ -49,6 +51,11 @@ export function SearchResultItem({
       (line.typeName || '').toLowerCase() === 'subway' ||
       line.type === 0 ||
       line.type === 1;
+    const rail = isHeavyRailRoute(line);
+    const badgeLabel = rail ? railTrainNumber(line) : line.displayName;
+    const subtitle = rail
+      ? formatRailFinalCity(line.longName) || line.longName || 'Line'
+      : line.longName || 'Line';
     return (
       <li className="search-result-row">
         <button type="button" className="suggestions__row" onClick={() => onPickLine(line)}>
@@ -61,15 +68,15 @@ export function SearchResultItem({
               .join(' ')}
             style={{ background: bg, color: contrastText(bg) }}
           >
-            {isTram ? null : modeIcon(line.typeName)} {line.displayName}
+            {isTram ? null : modeIcon(line.typeName)} {badgeLabel}
           </span>
           <span className="suggestions__text">
-            <span className="suggestions__name">{line.longName || 'Line'}</span>
+            <span className="suggestions__name">{subtitle}</span>
           </span>
         </button>
         <SearchFavButton
           favored={lineFavored}
-          label={line.displayName || 'line'}
+          label={badgeLabel || 'line'}
           onToggle={() => onToggleLine(line)}
         />
       </li>

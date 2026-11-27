@@ -8,7 +8,7 @@
 
 import fs from 'node:fs';
 import path from 'node:path';
-import { brandLightRailRoute } from './lightRailBrand.js';
+import { brandLightRailRoute, modeFamily } from './lightRailBrand.js';
 
 const SEARCH_DEPTH_ENV = 'GTFS_DATA_DIR';
 
@@ -386,6 +386,11 @@ export class TransitStore {
       typeName = branded.typeName;
       displayName = branded.displayName;
       color = branded.color;
+    } else if (modeFamily(type, typeName) === 'rail') {
+      // Israel Railways: short_name empty; train number lives on trip_headsign / route_desc.
+      const trip = this.routeFirstTrip?.[i] ?? -1;
+      const trainNum = trip >= 0 ? String(this.tripHeadsign[trip] || '').trim() : '';
+      displayName = shortName || trainNum || 'Train';
     }
 
     return {
@@ -419,15 +424,22 @@ export class TransitStore {
       const shortName = shortRaw.toLowerCase();
       const longName = longRaw.toLowerCase();
       const agencyId = this.routeAgency[i] || '';
+      const type = this.routeType[i];
       const branded = brandLightRailRoute({
         agencyId,
         agencyName: this.agencyName(agencyId) || agencyId,
         shortName: shortRaw,
         longName: longRaw,
-        type: this.routeType[i],
+        type,
         color: this.routeColor[i],
       });
-      const displayName = (branded?.displayName || shortRaw).toLowerCase();
+      let displayRaw = branded?.displayName || shortRaw;
+      if (!branded && modeFamily(type, this.meta.routeTypes?.[type] ?? '') === 'rail') {
+        const trip = this.routeFirstTrip?.[i] ?? -1;
+        const trainNum = trip >= 0 ? String(this.tripHeadsign[trip] || '').trim() : '';
+        displayRaw = shortRaw || trainNum;
+      }
+      const displayName = displayRaw.toLowerCase();
       let best = Infinity;
       if (shortName === q || displayName === q) best = 0;
       else if (shortName.startsWith(q) || displayName.startsWith(q)) best = 1;

@@ -13,6 +13,7 @@ import {
   routeColor,
 } from '../lib/format';
 import { leaveEtasFromBoard, type LeaveEtaEntry } from '../lib/boardingEta';
+import { isHeavyRailRoute, transitDestinationLabel } from '../lib/railLabel';
 import { api } from '../lib/api';
 import { BundledLineBadge } from './common/BundledLineBadge';
 import { SwipeRail } from './common/SwipeRail';
@@ -93,10 +94,17 @@ function ClampedRouteSequence({
 
         const alts = transitAlternatives[transitIdx] ?? [leg.route];
         transitIdx += 1;
+        const railDest =
+          isHeavyRailRoute(leg.route) ? transitDestinationLabel(leg.route, leg.headsign) : '';
         return (
           <span key={li} className="journey-card__leg-wrap">
             {sep}
             <BundledLineBadge routes={alts} />
+            {railDest ? (
+              <span className="journey-card__rail-dest" dir="auto">
+                {railDest}
+              </span>
+            ) : null}
           </span>
         );
       })}
@@ -307,6 +315,7 @@ export function JourneyDetail({
 
           const alts = transitAlternatives?.[transitIdx] ?? [leg.route];
           transitIdx += 1;
+          const railDest = transitDestinationLabel(leg.route, leg.headsign);
 
           return (
             <li key={i} className="leg leg--transit">
@@ -319,7 +328,7 @@ export function JourneyDetail({
                 <div className="leg__body">
                   <div className="leg__line">
                     <BundledLineBadge routes={alts} />
-                    <span className="leg__headsign">→ {leg.headsign}</span>
+                    {railDest ? <span className="leg__headsign">→ {railDest}</span> : null}
                   </div>
 
                   <div className="leg__stops">

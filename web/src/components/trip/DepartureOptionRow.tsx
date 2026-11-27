@@ -13,6 +13,7 @@ import {
   resolveSource,
   shouldShowRelativeEta,
 } from '../../lib/arrivalAccuracy';
+import { railTrainNumber, transitDestinationLabel } from '../../lib/railLabel';
 import { RouteBadge } from '../common/RouteBadge';
 import { LiveSignalIcon } from '../icons';
 import type { DepartureGroup, DepartureNext } from '../../types';
@@ -71,24 +72,29 @@ function LineInfo({
   live: boolean;
   delayLate: boolean;
 }) {
+  const badgeLabel = railTrainNumber(group.route, group.headsign);
+  const destination = transitDestinationLabel(group.route, group.headsign);
+
   return (
     <>
       <RouteBadge
-        label={group.route.displayName}
+        label={badgeLabel}
         typeName={group.route.typeName}
         color={group.route.color}
       />
       <div className="ld-option__info">
         <div className="ld-option__headline">
           {group.platform && <span>Platform: {group.platform}</span>}
-          {group.platform && (
+          {group.platform && destination && (
             <span className="ld-option__dot" aria-hidden="true">
               •
             </span>
           )}
-          <span className="ld-option__headsign" dir="auto">
-            {group.headsign}
-          </span>
+          {destination ? (
+            <span className="ld-option__headsign" dir="auto">
+              {destination}
+            </span>
+          ) : null}
         </div>
         <div className={`ld-option__acc-label ${confidenceClass(confidence)}`}>
           {accuracyCaption(confidence, source)}
@@ -180,7 +186,7 @@ export function DepartureOptionRow({ group, highlighted, onSelect }: OptionRowPr
           selectable={selectable}
           onSelect={onSelect ? () => onSelect(group.route) : undefined}
           highlighted={highlighted}
-          label={group.route.displayName}
+          label={railTrainNumber(group.route, group.headsign)}
         >
           <LineInfo
             group={group}

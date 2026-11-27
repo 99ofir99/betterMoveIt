@@ -2,6 +2,7 @@
 
 import type { Leg } from '../../types';
 import { formatClock12h, formatDistance, formatDuration } from '../../lib/format';
+import { transitDestinationLabel } from '../../lib/railLabel';
 import { BundledLineBadge } from '../common/BundledLineBadge';
 import { SwipeRail } from '../common/SwipeRail';
 import { ItineraryRow } from './ItineraryRow';
@@ -74,13 +75,14 @@ function TransitRow({ leg, hideBoardStop, onStopClick, alternatives }: Itinerary
   const middle = leg.intermediateStops.slice(1, -1);
   const routes = alternatives && alternatives.length > 0 ? alternatives : [leg.route];
   const eta = useTransitLegEta(leg, alternatives);
+  const destination = transitDestinationLabel(leg.route, leg.headsign);
 
   return (
     <>
       <div className="itin__line-row">
         <SwipeRail className="itin__line">
           <BundledLineBadge routes={routes} />
-          <span className="itin__headsign">{leg.headsign}</span>
+          {destination ? <span className="itin__headsign">{destination}</span> : null}
         </SwipeRail>
         <TransitLegEtaBadge eta={eta} />
       </div>

@@ -1,6 +1,7 @@
 /** Phase cards for walking / onboard / alight / done, plus the preview for a paged-to leg. */
 
 import { formatClock12h, formatDistance, formatDuration, routeColor } from '../../lib/format';
+import { railTrainNumber, transitDestinationLabel } from '../../lib/railLabel';
 import { RouteBadge } from '../common/RouteBadge';
 import { CheckCircleIcon, WalkIcon } from '../icons';
 import type { TransitLeg, WalkLeg } from '../../types';
@@ -122,12 +123,14 @@ export function LegPreviewCard({ leg, isPast }: LegPreviewCardProps) {
       ) : (
         <>
           <RouteBadge
-            label={leg.route.displayName}
+            label={railTrainNumber(leg.route, leg.headsign)}
             typeName={leg.route.typeName}
             color={leg.route.color}
             className="ld-phase__badge"
           />
-          <div className="trip-progress__title">{leg.headsign}</div>
+          <div className="trip-progress__title">
+            {transitDestinationLabel(leg.route, leg.headsign) || leg.headsign}
+          </div>
           <div className="trip-progress__subtitle">
             {leg.fromName} {formatClock12h(leg.departure)} → {leg.toName} {formatClock12h(leg.arrival)}
           </div>

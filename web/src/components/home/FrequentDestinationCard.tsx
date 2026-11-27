@@ -11,6 +11,7 @@ import {
   formatEtaLabel,
   shouldShowRelativeEta,
 } from '../../lib/arrivalAccuracy';
+import { railTrainNumber, transitDestinationLabel } from '../../lib/railLabel';
 import { LineBadge } from '../shared/LineBadge';
 import {
   BusIcon,
@@ -38,12 +39,20 @@ function TransitChip({ leg }: { leg: TransitLeg }) {
   const isTram =
     typeName === 'tram' || typeName === 'subway' || typeName === 'light_rail' || typeName === 'light rail';
   const isBus = typeName === 'bus' || typeName === '' || typeName === 'trolleybus';
+  const isRail = !isTram && !isBus;
+  const label = isRail
+    ? railTrainNumber(leg.route, leg.headsign)
+    : leg.route.displayName || leg.route.shortName;
+  const dest = isRail ? transitDestinationLabel(leg.route, leg.headsign) : '';
   return (
-    <LineBadge
-      label={leg.route.displayName || leg.route.shortName}
-      mode={isTram ? 'tram' : isBus ? 'bus' : 'rail'}
-      size="sm"
-    />
+    <span className="fdcard__transit-chip">
+      <LineBadge label={label} mode={isTram ? 'tram' : isBus ? 'bus' : 'rail'} size="sm" />
+      {dest ? (
+        <span className="fdcard__rail-dest" dir="auto">
+          {dest}
+        </span>
+      ) : null}
+    </span>
   );
 }
 

@@ -80,3 +80,14 @@ export function formatLineLongName(longName: string | undefined): string {
   if (a || b) return a || b;
   return trimmed;
 }
+
+/**
+ * Israel Railways long_name is `OriginStation-City<->DestStation-City`.
+ * The trip terminates at the right-hand side — return that city only.
+ */
+export function formatRailFinalCity(longName: string | undefined): string {
+  if (!longName) return '';
+  const ends = splitEndpoints(longName.trim());
+  if (!ends) return endpointCity(longName);
+  return endpointCity(ends[1]) || endpointCity(ends[0]);
+}
