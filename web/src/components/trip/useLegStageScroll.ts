@@ -31,6 +31,8 @@ interface DragSession {
   velocityX: number;
   axis: Axis;
   width: number;
+  /** 1 in LTR, -1 in RTL: pages flow leftwards there, so offsets mirror. */
+  sign: number;
 }
 
 function isInteractive(target: EventTarget | null): boolean {
@@ -117,6 +119,7 @@ export function useLegStageScroll(
         velocityX: 0,
         axis: null,
         width: w,
+        sign: getComputedStyle(viewport).direction === 'rtl' ? -1 : 1,
       };
     };
 
@@ -156,7 +159,7 @@ export function useLegStageScroll(
 
       const max = 0;
       const min = -(legCountRef.current - 1) * session.width;
-      const raw = session.originOffset + dx;
+      const raw = session.originOffset + dx * session.sign;
       let next = raw;
       if (raw > max) next = max + (raw - max) * 0.28;
       else if (raw < min) next = min + (raw - min) * 0.28;
@@ -174,13 +177,13 @@ export function useLegStageScroll(
         return;
       }
 
-      const dx = e.clientX - session.startX;
+      const dx = (e.clientX - session.startX) * session.sign;
       const pageW = session.width;
       const current = viewIndexRef.current;
       let target = current;
 
       if (Math.abs(session.velocityX) >= FLICK_VX) {
-        target = session.velocityX < 0 ? current + 1 : current - 1;
+        target = session.velocityX * session.sign < 0 ? current + 1 : current - 1;
       } else if (Math.abs(dx) >= pageW * PAGE_THRESHOLD) {
         target = dx < 0 ? current + 1 : current - 1;
       }
@@ -202,10 +205,15 @@ export function useLegStageScroll(
   }, [finishTo, legCount]);
 
   const settled = width > 0 ? -viewIndex * width : 0;
+  // Offsets are logical (page 0 at 0, later pages negative); RTL lays pages
+  // leftwards, so the physical shift is mirrored there.
+  const rtl =
+    typeof document !== 'undefined' && document.documentElement.dir === 'rtl';
+  const physical = (dragOffset != null ? dragOffset : settled) * (rtl ? -1 : 1);
   // Track stays viewport-width; each page is flex: 0 0 100% of that.
   // Do NOT set track width to N×viewport — that makes page 100% = all pages.
   const trackStyle: CSSProperties = {
-    transform: `translate3d(${dragOffset != null ? dragOffset : settled}px, 0, 0)`,
+    transform: `translate3d(${physical}px, 0, 0)`,
     transition:
       dragOffset != null || !animating
         ? 'none'
