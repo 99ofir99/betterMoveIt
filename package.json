@@ -22,7 +22,7 @@
     "start:tunnel": "npm run build && concurrently -n server,ngrok -c blue,green \"npm:start\" \"ngrok http 8787\"",
     "check": "npm --workspace web exec tsc -- --noEmit",
     "test": "npm run test:tools && npm --workspace web run test",
-    "test:tools": "node --test tools/lib/csv.test.mjs",
+    "test:tools": "node --test tools/lib/csv.test.mjs server/src/raptor.test.mjs",
     "test:watch": "npm --workspace web run test:watch",
     "verify": "npm run check && npm test && npm run build",
     "smoke": "node tools/smoke.mjs",
