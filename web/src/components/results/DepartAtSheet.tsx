@@ -3,7 +3,6 @@
  */
 
 import { useState } from 'react';
-import { DepartPromoStrip } from './DepartPromoStrip';
 import { DepartTimeForm } from './DepartTimeForm';
 import type { DepartAtAction, DepartAtSheetProps, DepartSheetMode } from './types';
 import { t } from '../../lib/i18n';
@@ -24,8 +23,8 @@ const MENU_ITEMS: MenuItem[] = [
   { label: '+15 min', action: { type: 'plus15' } },
 ];
 
-export function DepartAtSheet({ onClose, onSelect }: DepartAtSheetProps) {
-  const [mode, setMode] = useState<DepartSheetMode>('menu');
+export function DepartAtSheet({ onClose, onSelect, startMode }: DepartAtSheetProps) {
+  const [mode, setMode] = useState<DepartSheetMode>(startMode ?? 'menu');
 
   const handleItem = (item: MenuItem) => {
     if ('open' in item.action) {
@@ -47,7 +46,6 @@ export function DepartAtSheet({ onClose, onSelect }: DepartAtSheetProps) {
         <div className="depart-sheet__grabber" aria-hidden="true" />
         {mode === 'menu' ? (
           <>
-            <DepartPromoStrip />
             <ul className="depart-sheet__list">
               {MENU_ITEMS.map((item) => (
                 <li key={item.label}>
@@ -65,7 +63,9 @@ export function DepartAtSheet({ onClose, onSelect }: DepartAtSheetProps) {
         ) : (
           <DepartTimeForm
             mode={mode}
-            onBack={() => setMode('menu')}
+            // Opened straight on the form (home card clock): depart/arrive toggle, Back closes.
+            onModeChange={startMode ? setMode : undefined}
+            onBack={() => (startMode ? onClose() : setMode('menu'))}
             onApply={(action) => {
               onSelect(action);
               onClose();

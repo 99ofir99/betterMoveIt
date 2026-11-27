@@ -15,15 +15,37 @@ function defaultTimeValue(): string {
   return `${String(Math.floor(sec / 3600)).padStart(2, '0')}:${String(Math.floor((sec % 3600) / 60)).padStart(2, '0')}`;
 }
 
-export function DepartTimeForm({ mode, onBack, onApply }: DepartTimeFormProps) {
+export function DepartTimeForm({ mode, onModeChange, onBack, onApply }: DepartTimeFormProps) {
   const [time, setTime] = useState(defaultTimeValue);
   const [date, setDate] = useState(todayIso);
 
   return (
     <>
-      <h2 className="depart-sheet__title">
-        {mode === 'depart' ? t('Set departure time') : t('Set desired arrival time')}
-      </h2>
+      {onModeChange ? (
+        <>
+          <h2 className="depart-sheet__title">{t('When do you want to travel?')}</h2>
+          <div className="segmented depart-sheet__switch" role="group" aria-label={t('Departure timing')}>
+            <button
+              type="button"
+              className={mode === 'depart' ? 'is-active' : ''}
+              onClick={() => onModeChange('depart')}
+            >
+              {t('Depart at')}
+            </button>
+            <button
+              type="button"
+              className={mode === 'arrive' ? 'is-active' : ''}
+              onClick={() => onModeChange('arrive')}
+            >
+              {t('Arrive by')}
+            </button>
+          </div>
+        </>
+      ) : (
+        <h2 className="depart-sheet__title">
+          {mode === 'depart' ? t('Set departure time') : t('Set desired arrival time')}
+        </h2>
+      )}
       <div className="depart-sheet__form">
         <label className="depart-sheet__field">
           <span>{t("Date")}</span>
@@ -47,7 +69,7 @@ export function DepartTimeForm({ mode, onBack, onApply }: DepartTimeFormProps) {
             )
           }
         >
-          {t("Apply")}
+          {onModeChange ? t('Find routes') : t("Apply")}
         </button>
       </div>
     </>
