@@ -7499,24 +7499,38 @@ button.ld-option {
 .fdcard.is-loading {
   cursor: default;
 }
+/* Shimmer = a light band sliding across on the GPU (transform, linear), so it
+   never pauses at the ends or stutters while the page is busy loading. */
 .fdcard__skel {
+  position: relative;
   display: block;
   height: 14px;
   border-radius: 7px;
-  background: linear-gradient(90deg, var(--surface-3) 25%, #3a3b40 50%, var(--surface-3) 75%);
-  background-size: 200% 100%;
-  animation: fdcard-shimmer 1.4s ease-in-out infinite;
+  overflow: hidden;
+  background: var(--surface-3);
+}
+.fdcard__skel::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.09) 50%, transparent 100%);
+  transform: translateX(-100%);
+  animation: fdcard-shimmer 1.1s linear infinite;
+  will-change: transform;
+}
+[dir='rtl'] .fdcard__skel::after {
+  animation-direction: reverse;
 }
 .fdcard__skel--title { width: 45%; height: 20px; border-radius: 10px; }
 .fdcard__skel--line { width: 62%; }
 .fdcard__skel--legs { width: 55%; height: 44px; border-radius: 12px; margin-top: 6px; }
 .fdcard__skel--short { width: 38%; margin-top: 6px; }
 @keyframes fdcard-shimmer {
-  from { background-position: 100% 0; }
-  to { background-position: -100% 0; }
+  from { transform: translateX(-100%); }
+  to { transform: translateX(100%); }
 }
 @media (prefers-reduced-motion: reduce) {
-  .fdcard__skel { animation: none; }
+  .fdcard__skel::after { animation: none; }
 }
 
 .fdcard__tap-hint {
