@@ -728,7 +728,9 @@ export default function App() {
       setActiveTab("directions");
       const origin = await state.useMyLocationAsOrigin();
       if (origin) {
-        void searchRoutes(origin, place);
+        // From the home screen it's always "leave now", even if an earlier
+        // plan picked another departure time.
+        void searchRoutes(origin, place, { forceNow: true });
       } else {
         setShowPlanForm(true);
       }

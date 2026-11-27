@@ -16,6 +16,12 @@ import {
 
 interface SwipeRailProps extends HTMLAttributes<HTMLDivElement> {
   children: ReactNode;
+  /**
+   * In RTL, open scrolled to the left edge (the end of a right-to-left leg
+   * sequence) instead of the browser default right edge. Only for rows the
+   * user wants to see from the left, such as the result-card leg chips.
+   */
+  startAtLeft?: boolean;
 }
 
 function nearestVerticalScrollParent(from: HTMLElement): HTMLElement | null {
@@ -31,7 +37,14 @@ function nearestVerticalScrollParent(from: HTMLElement): HTMLElement | null {
   return null;
 }
 
-export function SwipeRail({ children, className, onPointerDown, onClick, ...rest }: SwipeRailProps) {
+export function SwipeRail({
+  children,
+  className,
+  onPointerDown,
+  onClick,
+  startAtLeft = false,
+  ...rest
+}: SwipeRailProps) {
   const railRef = useRef<HTMLDivElement>(null);
   const originX = useRef(0);
   const panned = useRef(false);
@@ -60,7 +73,7 @@ export function SwipeRail({ children, className, onPointerDown, onClick, ...rest
   const touched = useRef(false);
   useLayoutEffect(() => {
     const el = railRef.current;
-    if (!el || touched.current) return;
+    if (!startAtLeft || !el || touched.current) return;
     if (getComputedStyle(el).direction !== 'rtl') return;
     if (el.scrollWidth <= el.clientWidth) return;
     el.scrollLeft = -el.scrollWidth;

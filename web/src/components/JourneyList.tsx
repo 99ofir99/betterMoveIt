@@ -19,9 +19,10 @@ import {
 } from '../lib/boardingEta';
 import { isHeavyRailRoute, transitDestinationLabel } from '../lib/railLabel';
 import { api } from '../lib/api';
+import { previewLegs } from '../lib/previewLegs';
 import { BundledLineBadge } from './common/BundledLineBadge';
 import { SwipeRail } from './common/SwipeRail';
-import { WalkIcon } from './icons';
+import { ChevronRightIcon, WalkIcon } from './icons';
 import { TripStartBar } from './trip/TripStartBar';
 import { TripTips } from './results/TripTips';
 import type { JourneyDetailProps, JourneyListProps } from './types';
@@ -79,12 +80,12 @@ function ClampedRouteSequence({
 }) {
   let transitIdx = 0;
   return (
-    <SwipeRail className="journey-card__legs" aria-label={t("Route legs")}>
-      {journey.legs.map((leg, li) => {
+    <SwipeRail className="journey-card__legs" startAtLeft aria-label={t("Route legs")}>
+      {previewLegs(journey.legs).map((leg, li) => {
         const sep =
           li > 0 ? (
             <span className="journey-card__leg-sep" aria-hidden="true">
-              ›
+              <ChevronRightIcon size={12} className="journey-card__leg-sep-icon" />
             </span>
           ) : null;
 

@@ -1638,6 +1638,8 @@ select {
 }
 
 .journey-card__leg-sep {
+  display: inline-flex;
+  align-items: center;
   color: var(--text-faint);
   font-size: 14px;
   font-weight: 600;
@@ -6578,7 +6580,11 @@ button.ld-option {
 .ld-ride__headsign {
   font-size: 14px;
   color: #e8e8ea;
-  flex-shrink: 0;
+  /* Shrink and ellipsize so the line badge never gets pushed out of view. */
+  flex: 0 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
   white-space: nowrap;
 }
 
@@ -8165,14 +8171,23 @@ button.ld-option {
   display: none;
 }
 
-.itin__line .route-badge--bundled {
+.itin__line .route-badge--bundled,
+.itin__line > .line-badge,
+.ld-ride__line-row > * {
   flex-shrink: 0;
+}
+.ld-ride__line-row > .ld-ride__headsign {
+  flex-shrink: 1;
 }
 
 .itin__headsign {
   font-size: 14px;
   color: var(--text-dim);
-  flex-shrink: 0;
+  /* Shrink and ellipsize so the line badge never gets pushed out of view. */
+  flex: 0 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
   white-space: nowrap;
 }
 
@@ -9920,6 +9935,14 @@ button.ld-option {
    on its own when <html dir="rtl">. These cover what logical props can't. */
 [dir='rtl'] .rtl-flip {
   transform: scaleX(-1);
+}
+
+/* Leg-sequence separators keep pointing right (›) in Hebrew too, as asked;
+   the row order and alignment still follow RTL. */
+[dir='rtl'] .directions__timeline-arrow.rtl-flip,
+[dir='rtl'] .journey-card__leg-sep-icon.rtl-flip,
+[dir='rtl'] .fdcard__arrow.rtl-flip {
+  transform: none;
 }
 
 [dir='rtl'] .prefs-sheet__switch.is-on::after {

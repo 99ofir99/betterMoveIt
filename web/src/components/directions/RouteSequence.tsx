@@ -10,7 +10,7 @@ import { t } from '../../lib/i18n';
 export function RouteSequence({ legs, transitAlternatives }: RouteSequenceProps) {
   let transitIdx = 0;
   return (
-    <SwipeRail className="directions__timeline" aria-label={t("Route legs")}>
+    <SwipeRail className="directions__timeline" startAtLeft aria-label={t("Route legs")}>
       {legs.map((leg, i) => {
         const arrow =
           i > 0 ? <ChevronRightIcon size={16} className="directions__timeline-arrow" /> : null;
