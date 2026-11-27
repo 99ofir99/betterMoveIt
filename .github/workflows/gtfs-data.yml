@@ -3,8 +3,8 @@
 # asset and redeploy the Render services that load it via GTFS_DIST_URL.
 #
 #   asset:  https://github.com/<owner>/<repo>/releases/download/gtfs-data/gtfs-dist.tgz
-#   window: repo variable GTFS_DAYS (default 10). 10 days keeps the server under
-#           Render free tier's 512 MB; 14 days does not.
+#   window: repo variable GTFS_DAYS (default 7). Rebuilt nightly, so 7 days is plenty;
+#           10 days ran at ~495 MB on Render free tier (512 MB), too close.
 #   deploy: repo secret RENDER_DEPLOY_HOOKS = one or more Render deploy-hook URLs
 #           (space or newline separated). Without it the asset is still published.
 #
@@ -18,7 +18,7 @@ on:
   workflow_dispatch:
     inputs:
       days:
-        description: 'Days of service to keep (blank = GTFS_DAYS or 10)'
+        description: 'Days of service to keep (blank = GTFS_DAYS or 7)'
         required: false
   push:
     branches: [feat/riko]
@@ -39,7 +39,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     env:
-      DAYS: ${{ inputs.days || vars.GTFS_DAYS || '10' }}
+      DAYS: ${{ inputs.days || vars.GTFS_DAYS || '7' }}
       TAG: gtfs-data
       FEED_URL: https://gtfs.mot.gov.il/gtfsfiles/israel-public-transportation.zip
       GH_TOKEN: ${{ github.token }}
