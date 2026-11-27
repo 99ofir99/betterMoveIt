@@ -278,10 +278,16 @@ export function useSheetDrag(options: UseSheetDragOptions = {}): {
           projected = Math.max(projected, snaps.full * 0.92);
         }
         const clamped = Math.max(snaps.peek, Math.min(snaps.full, projected));
-        publishHeight(clamped, softZone(clamped, snaps), true);
+        const zone = softZone(clamped, snaps);
+        publishHeight(clamped, zone, true);
+        // A slow drag already moved snapRef into this zone during pointermove,
+        // so publishHeight saw no change and never told the parent. The parent's
+        // stale controlled snap then yanked the sheet back. Always report it.
+        onSnapChangeRef.current?.(zone);
       } else {
         const next = snapFromRelease(delta, session.velocityY, snaps, session.startHeight);
         publishHeight(snaps[next], next, true);
+        onSnapChangeRef.current?.(next);
       }
       setDragging(false);
     },
@@ -406,7 +412,8 @@ export function useSheetDrag(options: UseSheetDragOptions = {}): {
     const onUp = (e: PointerEvent) => {
       const session = dragRef.current;
       if (!session || session.pointerId !== e.pointerId) return;
-      endDrag(e.clientY);
+      // pointercancel can carry no useful coordinates; use the last move.
+      endDrag(e.type === 'pointercancel' ? session.lastY : e.clientY);
     };
 
     window.addEventListener('pointermove', onMove, { passive: false });
