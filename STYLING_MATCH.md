@@ -1,7 +1,7 @@
-# Styling Match Report: betterMoveIt → oldApp APK
+# Styling Match Report: BetterMoveIt → oldApp APK
 
 ## Overview
-This document details the reverse engineering process and styling updates made to match the betterMoveIt web app to the oldApp APK's visual design system.
+This document details the reverse engineering process and styling updates made to match the BetterMoveIt web app to the oldApp APK's visual design system.
 
 ## Reverse Engineering Process
 
@@ -347,7 +347,7 @@ Material Design uses specific easing curves. Consider adopting:
 
 ## Conclusion
 
-The betterMoveIt web app now matches the oldApp's visual design system using:
+The BetterMoveIt web app now matches the oldApp's visual design system using:
 - ✅ Exact color palette from decompiled APK
 - ✅ Material Design spacing and sizing
 - ✅ 48dp touch targets

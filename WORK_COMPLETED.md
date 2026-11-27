@@ -1,8 +1,8 @@
-# Work Completed: betterMoveIt Styling & Feature Cleanup
+# Work Completed: BetterMoveIt Styling & Feature Cleanup
 
 ## Summary
 
-Successfully reverse-engineered the oldApp APK and applied its visual design to betterMoveIt, while simultaneously cleaning up unnecessary features to create a focused, perfect transit app.
+Successfully reverse-engineered the oldApp APK and applied its visual design to BetterMoveIt, while simultaneously cleaning up unnecessary features to create a focused, perfect transit app.
 
 ---
 
@@ -233,7 +233,7 @@ npm run build
 
 ## Visual Design Comparison
 
-### Before (Original betterMoveIt)
+### Before (Original BetterMoveIt)
 - Teal/green accent color
 - Blue-tinted dark backgrounds
 - Softer, iOS-inspired pill shapes
@@ -403,7 +403,7 @@ npm run build
 
 ## Final State
 
-### betterMoveIt is now:
+### BetterMoveIt is now:
 
 **🎯 Focused** - 11 essential features, no bloat
 **🎨 Polished** - 1:1 visual match with professional transit app
@@ -445,7 +445,7 @@ npm run build
 
 ## Conclusion
 
-betterMoveIt has been transformed from a feature-parity clone into a **focused, polished transit app** with professional-grade styling matched to the oldApp APK.
+BetterMoveIt has been transformed from a feature-parity clone into a **focused, polished transit app** with professional-grade styling matched to the oldApp APK.
 
 **Core Achievement:** Every pixel, color, and dimension now matches the Material Design system used by the oldApp, while the feature set has been ruthlessly simplified to focus on what matters: **live bus tracking and smart trip planning.**
 
@@ -456,4 +456,4 @@ betterMoveIt has been transformed from a feature-parity clone into a **focused, 
 ---
 
 *Generated: 2026-11-24*
-*betterMoveIt: A perfect transit app, without the bloat.*
+*BetterMoveIt: A perfect transit app, without the bloat.*

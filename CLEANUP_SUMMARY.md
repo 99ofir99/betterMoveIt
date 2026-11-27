@@ -185,7 +185,7 @@ Moved from "Previously premium" to **Core** and upgraded status to **Partial**.
 
 ## Conclusion
 
-This cleanup transforms betterMoveIt from a feature-parity clone into a **focused transit tool**.
+This cleanup transforms BetterMoveIt from a feature-parity clone into a **focused transit tool**.
 
 **Core principle:** Every feature must answer "Will this help me catch my bus faster?"
 
