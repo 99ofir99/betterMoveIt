@@ -8,6 +8,7 @@ import { bestBoardingMinutes, type LeaveEtaEntry } from '../../lib/boardingEta';
 import { minutesUntilDepart, secondsSinceLocalMidnight } from '../../lib/format';
 import type { RouteInfo, TransitLeg } from '../../types';
 import { useStopDepartures } from '../trip/useStopDepartures';
+import { departureHasPassed, plannedRideMinMinutes } from '../../lib/journeyStale';
 
 export function useTransitLegEta(
   leg: TransitLeg,
@@ -22,7 +23,19 @@ export function useTransitLegEta(
   return useMemo(() => {
     const routes =
       alternatives && alternatives.length > 0 ? alternatives : [leg.route];
-    const fromBoard = bestBoardingMinutes(board, leg, routes);
+    // The planned bus already left: say so instead of showing the next one as "now".
+    if (departureHasPassed(leg.departure)) {
+      return {
+        minutes: 0,
+        departure: leg.departure,
+        live: false,
+        confidence: 'none' as const,
+        source: 'schedule' as const,
+        departed: true,
+      };
+    }
+    // Only buses from the planned one on; an earlier bus belongs to another itinerary.
+    const fromBoard = bestBoardingMinutes(board, leg, routes, plannedRideMinMinutes(leg.departure));
     if (fromBoard) return fromBoard;
 
     // Schedule fallback from the planned leg clock (black / based on schedule).
