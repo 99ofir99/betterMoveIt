@@ -14,7 +14,7 @@ function line(partial: Partial<Line> & Pick<Line, 'id' | 'shortName' | 'longName
 }
 
 describe('dedupeLines', () => {
-  it('keeps opposite directions as separate rows', () => {
+  it('collapses opposite directions into one row', () => {
     const a = line({
       id: '85',
       shortName: '5',
@@ -26,8 +26,8 @@ describe('dedupeLines', () => {
       longName: 'מסוף הלוחמים-חולון<->ת. רכבת תל אביב - סבידור-תל אביב יפו',
     });
     const out = dedupeLines([a, b]);
-    expect(out).toHaveLength(2);
-    expect(out.map((l) => l.id)).toEqual(['85', '86']);
+    expect(out).toHaveLength(1);
+    expect(out[0]!.id).toBe('85');
   });
 
   it('still collapses same-direction GTFS variants', () => {
@@ -50,7 +50,7 @@ describe('dedupeLines', () => {
 });
 
 describe('searchResultDedupeKey', () => {
-  it('distinguishes opposite line directions', () => {
+  it('treats opposite line directions as the same corridor', () => {
     const a: SearchResult = {
       kind: 'line',
       shortName: '5',
@@ -65,6 +65,6 @@ describe('searchResultDedupeKey', () => {
       name: '5',
       longName: 'חולון<->תל אביב יפו',
     };
-    expect(searchResultDedupeKey(a)).not.toBe(searchResultDedupeKey(b));
+    expect(searchResultDedupeKey(a)).toBe(searchResultDedupeKey(b));
   });
 });

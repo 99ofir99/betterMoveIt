@@ -316,6 +316,7 @@ app.get('/api/lines/:id/schedule', (req, res) => {
     headsign: detail.headsign,
     direction: detail.direction,
     directions: detail.directions,
+    oppositeLineId: detail.oppositeLineId ?? null,
     stops,
     time: clock,
   });

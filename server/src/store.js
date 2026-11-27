@@ -8,6 +8,11 @@
 
 import fs from 'node:fs';
 import path from 'node:path';
+import {
+  corridorDestCity,
+  corridorKey,
+  corridorOriginCity,
+} from './corridorKey.js';
 import { brandLightRailRoute, modeFamily } from './lightRailBrand.js';
 
 const SEARCH_DEPTH_ENV = 'GTFS_DATA_DIR';
@@ -542,6 +547,58 @@ export class TransitStore {
     return [...byDir.values()].sort((a, b) => a.direction - b.direction);
   }
 
+  /**
+   * Israel GTFS often stores opposite corridors as separate routes
+   * (A→B and B→A). Pair them so the UI can offer one list row + direction swap.
+   */
+  _buildOppositeRoutes() {
+    const n = this.routeCount;
+    const opposite = new Int32Array(n);
+    opposite.fill(-1);
+    /** @type {Map<string, number[]>} */
+    const byKey = new Map();
+    for (let i = 0; i < n; i++) {
+      const short = this.routeShortName[i] || '';
+      if (!short) continue;
+      const key = corridorKey(this.routeLongName[i] || '');
+      if (!key) continue;
+      const agency = this.routeAgency[i] || '';
+      const groupKey = `${short}\0${agency}\0${key}`;
+      let list = byKey.get(groupKey);
+      if (!list) {
+        list = [];
+        byKey.set(groupKey, list);
+      }
+      list.push(i);
+    }
+    for (const list of byKey.values()) {
+      if (list.length < 2) continue;
+      for (const i of list) {
+        const dest = corridorDestCity(this.routeLongName[i] || '');
+        let pick = -1;
+        for (const j of list) {
+          if (j === i) continue;
+          const origin = corridorOriginCity(this.routeLongName[j] || '');
+          if (dest && origin && dest === origin) {
+            pick = j;
+            break;
+          }
+          if (pick < 0) pick = j;
+        }
+        opposite[i] = pick;
+      }
+    }
+    this._oppositeRoute = opposite;
+  }
+
+  /** Paired opposite-corridor route id, or null. */
+  oppositeRouteId(routeIdx) {
+    if (routeIdx < 0 || routeIdx >= this.routeCount) return null;
+    if (!this._oppositeRoute) this._buildOppositeRoutes();
+    const j = this._oppositeRoute[routeIdx];
+    return j != null && j >= 0 ? String(j) : null;
+  }
+
   /** Pick a representative trip, optionally for a specific GTFS direction_id. */
   tripForRoute(routeIdx, direction) {
     if (routeIdx < 0 || routeIdx >= this.routeCount) return -1;
@@ -559,6 +616,7 @@ export class TransitStore {
     if (routeIdx < 0 || routeIdx >= this.routeCount) return null;
     const trip = this.tripForRoute(routeIdx, direction);
     const directions = this.routeDirections(routeIdx);
+    const oppositeLineId = this.oppositeRouteId(routeIdx);
     if (trip < 0) {
       return {
         line: this.routeObject(routeIdx),
@@ -567,6 +625,7 @@ export class TransitStore {
         headsign: '',
         direction: 0,
         directions,
+        oppositeLineId,
       };
     }
     const start = this.tripStopStart[trip];
@@ -584,6 +643,7 @@ export class TransitStore {
       headsign: this.tripHeadsign[trip] || '',
       direction: this.tripDirection[trip],
       directions,
+      oppositeLineId,
     };
   }
 

@@ -26,8 +26,9 @@ export function LineDetailPanel({
   onOpenStop: _onOpenStop,
   onGeometryChange,
   onStartLineRide,
+  onSwitchLine,
 }: LineDetailPanelProps) {
-  const s = useLineDetail(lineId, onGeometryChange);
+  const s = useLineDetail(lineId, onGeometryChange, onSwitchLine);
   const boardStop =
     s.boardIndex != null && s.data ? s.data.stops[s.boardIndex] : null;
   const agency = agencyLabel(s.line?.agency);
