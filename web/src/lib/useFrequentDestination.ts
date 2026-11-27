@@ -14,7 +14,7 @@ import { normalizeJourneyTiming } from './journeyTiming';
 import { sortJourneys } from './sort';
 import { bestBoardingMinutes } from './boardingEta';
 import { minutesUntilDepart, secondsSinceLocalMidnight } from './format';
-import { journeyHasDeparted, plannedRideMinMinutes } from './journeyStale';
+import { journeyHasDeparted, markNextDay, plannedRideMinMinutes } from './journeyStale';
 import type { Journey, LatLon, Place, TransitLeg } from '../types';
 import type { FrequentDestResult } from '../components/home/types';
 import { getLocale } from './i18n';
@@ -61,7 +61,7 @@ function deriveDisplay(
   | 'boardingStop'
 > {
   const now = nowSeconds();
-  const scheduled = minutesUntilDepart(journey.departSeconds, now);
+  const scheduled = minutesUntilDepart(journey.departSeconds, now, journey.nextDay);
   const scheduleMin = scheduled.minutes;
   // Prefer live board / vehicle ETA when available (Moovit).
   const leavesInMin =
@@ -203,7 +203,8 @@ export function useFrequentDestination(
       .then(async (res) => {
         if (ctrl.signal.aborted) return;
         // Fastest = shortest duration (same default as results).
-        const ranked = sortJourneys(res.journeys.map(normalizeJourneyTiming), 'fastest');
+        const planned = res.nextDay ? markNextDay(res.journeys) : res.journeys;
+        const ranked = sortJourneys(planned.map(normalizeJourneyTiming), 'fastest');
         const journey: Journey | null = ranked[0] ?? null;
         journeyRef.current = journey;
 
@@ -217,7 +218,7 @@ export function useFrequentDestination(
                 board.departures,
                 firstTransit,
                 undefined,
-                plannedRideMinMinutes(firstTransit.departure)
+                plannedRideMinMinutes(firstTransit.departure, undefined, firstTransit.nextDay)
               );
               if (best) boardLeave = best;
             }
@@ -259,7 +260,7 @@ export function useFrequentDestination(
                 board.departures,
                 firstTransit,
                 undefined,
-                plannedRideMinMinutes(firstTransit.departure)
+                plannedRideMinMinutes(firstTransit.departure, undefined, firstTransit.nextDay)
               );
           if (best == null) return;
           setResult((prev) =>

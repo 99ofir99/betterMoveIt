@@ -82,6 +82,8 @@ export interface TransitLeg {
   /** Shape slice from planner; each pair is [lat, lon]. */
   geometry?: [number, number][];
   tripId?: string;
+  /** Runs tomorrow (the planner rolled over after tonight's last bus). */
+  nextDay?: boolean;
 }
 
 export type Leg = WalkLeg | TransitLeg;
@@ -102,6 +104,8 @@ export interface Journey {
   /** Total fare in ILS when the planner supplies one (UI omits the price otherwise). */
   fareIls?: number;
   kind?: "fastest" | "fewest" | "best" | string;
+  /** Leaves tomorrow: no more service today, so the planner searched the next day. */
+  nextDay?: boolean;
 }
 
 export interface PlanResponse {
@@ -109,6 +113,8 @@ export interface PlanResponse {
   reason?: string;
   elapsedMs?: number;
   query?: unknown;
+  /** Server rolled "depart now" over to tomorrow morning. */
+  nextDay?: boolean;
 }
 
 export interface SearchResult {

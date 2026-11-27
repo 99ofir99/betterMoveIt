@@ -78,8 +78,13 @@ const JUST_LEFT_WINDOW_SEC = 6 * 3600;
  */
 export function minutesUntilDepart(
   departSeconds: number,
-  nowSec = secondsSinceLocalMidnight()
+  nowSec = secondsSinceLocalMidnight(),
+  /** The departure is known to be tomorrow (planner rolled over to the next day). */
+  tomorrow = false
 ): { minutes: number; nextDay: boolean } {
+  if (tomorrow) {
+    return { minutes: Math.max(0, Math.round((departSeconds + 86400 - nowSec) / 60)), nextDay: true };
+  }
   let diff = departSeconds - nowSec;
   let nextDay = false;
   // Only a time far in the past is tomorrow's bus. One that left a minute ago (stale

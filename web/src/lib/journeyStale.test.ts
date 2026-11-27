@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { journeyHasDeparted } from './journeyStale';
+import { journeyHasDeparted, markNextDay } from './journeyStale';
+import { minutesUntilDepart } from './format';
 import type { Journey } from '../types';
 
 const ride = (dep: number) =>
@@ -20,5 +21,16 @@ describe('journeyHasDeparted', () => {
   });
   it('a 24:30 bus at 00:40 has left', () => {
     expect(journeyHasDeparted(ride(24 * 3600 + 30 * 60), 40 * 60)).toBe(true);
+  });
+});
+
+describe('tomorrow trips', () => {
+  it("a trip planned for tomorrow 18:39 is not 'departed' at 20:14", () => {
+    const [j] = markNextDay([ride(18 * 3600 + 39 * 60)]);
+    expect(journeyHasDeparted(j, 20 * 3600 + 14 * 60)).toBe(false);
+    expect(minutesUntilDepart(18 * 3600 + 39 * 60, 20 * 3600 + 14 * 60, true)).toEqual({
+      minutes: 1345,
+      nextDay: true,
+    });
   });
 });

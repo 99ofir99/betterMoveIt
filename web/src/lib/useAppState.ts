@@ -8,7 +8,7 @@
 
 import { arriveBySearchStart, rankForArriveBy } from './arriveBy';
 import { israelClock } from './format';
-import { journeyHasDeparted } from './journeyStale';
+import { journeyHasDeparted, markNextDay } from './journeyStale';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { api } from './api';
 import { saveHistoryEntry } from './history';
@@ -263,7 +263,10 @@ export function useAppState(opts?: { watchLocation?: boolean }) {
             ctrl.signal
           );
           if (ctrl.signal.aborted) return;
+          res = { ...res, nextDay: true };
         }
+        // Tomorrow's trips carry clock times that look like the past today.
+        if (res.nextDay) res = { ...res, journeys: markNextDay(res.journeys) };
 
         // Arrive-by: keep journeys that land closest to the desired arrival.
         if (arriveByOpt && res.journeys.length > 1) {
