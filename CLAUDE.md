@@ -11,7 +11,7 @@ tools (`tools/`). Node 20 (`.node-version` = 20.19), ESM everywhere. No lint con
 | `npm run setup` | Install deps, get transit data (real if present, else synthetic sample), typecheck + test. Idempotent, ~12 s fresh |
 | `npm run dev` | API on :8787 (`node --watch`) + Vite on :5173 with HMR; Vite proxies `/api` → :8787 |
 | `npm run dev:debug` | Same, API with `--inspect` on :9229 |
-| `npm test` / `npm run test:watch` | `node --test` for tools/lib (CSV parser) + Vitest for web (`web/src/**/*.test.ts`) |
+| `npm test` / `npm run test:watch` | `node --test` for tools/lib (CSV parser) and `server/src/raptor.test.mjs` (router, fake in-memory store) + Vitest for web (`web/src/**/*.test.ts`) |
 | `npm run check` | `tsc --noEmit` for web (strict, `noUnusedLocals`) |
 | `npm run verify` | check + test + production build |
 | `npm run smoke` | Boot API on :8797 and hit every endpoint; `SMOKE_URL=…` to target a running server |

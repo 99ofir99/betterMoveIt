@@ -102,6 +102,29 @@ function cloneParentChain(parents, destStop) {
   return out;
 }
 
+/**
+ * Fold back-to-back walk legs into one (e.g. a transfer walk to a stop followed
+ * by the last-mile walk from it). A rider sees one "Walk X m" step, not a chain.
+ */
+export function mergeConsecutiveWalks(legs) {
+  const out = [];
+  for (const leg of legs) {
+    const prev = out[out.length - 1];
+    if (prev && prev.mode === 'walk' && leg.mode === 'walk') {
+      out[out.length - 1] = {
+        ...prev,
+        toName: leg.toName,
+        to: leg.to,
+        distanceM: (prev.distanceM ?? 0) + (leg.distanceM ?? 0),
+        durationSec: (prev.durationSec ?? 0) + (leg.durationSec ?? 0),
+      };
+    } else {
+      out.push(leg);
+    }
+  }
+  return out;
+}
+
 export class JourneyPlanner {
   constructor(store) {
     this.store = store;
@@ -570,9 +593,17 @@ export class JourneyPlanner {
       const reachableNow = new Set(frontier);
 
       // ---- step 1: walking from the transit frontier of the previous round
+      // A stop that was itself reached on foot (origin access or an earlier
+      // transfer walk) may walk on, which lets the search reach stops beyond the
+      // access ring. But the new label points back to where that walk *started*
+      // (the origin or the stop the rider got off at) with the distances added,
+      // so the itinerary shows one "Walk X m" step instead of a chain of
+      // stop-to-stop hops.
       for (const stop of frontier) {
         const base = best[stop];
         if (base === INF) continue;
+        const here = bestParents.get(stop);
+        const walkedIn = here?.type === 'walk' ? here : null;
         const t0 = transferStart[stop];
         const t1 = transferStart[stop + 1];
         for (let ti = t0; ti < t1; ti++) {
@@ -581,12 +612,16 @@ export class JourneyPlanner {
           const arrive = base + walk(distance);
           if (arrive < best[nStop]) {
             best[nStop] = arrive;
-            bestParents.set(nStop, {
-              type: 'walk',
-              fromStop: stop,
-              distance,
-              duration: walk(distance),
-            });
+            bestParents.set(
+              nStop,
+              walkedIn
+                ? {
+                    ...walkedIn,
+                    distance: walkedIn.distance + distance,
+                    duration: walkedIn.duration + walk(distance),
+                  }
+                : { type: 'walk', fromStop: stop, distance, duration: walk(distance) }
+            );
             reachableNow.add(nStop);
             improved.push(nStop);
           }
@@ -785,7 +820,7 @@ export class JourneyPlanner {
       }
     }
     if (legs.length === 0) return null;
-    return legs;
+    return mergeConsecutiveWalks(legs);
   }
 
   /** Attach map geometry after pruning so discarded candidates skip the work. */
