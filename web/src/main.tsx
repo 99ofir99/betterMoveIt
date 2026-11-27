@@ -23,3 +23,8 @@ createRoot(document.getElementById('root')!).render(
     <App />
   </React.StrictMode>
 );
+
+// Hide the inline splash (index.html) once React has painted its first frame.
+requestAnimationFrame(() =>
+  requestAnimationFrame(() => (window as Window & { __bmiAppReady?: () => void }).__bmiAppReady?.())
+);
