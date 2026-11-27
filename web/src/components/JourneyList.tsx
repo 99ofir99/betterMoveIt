@@ -45,6 +45,9 @@ export function JourneyList({ journeys, selected, onSelect, departNow, insights 
               <div className="journey-card__layout">
                 <div className="journey-card__left">
                   <div className="journey-card__duration-big">{formatDurationMins(j.durationSec)}</div>
+                  {j.nextDay ? (
+                    <div className="journey-card__day">{t('Tomorrow')}</div>
+                  ) : null}
                   <div className="journey-card__times">
                     <span className="journey-card__clock">{formatClock12h(j.departSeconds)}</span>
                     <span className="journey-card__times-rail" aria-hidden="true" />

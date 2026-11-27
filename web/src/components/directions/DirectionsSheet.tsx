@@ -43,6 +43,7 @@ export function DirectionsSheet({
           <DirectionsSummary
             durationSec={journey.durationSec}
             arrivalSeconds={journey.arrivalSeconds}
+            nextDay={journey.nextDay}
             fare={formatFare(journey.fareIls)}
             saved={saved}
             onToggleSaved={handleToggleSaved}
@@ -54,6 +55,7 @@ export function DirectionsSheet({
         <ShiftStrip
           departSeconds={journey.departSeconds}
           arrivalSeconds={journey.arrivalSeconds}
+          nextDay={journey.nextDay}
           onEarlier={onEarlier}
           onLater={onLater}
         />

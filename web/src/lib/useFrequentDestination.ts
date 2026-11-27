@@ -52,6 +52,7 @@ function deriveDisplay(
 ): Pick<
   FrequentDestResult,
   | 'leavesInMin'
+  | 'leavesTomorrow'
   | 'leavesDepartureSec'
   | 'leavesLive'
   | 'leavesConfidence'
@@ -79,6 +80,7 @@ function deriveDisplay(
 
   return {
     leavesInMin,
+    leavesTomorrow: Boolean(journey.nextDay),
     leavesDepartureSec,
     leavesLive,
     leavesConfidence,
