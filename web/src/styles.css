@@ -8592,38 +8592,14 @@ button.ld-option {
 }
 
 
-/* "Use current location" card at the top of full-screen search. It used
-   width:100% plus side margins, so it ran 24px past the screen edge. */
+/* "Use current location" row at the top of full-screen search: same surface,
+   border and icon as the other rows. It used width:100% plus side margins,
+   so it ran 24px past the screen edge. */
 .suggestions__row--current {
   width: calc(100% - 24px);
-  margin: 12px 12px 4px;
-  padding: 14px 16px;
-  gap: 14px;
-  border: 1px solid rgba(0, 122, 255, 0.28);
-  border-radius: 16px;
-  background: linear-gradient(180deg, rgba(0, 122, 255, 0.12), rgba(0, 122, 255, 0.05));
-}
-
-.suggestions__row--current:hover,
-.suggestions__row--current:active {
-  background: rgba(0, 122, 255, 0.16);
-}
-
-.suggestions__row--current .suggestions__icon--locate {
-  width: 42px;
-  height: 42px;
-  background: var(--accent);
-  color: #fff;
-  box-shadow: 0 4px 14px rgba(0, 122, 255, 0.35);
-}
-
-.suggestions__row--current .suggestions__name {
-  font-size: 16px;
-  font-weight: 600;
-}
-
-.suggestions__row--current .suggestions__meta {
-  color: #7fb6ff;
+  margin: 8px 12px;
+  border: 1px solid var(--line);
+  background: var(--surface);
 }
 
 .suggestions__icon--locate,

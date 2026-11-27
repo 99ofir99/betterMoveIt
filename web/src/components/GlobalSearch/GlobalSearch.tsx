@@ -89,7 +89,7 @@ export function GlobalSearch({
                 }}
               >
                 <span className="suggestions__icon suggestions__icon--locate" aria-hidden="true">
-                  <Icon name="my-location" size={22} />
+                  <Icon name="my-location" size={16} />
                 </span>
                 <span className="suggestions__text">
                   <span className="suggestions__name">{currentLocationLabel ?? t('Current location')}</span>
