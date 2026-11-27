@@ -105,7 +105,7 @@ async function refreshHasadna() {
 
   try {
     const res = await fetch(url, {
-      headers: { Accept: 'application/json', 'User-Agent': 'BetterMoovit/1.0' },
+      headers: { Accept: 'application/json', 'User-Agent': 'betterMoveIt/1.0' },
       signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
     });
     if (!res.ok) throw new Error(`Hasadna HTTP ${res.status}`);

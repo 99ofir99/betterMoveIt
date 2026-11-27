@@ -474,7 +474,7 @@ app.get('/api/geocode', async (req, res) => {
       url += `&viewbox=${lon - delta},${lat - delta},${lon + delta},${lat + delta}&bounded=0`;
     }
     const r = await fetch(url, {
-      headers: { 'User-Agent': 'BetterMoovit/1.0 (open-source transit app)' },
+      headers: { 'User-Agent': 'betterMoveIt/1.0 (open-source transit app)' },
     });
     const json = await r.json();
     const results = json.map((item) => ({
@@ -497,7 +497,7 @@ app.get('/api/walk', async (req, res) => {
     const url =
       `https://routing.openstreetmap.de/routed-foot/route/v1/foot/` +
       `${fromLon},${fromLat};${toLon},${toLat}?overview=full&geometries=geojson`;
-    const r = await fetch(url, { headers: { 'User-Agent': 'BetterMoovit/1.0' } });
+    const r = await fetch(url, { headers: { 'User-Agent': 'betterMoveIt/1.0' } });
     const j = await r.json();
     const route = j.routes?.[0];
     if (!route) return res.json({ journey: null });

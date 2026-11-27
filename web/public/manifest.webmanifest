@@ -1,6 +1,6 @@
 {
-  "name": "BetterMoovit",
-  "short_name": "BetterMoovit",
+  "name": "betterMoveIt",
+  "short_name": "betterMoveIt",
   "description": "Ad-free multimodal transit with every feature unlocked.",
   "start_url": "/",
   "scope": "/",

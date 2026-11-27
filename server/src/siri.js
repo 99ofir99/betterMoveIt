@@ -39,7 +39,7 @@ async function refreshMotVehicles() {
 
   try {
     const res = await fetch(url, {
-      headers: { Accept: 'application/json', 'User-Agent': 'BetterMoovit/1.0' },
+      headers: { Accept: 'application/json', 'User-Agent': 'betterMoveIt/1.0' },
       signal: AbortSignal.timeout(12_000),
     });
     if (!res.ok) throw new Error(`SIRI HTTP ${res.status}`);
@@ -124,7 +124,7 @@ export async function fetchStopMonitoring(stopCodes, previewMinutes = 90) {
 
   try {
     const res = await fetch(url, {
-      headers: { Accept: 'application/json', 'User-Agent': 'BetterMoovit/1.0' },
+      headers: { Accept: 'application/json', 'User-Agent': 'betterMoveIt/1.0' },
       signal: AbortSignal.timeout(10_000),
     });
     if (!res.ok) throw new Error(`SIRI HTTP ${res.status}`);

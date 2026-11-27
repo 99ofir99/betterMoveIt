@@ -1,4 +1,4 @@
-# BetterMoovit
+# betterMoveIt
 
 A clean, ad-free transit app focused on what matters: live bus locations and smart trip planning.
 Runs as an installable PWA on Android (and anything else with a browser), backed

@@ -1,5 +1,5 @@
 /**
- * Shared types for BetterMoovit.
+ * Shared types for betterMoveIt.
  * API response shapes mirror the RAPTOR server / GTFS store.
  */
 

@@ -54,8 +54,8 @@ export default defineConfig({
       includeAssets: ['icon.svg', 'icon-192.png', 'icon-512.png'],
       manifest: {
         id: '/',
-        name: 'BetterMoovit',
-        short_name: 'BetterMoovit',
+        name: 'betterMoveIt',
+        short_name: 'betterMoveIt',
         description: 'Ad-free multimodal transit with every feature unlocked.',
         theme_color: '#000000',
         background_color: '#000000',

@@ -88,7 +88,7 @@ export function MoreTab({ onReplayTrip, onOpenSearch }: MoreTabProps) {
           label={t("Tickets & payment")}
           onClick={() =>
             window.alert(
-              t('BetterMoovit does not process payments. Use Rav-Kav, HopOn, or the operator app.')
+              t('betterMoveIt does not process payments. Use Rav-Kav, HopOn, or the operator app.')
             )
           }
         />

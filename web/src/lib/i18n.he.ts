@@ -40,9 +40,9 @@ export const HE: Record<string, string> = {
   'Based on previous arrivals': 'לפי הגעות קודמות',
   'Based on schedule': 'לפי לוח הזמנים',
   'Best time to leave': 'הזמן הטוב ביותר לצאת',
-  BetterMoovit: 'BetterMoovit',
-  'BetterMoovit does not process payments. Use Rav-Kav, HopOn, or the operator app.':
-    'BetterMoovit לא מבצעת תשלומים. אפשר לשלם ברב-קו, ב-HopOn או באפליקציית המפעיל.',
+  betterMoveIt: 'betterMoveIt',
+  'betterMoveIt does not process payments. Use Rav-Kav, HopOn, or the operator app.':
+    'betterMoveIt לא מבצעת תשלומים. אפשר לשלם ברב-קו, ב-HopOn או באפליקציית המפעיל.',
   Bike: 'אופניים',
   'Boarding stop': 'תחנת עלייה',
   Bus: 'אוטובוס',

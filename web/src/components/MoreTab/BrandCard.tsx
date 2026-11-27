@@ -10,7 +10,7 @@ export function BrandCard() {
         <BrandMarkIcon size={30} />
       </span>
       <span className="more-brand-card__text">
-        <span className="more-brand-card__title">{t("BetterMoovit")}</span>
+        <span className="more-brand-card__title">{t("betterMoveIt")}</span>
         <span className="more-brand-card__sub">{t("No ads · Live map · Open source")}</span>
       </span>
       <ChevronRightIcon size={16} className="more-brand-card__chevron" />
