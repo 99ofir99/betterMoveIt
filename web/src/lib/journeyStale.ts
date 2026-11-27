@@ -94,12 +94,17 @@ export function tagServiceDate(
 }
 
 const WEEKDAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-/** A same-day trip this far ahead (e.g. Saturday 18:39 planned at 00:35) gets its day named. */
+/**
+ * Later today is named only after midnight, when "today" still feels like
+ * yesterday (Saturday 18:39 planned at 00:35), and only for a trip this far ahead.
+ * A trip a few hours away, or one later the same afternoon, needs no day.
+ */
 const NAME_DAY_AHEAD_SEC = 6 * 3600;
+const AFTER_MIDNIGHT_END_SEC = 5 * 3600;
 
 /**
  * Which day a departure falls on, for labels next to its clock: "Tomorrow", a
- * weekday name for later days or a same-day trip many hours away, or '' for soon.
+ * weekday name for 2+ days ahead or a same-day trip far ahead after midnight, or ''.
  */
 export function departureDayLabel(
   depSec: number,
@@ -110,7 +115,7 @@ export function departureDayLabel(
   const calendarDay = base + Math.floor(depSec / 86400);
   if (calendarDay === 1) return t('Tomorrow');
   const ahead = depSec + base * 86400 - now.seconds;
-  if (calendarDay >= 2 || (calendarDay === 0 && ahead > NAME_DAY_AHEAD_SEC)) {
+  if (calendarDay >= 2 || (calendarDay === 0 && now.seconds < AFTER_MIDNIGHT_END_SEC && ahead > NAME_DAY_AHEAD_SEC)) {
     const dow = new Date(isoToUtcMs(now.isoDate) + calendarDay * 86400000).getUTCDay();
     return t(WEEKDAYS[dow]);
   }
