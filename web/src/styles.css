@@ -1567,7 +1567,8 @@ select {
 
 .journey-card.is-selected {
   border-color: rgba(255, 255, 255, 0.22);
-  background: var(--surface-3);
+  /* Only a step above the regular cards, so text and line chips keep their contrast. */
+  background: #1c1d21;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.28);
 }
 
