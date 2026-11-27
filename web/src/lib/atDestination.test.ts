@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { isAtDestination } from './atDestination';
+import { isAtDestination, pickFrequentDestination } from './atDestination';
 import type { Journey } from '../types';
 
 const home = { lat: 32.0, lon: 34.8 };
@@ -21,5 +21,23 @@ describe('isAtDestination', () => {
   });
   it('is false for a long walk-only plan', () => {
     expect(isAtDestination({ lat: 32.009, lon: 34.8 }, home, j(['walk'], 900))).toBe(false);
+  });
+});
+
+describe('pickFrequentDestination', () => {
+  const homeP = { label: 'Home', ...home };
+  const work = { label: 'Work', lat: 32.07, lon: 34.79 };
+  it('shows work when at home', () => {
+    expect(pickFrequentDestination([homeP, work], home)).toBe(work);
+  });
+  it('shows home when at work', () => {
+    expect(pickFrequentDestination([homeP, work], work)).toBe(homeP);
+  });
+  it('shows the first place when elsewhere or location unknown', () => {
+    expect(pickFrequentDestination([homeP, work], { lat: 31.5, lon: 35 })).toBe(homeP);
+    expect(pickFrequentDestination([homeP, work], null)).toBe(homeP);
+  });
+  it('is null when every place is here', () => {
+    expect(pickFrequentDestination([homeP], home)).toBeNull();
   });
 });
