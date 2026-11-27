@@ -52,12 +52,17 @@ function LineList({
   );
 }
 
-export function LinesTab({ onOpenLine }: LinesTabProps) {
-  const s = useLinesTab(onOpenLine);
+export function LinesTab(props: LinesTabProps) {
+  const s = useLinesTab(props);
 
   const searching = s.query.length > 0;
-  const mainLines = s.isFavouritesTab ? s.favouriteLines : s.filteredLines;
-  const noResults = !s.loading && mainLines.length === 0 && !s.error;
+  /** Empty query on a category tab: personal sections replace the generic list. */
+  const suggesting = !s.isFavouritesTab && !searching && s.sections.length > 0;
+  const mainLines = s.isFavouritesTab ? s.favouriteLines : suggesting ? [] : s.filteredLines;
+  const waitingForSuggestions =
+    !s.isFavouritesTab && !searching && s.sections.length === 0 && s.suggestLoading;
+  const noResults =
+    !s.loading && !waitingForSuggestions && !suggesting && mainLines.length === 0 && !s.error;
 
   return (
     <div className="lines-tab">
@@ -69,7 +74,7 @@ export function LinesTab({ onOpenLine }: LinesTabProps) {
       <div className="lines-content">
         {s.error && <p className="error-text lines-error">{s.error}</p>}
 
-        {s.loading && !s.isFavouritesTab && mainLines.length === 0 && (
+        {(s.loading || waitingForSuggestions) && !s.isFavouritesTab && !suggesting && mainLines.length === 0 && (
           <RippleLoader label={searching ? t("Searching…") : t("Loading lines…")} />
         )}
 
@@ -106,7 +111,20 @@ export function LinesTab({ onOpenLine }: LinesTabProps) {
           </section>
         )}
 
-        {mainLines.length > 0 && (
+        {suggesting &&
+          s.sections.map((section) => (
+            <section key={section.key} aria-label={section.title}>
+              <p className="lines-section-label">{section.title}</p>
+              <LineList
+                lines={section.lines}
+                favouriteIds={s.favouriteIds}
+                onOpen={s.openLine}
+                onToggleFavourite={s.toggleFavourite}
+              />
+            </section>
+          ))}
+
+        {mainLines.length > 0 && !waitingForSuggestions && (
           <>
             {s.isFavouritesTab && <p className="lines-section-label">{t("Favourites")}</p>}
             {!s.isFavouritesTab && s.isPopular && !searching && (

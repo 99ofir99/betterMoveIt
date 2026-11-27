@@ -1,5 +1,5 @@
 /** Types for the Lines tab (Moovit-style category tabs, rows). */
-import type { Line } from '../../types';
+import type { Journey, LatLon, Line } from '../../types';
 
 /** Line category filters applied to line lists. */
 export type LineCategoryFilter = 'all' | 'bus' | 'light-rail';
@@ -14,6 +14,12 @@ export interface LinesTabOption {
 
 export interface LinesTabProps {
   onOpenLine: (line: Line) => void;
+  /** Where to look for nearby lines: live location, else the map centre. */
+  near?: LatLon | null;
+  /** `near` is the user's live location (vs. the map centre). */
+  nearIsLive?: boolean;
+  /** The user's frequent destination and the trip planned to it from here. */
+  destination?: { label: string; journey: Journey | null } | null;
 }
 
 export interface LineRowProps {

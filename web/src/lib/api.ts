@@ -63,6 +63,12 @@ export const api = {
       signal
     ),
 
+  nearbyLines: (lat: number, lon: number, radius = 600, signal?: AbortSignal) =>
+    getJson<{ lines: Line[] }>(
+      `/api/nearby?lat=${lat}&lon=${lon}&radius=${radius}&withLines=1&limit=20`,
+      signal
+    ),
+
   stopDepartures: (stopId: string, signal?: AbortSignal) =>
     getJson<StopDeparturesResponse>(`/api/stop/${encodeURIComponent(stopId)}/departures`, signal),
 

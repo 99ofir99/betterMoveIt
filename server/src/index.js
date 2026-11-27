@@ -152,7 +152,31 @@ app.get('/api/nearby', (req, res) => {
       })),
     };
   });
-  res.json({ stops, time: clock });
+  // withLines=1: the lines that serve these stops, frequent + close first. Uses
+  // the whole timetable, so it still answers at night or on Shabbat.
+  let lines;
+  if (req.query.withLines === '1' || req.query.withLines === 'true') {
+    const score = new Map();
+    for (const n of near.slice(0, 12)) {
+      const weight = 1 / (1 + n.distance / 200);
+      const perRoute = new Map();
+      for (let i = store.stopTripStart[n.stop]; i < store.stopTripStart[n.stop + 1]; i++) {
+        const r = store.tripRoute[store.stopTripTrip[i]];
+        perRoute.set(r, (perRoute.get(r) || 0) + 1);
+      }
+      for (const [r, trips] of perRoute) {
+        const prev = score.get(r) || { score: 0, distance: n.distance };
+        prev.score += trips * weight;
+        prev.distance = Math.min(prev.distance, n.distance);
+        score.set(r, prev);
+      }
+    }
+    lines = [...score.entries()]
+      .sort((a, b) => b[1].score - a[1].score)
+      .slice(0, Math.min(Number(req.query.limit) || 20, 50))
+      .map(([r, s]) => ({ ...store.routeObject(r), distance: Math.round(s.distance) }));
+  }
+  res.json(lines ? { stops, lines, time: clock } : { stops, time: clock });
 });
 
 /** Live departures at a stop for the next N minutes (the "arrivals board"). */

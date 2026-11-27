@@ -11,6 +11,7 @@ import { israelClock } from './format';
 import { journeyHasDeparted, markNextDay } from './journeyStale';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { api } from './api';
+import { journeyLines } from './suggestedLines';
 import { saveHistoryEntry } from './history';
 import { loadSettings } from './settings';
 import { dedupeJourneys, dedupePlaces, dedupeSearchResults } from './dedupeSearch';
@@ -315,6 +316,7 @@ export function useAppState(opts?: { watchLocation?: boolean }) {
           durationSec: best?.durationSec,
           transfers: best?.transfers,
           routes: [...new Set(routeNames)],
+          lines: journeyLines(best),
         });
 
         void enrichWalkGeometries(journeys, ctrl.signal).then((changed) => {

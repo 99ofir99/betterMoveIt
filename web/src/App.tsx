@@ -952,7 +952,16 @@ export default function App() {
               searchBias={searchBias}
             />
           )}
-          {activeTab === "lines" && <LinesTab onOpenLine={(line) => void openLine(line)} />}
+          {activeTab === "lines" && (
+            <LinesTab
+              onOpenLine={(line) => void openLine(line)}
+              near={state.userLocation ?? state.center}
+              nearIsLive={Boolean(state.userLocation)}
+              destination={
+                frequentDest ? { label: frequentDest.place.label, journey: frequentDest.journey } : null
+              }
+            />
+          )}
           {activeTab === "more" && (
             <MoreTab onReplayTrip={replayTrip} onOpenSearch={() => openSearch("any")} />
           )}

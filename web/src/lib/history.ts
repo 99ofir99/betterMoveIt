@@ -1,6 +1,6 @@
 /** Trip history — save planned journeys for replay. */
 
-import type { Place } from '../types';
+import type { Line, Place } from '../types';
 
 export interface TripHistoryEntry {
   id: string;
@@ -11,6 +11,8 @@ export interface TripHistoryEntry {
   transfers?: number;
   /** Line labels from the planned journey (short / display names). */
   routes?: string[];
+  /** Transit lines of the planned journey (feeds the Lines tab "For you" list). */
+  lines?: Line[];
 }
 
 const KEY = 'bmi.history.v1';
