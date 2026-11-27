@@ -31,6 +31,8 @@ export interface RouteInfo {
   displayName: string;
   longName: string;
   agency: string;
+  /** GTFS agency_id (== SIRI OperatorRef) for live-bus matching. */
+  agencyId?: string;
   color?: string | null;
   type: number;
   typeName: string;
@@ -209,6 +211,8 @@ export interface Line {
   typeName: string;
   color?: string | null;
   agency?: string;
+  /** GTFS agency_id (== SIRI OperatorRef) for live-bus matching. */
+  agencyId?: string;
 }
 
 export interface LineDirectionOption {
@@ -270,6 +274,8 @@ export interface VehiclePosition {
   vehicleId: string;
   routeId: string;
   lineName?: string;
+  /** SIRI OperatorRef (== GTFS agency_id). */
+  operatorRef?: string;
   lat: number;
   lon: number;
   bearing?: number;

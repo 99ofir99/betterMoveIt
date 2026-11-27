@@ -3,7 +3,8 @@
  * favourite-line matches (preferredOnly), or nearby + preferred when mixed.
  */
 
-import type { FavoriteLine, Journey, LatLon, VehiclePosition } from '../types';
+import type { FavoriteLine, Journey, LatLon, RouteInfo, VehiclePosition } from '../types';
+import { modeFamilyForRoute } from './transportMode';
 import { haversine } from './tripGuidance';
 import type { PrioritizeVehiclesOptions, RankedVehicle } from './prioritizeVehiclesTypes';
 
@@ -24,31 +25,69 @@ export function toPreferredKeySet(keys: Iterable<string>): Set<string> {
   return out;
 }
 
-/** Collect line labels from planned / active journeys. */
+/** Separator for operator-scoped keys: `${agencyId}|${line}`. */
+const SCOPE_SEP = '|';
+
+type LiveRouteRef = Pick<RouteInfo, 'type' | 'typeName' | 'shortName' | 'displayName'> & {
+  agencyId?: string;
+};
+
+/**
+ * Only buses report Live location. Light rail (R1/R2/R3, Jerusalem tram) and
+ * trains share line numbers with buses ("R1" is GTFS short name "1"), so
+ * tracking them would paint unrelated bus 1 vehicles on the map.
+ */
+export function isLiveTrackableRoute(route: Pick<RouteInfo, 'type' | 'typeName'>): boolean {
+  return modeFamilyForRoute(route) === 'bus';
+}
+
+/**
+ * Match keys for one route. With an agency id the key is operator-scoped so
+ * Dan 1 and Kavim 1 (both inside the map bbox) are told apart.
+ */
+export function liveKeysForRoute(route: LiveRouteRef): string[] {
+  if (!isLiveTrackableRoute(route)) return [];
+  const name = (route.shortName || route.displayName || '').trim();
+  if (!name) return [];
+  const agency = (route.agencyId ?? '').trim();
+  return [agency ? `${agency}${SCOPE_SEP}${name}` : name];
+}
+
+/** Human label for a match key ("5|18" → "18"). */
+export function liveKeyLabel(key: string): string {
+  const sep = key.indexOf(SCOPE_SEP);
+  return sep >= 0 ? key.slice(sep + 1) : key;
+}
+
+/** True when any transit leg of the journey can show Live location. */
+export function journeyHasLiveTrackableLeg(journey: Journey | null | undefined): boolean {
+  return Boolean(
+    journey?.legs.some((leg) => leg.mode === 'transit' && isLiveTrackableRoute(leg.route))
+  );
+}
+
+/** Collect live-bus match keys from planned / active journeys (bus legs only). */
 export function lineKeysFromJourneys(journeys: Iterable<Journey | null | undefined>): string[] {
   const keys: string[] = [];
   for (const journey of journeys) {
     if (!journey) continue;
-    for (const name of journey.routes ?? []) {
-      if (name) keys.push(name);
-    }
     for (const leg of journey.legs) {
       if (leg.mode !== 'transit') continue;
-      if (leg.route.shortName) keys.push(leg.route.shortName);
-      if (leg.route.displayName) keys.push(leg.route.displayName);
+      keys.push(...liveKeysForRoute(leg.route));
     }
   }
   return keys;
 }
 
-/** Collect match tokens from saved favourite lines. */
+/** Collect match tokens from saved favourite lines (bus lines only). */
 export function lineKeysFromFavoriteLines(favorites: Iterable<FavoriteLine>): string[] {
   const keys: string[] = [];
   for (const fav of favorites) {
-    if (fav.id) keys.push(fav.id);
-    if (fav.line.id) keys.push(fav.line.id);
-    if (fav.line.shortName) keys.push(fav.line.shortName);
-    if (fav.line.displayName) keys.push(fav.line.displayName);
+    keys.push(...liveKeysForRoute(fav.line));
+    // Old favourites saved display names like "184 Dan" without an agency id.
+    if (!fav.line.agencyId && isLiveTrackableRoute(fav.line) && fav.line.displayName) {
+      keys.push(fav.line.displayName);
+    }
   }
   return keys;
 }
@@ -73,14 +112,18 @@ export function vehicleMatchesPreferred(
 ): boolean {
   if (!preferred.size) return false;
   const line = vehicle.lineName ? normalizeLineKey(vehicle.lineName) : '';
-  const route = vehicle.routeId ? normalizeLineKey(vehicle.routeId) : '';
-  if (line && preferred.has(line)) return true;
-  if (route && preferred.has(route)) return true;
-  // Favourite display names like "184 dan" vs vehicle "184".
-  if (line) {
-    for (const key of preferred) {
-      if (labelMatchesKey(line, key)) return true;
+  if (!line) return false;
+  const op = vehicle.operatorRef ? normalizeLineKey(vehicle.operatorRef) : '';
+  if (op && preferred.has(`${op}${SCOPE_SEP}${line}`)) return true;
+  for (const key of preferred) {
+    const sep = key.indexOf(SCOPE_SEP);
+    if (sep >= 0) {
+      // Operator-scoped key: only a vehicle without an operator (old feed) may
+      // fall back to the bare line number.
+      if (!op && labelMatchesKey(line, key.slice(sep + 1))) return true;
+      continue;
     }
+    if (labelMatchesKey(line, key)) return true;
   }
   return false;
 }

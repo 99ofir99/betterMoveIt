@@ -47,10 +47,15 @@ import { requestCompassPermission, useCompassHeading } from "./lib/useCompassHea
 import { FAVORITES_CHANGED_EVENT, loadFavorites } from "./lib/favorites";
 import { ghostJourneyPolylines } from "./lib/journeyMap";
 import {
+  isLiveTrackableRoute,
+  journeyHasLiveTrackableLeg,
   lineKeysFromFavoriteLines,
   lineKeysFromJourneys,
+  liveKeyLabel,
+  liveKeysForRoute,
   prioritizeVehicles,
 } from "./lib/prioritizeVehicles";
+import { LiveStatusChip } from "./components/live";
 
 export default function App() {
   const state = useAppState({ watchLocation: true });
@@ -136,7 +141,8 @@ export default function App() {
     setShowJourneyDetail(ret.showJourneyDetail);
     if (ret.tab === "lines") {
       setSelectedLineId(ret.selectedLineId);
-      setFocusedLineKeys(ret.selectedLineId ? [ret.selectedLineId] : []);
+      // Keys come back via LineDetailPanel.onLineLoaded once the line reloads.
+      setFocusedLineKeys([]);
       if (!ret.selectedLineId) setLineGeometry(null);
     }
     return true;
@@ -226,7 +232,19 @@ export default function App() {
 
   // Prefetch whenever we have lines to track — markers appear as soon as any map shows.
   const showVehicles = liveBuses && preferredLineKeys.length > 0;
-  const { vehicles: rawVehicles } = useVehicles(showVehicles, vehicleBbox);
+  const {
+    vehicles: rawVehicles,
+    loading: vehiclesLoading,
+    updatedAt: vehiclesUpdatedAt,
+  } = useVehicles(showVehicles, vehicleBbox);
+  const liveLineLabels = useMemo(
+    () => [...new Set(preferredLineKeys.map(liveKeyLabel))],
+    [preferredLineKeys],
+  );
+  /** Bumped by Live location presses: MapCanvas flies to the buses and blinks them. */
+  /** Line detail sheet lowered while showing live buses on the map. */
+  const [lineSheetPeek, setLineSheetPeek] = useState(false);
+  const [liveFocus, setLiveFocus] = useState<{ key: number; near: LatLon | null } | null>(null);
 
   const vehicles = useMemo(
     () =>
@@ -304,7 +322,8 @@ export default function App() {
     const onSettingsChanged = () => {
       const s = loadSettings();
       setLiveBuses(s.showLiveBuses);
-      setMaxWalk(s.maxWalkM);
+      // State setter only: setMaxWalk() saves settings, which re-fires this event forever.
+      setMaxWalkState(s.maxWalkM);
     };
     window.addEventListener(SETTINGS_CHANGED_EVENT, onSettingsChanged);
     return () => window.removeEventListener(SETTINGS_CHANGED_EVENT, onSettingsChanged);
@@ -532,14 +551,62 @@ export default function App() {
     [searchRoutes, state.when, state.departTime],
   );
 
-  // Toggle live-vehicle overlay from the Live Directions sheet.
-  const handleToggleLiveBuses = useCallback(() => {
-    setLiveBuses((prev) => {
-      const next = !prev;
-      saveSettings({ showLiveBuses: next });
-      return next;
-    });
+  /**
+   * Live location pressed: make sure tracking is on, then fly the map to the
+   * nearest buses of the tracked lines (relative to `near`) and blink them.
+   * Pressing again re-finds them; the LIVE chip's ✕ turns tracking off.
+   */
+  const requestLiveFocus = useCallback((near: LatLon | null) => {
+    setLiveBuses(true);
+    saveSettings({ showLiveBuses: true });
+    setLiveFocus({ key: Date.now(), near });
   }, []);
+
+  const turnOffLiveBuses = useCallback(() => {
+    setLiveBuses(false);
+    saveSettings({ showLiveBuses: false });
+    setLiveFocus(null);
+  }, []);
+
+  /** Boarding stop of the first bus leg at/after `fromLeg` — where the user waits. */
+  const liveAnchorForJourney = useCallback(
+    (journey: Journey | null | undefined, fromLeg = 0): LatLon | null => {
+      if (!journey) return null;
+      for (let i = Math.max(0, fromLeg); i < journey.legs.length; i++) {
+        const leg = journey.legs[i];
+        if (leg.mode === "transit" && isLiveTrackableRoute(leg.route)) {
+          return { lat: leg.from.lat, lon: leg.from.lon };
+        }
+      }
+      return state.userLocation ?? null;
+    },
+    [state.userLocation],
+  );
+
+  const handleDirectionsLive = useCallback(() => {
+    requestLiveFocus(liveAnchorForJourney(activeJourney));
+  }, [requestLiveFocus, liveAnchorForJourney, activeJourney]);
+
+  const handleTripLive = useCallback(() => {
+    requestLiveFocus(liveAnchorForJourney(activeTrip?.journey, activeTrip?.legIndex ?? 0));
+  }, [requestLiveFocus, liveAnchorForJourney, activeTrip?.journey, activeTrip?.legIndex]);
+
+  /** Re-find from the LIVE chip: use whatever context is on screen. */
+  const handleChipFind = useCallback(() => {
+    if (tripLive && activeTrip) return handleTripLive();
+    if (activeTab === "directions" && activeJourney) return handleDirectionsLive();
+    requestLiveFocus(state.userLocation ?? state.center);
+  }, [
+    tripLive,
+    activeTrip,
+    handleTripLive,
+    activeTab,
+    activeJourney,
+    handleDirectionsLive,
+    requestLiveFocus,
+    state.userLocation,
+    state.center,
+  ]);
 
   /** Recenter + unlock compass (iOS needs a gesture for heading). */
   const handleLocate = useCallback(async () => {
@@ -602,12 +669,10 @@ export default function App() {
 
   const openLine = useCallback(async (line: Line | string) => {
     const id = typeof line === "string" ? line : line.id;
-    const keys =
-      typeof line === "string"
-        ? [line]
-        : [line.id, line.shortName, line.displayName].filter(Boolean);
+    // Never match by route index / bare name: R1 is GTFS "1" and would pull in bus 1.
     setSelectedLineId(id);
-    setFocusedLineKeys(keys);
+    setFocusedLineKeys(typeof line === "string" ? [] : liveKeysForRoute(line));
+    setLineSheetPeek(false);
     setActiveTab("lines");
     setShowSearch(false);
     // Ensure live buses are on while inspecting a line on the map.
@@ -616,13 +681,7 @@ export default function App() {
     try {
       const detail = await api.lineDetail(id);
       setLineGeometry(detail.geometry ?? null);
-      const short = detail.line?.shortName;
-      const display = detail.line?.displayName;
-      if (short || display) {
-        setFocusedLineKeys((prev) =>
-          [...new Set([...prev, short, display].filter(Boolean) as string[])],
-        );
-      }
+      if (detail.line) setFocusedLineKeys(liveKeysForRoute(detail.line));
     } catch {
       setLineGeometry(null);
     }
@@ -737,6 +796,23 @@ export default function App() {
               : null
           }
           onUserPan={tripLive ? () => setMapUserPanned(true) : undefined}
+          liveFocus={liveFocus}
+          liveFocusLoading={vehiclesLoading}
+          onLiveFocusDone={(n) => {
+            // Live focus moved the camera — stop auto-follow so it stays on the buses.
+            if (n > 0 && tripLive) setMapUserPanned(true);
+          }}
+        />
+      )}
+
+      {showMap && showVehicles && !showFullScreenTab && (
+        <LiveStatusChip
+          lines={liveLineLabels}
+          count={vehicles.length}
+          loading={vehiclesLoading}
+          updatedAt={vehiclesUpdatedAt}
+          onFind={handleChipFind}
+          onClose={turnOffLiveBuses}
         />
       )}
 
@@ -814,7 +890,9 @@ export default function App() {
           state={activeTrip}
           onEnd={handleEndTrip}
           onBack={goBack}
-          onToggleLiveBuses={handleToggleLiveBuses}
+          onToggleLiveBuses={
+            journeyHasLiveTrackableLeg(activeTrip.journey) ? handleTripLive : undefined
+          }
           liveBusesActive={liveBuses}
           onSelectLeg={handleSelectTripLeg}
           onToggleAlerts={() => setAlertsEnabled(!activeTrip.alertsEnabled)}
@@ -863,7 +941,9 @@ export default function App() {
               onEarlier={() => shiftPlanByMinutes(-20)}
               onLater={() => shiftPlanByMinutes(20)}
               onStartTrip={handleStartTrip}
-              onToggleLiveBuses={handleToggleLiveBuses}
+              onToggleLiveBuses={
+                journeyHasLiveTrackableLeg(activeJourney) ? handleDirectionsLive : undefined
+              }
               liveBusesActive={liveBuses}
               onShare={() => void shareTrip()}
               onStopClick={async (stopId) => {
@@ -1070,16 +1150,28 @@ export default function App() {
       )}
 
       {activeTab === "lines" && selectedLineId && (
-        <section className="sheet sheet--overlay sheet--with-nav sheet--line-detail" aria-label="Line detail">
+        <section
+          className={`sheet sheet--overlay sheet--with-nav sheet--line-detail${lineSheetPeek ? " is-live-peek" : ""}`}
+          aria-label="Line detail"
+          // Any touch on the lowered sheet brings the stop list back up.
+          onPointerDown={() => lineSheetPeek && setLineSheetPeek(false)}
+        >
           <LineDetailPanel
             lineId={selectedLineId}
             onClose={() => {
               setSelectedLineId(null);
               setFocusedLineKeys([]);
               setLineGeometry(null);
+              setLineSheetPeek(false);
             }}
             onOpenStop={openStop}
             onGeometryChange={setLineGeometry}
+            onLineLoaded={(line) => setFocusedLineKeys(liveKeysForRoute(line))}
+            onLiveLocation={(stop) => {
+              // Lower the sheet so the buses heading to this stop are visible.
+              setLineSheetPeek(true);
+              requestLiveFocus(stop);
+            }}
             onStartLineRide={(journey) => {
               if (tripActive) {
                 setPendingLineRide(journey);

@@ -412,6 +412,12 @@ select {
   flex-direction: column;
 }
 
+/* Live location from a stop card: lower the sheet so the buses show on the map. */
+.sheet--line-detail.is-live-peek {
+  height: 34vh;
+  max-height: 34vh;
+}
+
 .sheet--line-detail .line-detail,
 .sheet--stop-detail .stop-panel,
 .sheet-stop-host {
@@ -4373,87 +4379,334 @@ select {
 
 /* ------------------------------------------------------------ live bus markers */
 
-.bus-marker {
-  display: flex;
-  flex-direction: column;
+/* One marker per bus; glides between GPS pings (components/map/liveVehicleLayer.ts). */
+.live-bus {
+  --bus-fill: #1565d8;
+  --bus-fresh: #22c55e;
+  position: relative;
+  width: 0;
+  height: 0;
+  cursor: pointer;
+  transition: opacity 0.35s ease;
+}
+
+.live-bus__body {
+  position: absolute;
+  z-index: 1;
+  left: 0;
+  top: 0;
+  transform: translate(-50%, -50%);
+  display: inline-flex;
   align-items: center;
-  justify-content: center;
-  gap: 1px;
-  min-width: 34px;
-  padding: 4px 7px 3px;
-  border-radius: 10px;
-  background: #1a65e5;
+  gap: 3px;
+  height: 24px;
+  padding: 0 8px 0 6px;
+  border-radius: 12px;
+  background: var(--bus-fill);
   color: #fff;
   border: 2px solid #fff;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.45);
-  font-size: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+  font-size: 13px;
   font-weight: 800;
   line-height: 1;
-  transform: translateZ(0);
-}
-
-/* Moovit Live Location marker colors track GPS freshness */
-.bus-marker.is-acc-high {
-  background: #0f7a3a;
-  box-shadow:
-    0 0 0 3px rgba(4, 200, 118, 0.35),
-    0 2px 10px rgba(0, 0, 0, 0.45);
-  animation: bus-fresh-pulse 2.2s ease-out infinite;
-}
-
-.bus-marker.is-acc-medium {
-  background: #c48a00;
-  box-shadow:
-    0 0 0 3px rgba(230, 168, 0, 0.35),
-    0 2px 10px rgba(0, 0, 0, 0.45);
-}
-
-.bus-marker.is-acc-low {
-  background: #c62828;
-  box-shadow:
-    0 0 0 3px rgba(229, 57, 53, 0.3),
-    0 2px 10px rgba(0, 0, 0, 0.45);
-}
-
-.bus-marker.is-fresh {
-  background: #0f7a3a;
-  box-shadow:
-    0 0 0 3px rgba(4, 200, 118, 0.35),
-    0 2px 10px rgba(0, 0, 0, 0.45);
-  animation: bus-fresh-pulse 2.2s ease-out infinite;
-}
-
-.bus-marker.is-stale,
-.bus-marker.is-acc-none {
-  background: #4a4b52;
-  opacity: 0.92;
-}
-
-.bus-marker__label {
-  line-height: 1.05;
-  letter-spacing: 0.02em;
-}
-
-.bus-marker__age {
-  font-size: 9px;
-  font-weight: 600;
-  opacity: 0.92;
   letter-spacing: 0.01em;
   white-space: nowrap;
+  transition: transform 0.25s ease;
 }
 
-@keyframes bus-fresh-pulse {
+.live-bus__line {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Heading arrow: a wedge just outside the pill, rotated to the GPS bearing. */
+.live-bus__heading {
+  position: absolute;
+  left: -22px;
+  top: -22px;
+  width: 44px;
+  height: 44px;
+  pointer-events: none;
+}
+
+.live-bus__heading::before {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: -3px;
+  transform: translateX(-50%);
+  border-left: 6px solid transparent;
+  border-right: 6px solid transparent;
+  border-bottom: 8px solid var(--bus-fill);
+  filter: drop-shadow(0 -1px 0 #fff) drop-shadow(0 1px 2px rgba(0, 0, 0, 0.45));
+}
+
+/* GPS freshness dot (Moovit G/Y/R). */
+.live-bus__dot {
+  position: absolute;
+  right: -5px;
+  top: -5px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--bus-fresh);
+  border: 2px solid #111;
+}
+
+.live-bus.is-acc-high .live-bus__dot {
+  animation: live-dot-breathe 1.8s ease-in-out infinite;
+}
+.live-bus.is-acc-medium {
+  --bus-fresh: #f5b400;
+}
+.live-bus.is-acc-low {
+  --bus-fresh: #ef4444;
+}
+.live-bus.is-acc-none,
+.live-bus.is-acc-off_route {
+  --bus-fresh: #8b8f98;
+  --bus-fill: #50555f;
+}
+
+.live-bus__age {
+  position: absolute;
+  left: 0;
+  top: 16px;
+  transform: translateX(-50%);
+  padding: 2px 6px;
+  border-radius: 6px;
+  background: rgba(10, 12, 16, 0.88);
+  color: #e6e9ef;
+  font-size: 10px;
+  font-weight: 600;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+}
+
+.live-bus.is-expanded .live-bus__age,
+.live-bus.is-spotlight .live-bus__age {
+  opacity: 1;
+}
+
+.live-bus__ring {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 60px;
+  height: 60px;
+  margin: -30px 0 0 -30px;
+  border-radius: 50%;
+  pointer-events: none;
+  opacity: 0;
+}
+
+/* Spotlight: after Live location is pressed the relevant buses blink + ripple. */
+.live-bus.is-spotlight .live-bus__body {
+  transform: translate(-50%, -50%) scale(1.22);
+  animation: live-bus-blink 0.9s ease-in-out 5;
+}
+
+.live-bus.is-spotlight .live-bus__ring {
+  border: 3px solid #4fc3ff;
+  animation: live-bus-ripple 1.3s ease-out infinite;
+}
+
+.live-bus.is-dimmed {
+  opacity: 0.4;
+}
+
+@keyframes live-bus-blink {
   0%,
   100% {
-    box-shadow:
-      0 0 0 3px rgba(4, 200, 118, 0.35),
-      0 2px 10px rgba(0, 0, 0, 0.45);
+    background: var(--bus-fill);
+    box-shadow: 0 0 0 0 rgba(79, 195, 255, 0), 0 2px 8px rgba(0, 0, 0, 0.5);
   }
   50% {
-    box-shadow:
-      0 0 0 6px rgba(4, 200, 118, 0.15),
-      0 2px 10px rgba(0, 0, 0, 0.45);
+    background: #4fc3ff;
+    color: #04121f;
+    box-shadow: 0 0 0 8px rgba(79, 195, 255, 0.35), 0 2px 12px rgba(0, 0, 0, 0.5);
   }
+}
+
+@keyframes live-bus-ripple {
+  0% {
+    transform: scale(0.45);
+    opacity: 0.95;
+  }
+  100% {
+    transform: scale(1.6);
+    opacity: 0;
+  }
+}
+
+@keyframes live-dot-breathe {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.6);
+  }
+  50% {
+    box-shadow: 0 0 0 5px rgba(34, 197, 94, 0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .live-bus.is-spotlight .live-bus__body,
+  .live-bus.is-spotlight .live-bus__ring,
+  .live-bus.is-acc-high .live-bus__dot,
+  .live-chip__pulse {
+    animation: none;
+  }
+}
+
+/* ------------------------------------------------------------ LIVE status chip */
+
+.live-chip {
+  position: fixed;
+  z-index: 30;
+  top: calc(env(safe-area-inset-top, 0px) + 68px);
+  left: 12px;
+  right: 64px;
+  max-width: 420px;
+  display: flex;
+  align-items: stretch;
+  border-radius: 18px;
+  background: rgba(18, 22, 30, 0.94);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.45);
+  color: #f2f4f8;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  animation: live-chip-in 0.28s ease-out;
+  overflow: hidden;
+}
+
+.live-chip__main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 8px 8px 10px;
+  background: none;
+  border: 0;
+  color: inherit;
+  text-align: left;
+  font: inherit;
+  cursor: pointer;
+}
+
+.live-chip__badge {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 7px;
+  border-radius: 8px;
+  background: rgba(34, 197, 94, 0.16);
+  color: #4ade80;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+}
+
+.live-chip__pulse {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: currentColor;
+  animation: live-dot-breathe 1.6s ease-in-out infinite;
+}
+
+.live-chip--searching .live-chip__badge {
+  background: rgba(79, 195, 255, 0.16);
+  color: #7dd3fc;
+}
+
+.live-chip--empty .live-chip__badge {
+  background: rgba(245, 180, 0, 0.16);
+  color: #fbbf24;
+}
+
+.live-chip--empty .live-chip__pulse {
+  animation: none;
+}
+
+.live-chip__text {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.live-chip__lines {
+  display: flex;
+  gap: 4px;
+  overflow: hidden;
+}
+
+.live-chip__line {
+  padding: 1px 7px;
+  border-radius: 6px;
+  background: #1565d8;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 800;
+  line-height: 18px;
+}
+
+.live-chip__more {
+  font-size: 12px;
+  font-weight: 700;
+  color: #aeb4c0;
+  line-height: 20px;
+}
+
+.live-chip__detail {
+  font-size: 12px;
+  color: #aeb4c0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.live-chip__find {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: #1565d8;
+  color: #fff;
+}
+
+.live-chip__close {
+  flex-shrink: 0;
+  width: 40px;
+  border: 0;
+  border-left: 1px solid rgba(255, 255, 255, 0.08);
+  background: none;
+  color: #aeb4c0;
+  cursor: pointer;
+}
+
+@keyframes live-chip-in {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* Line detail stop card "Live location" is a real action now. */
+.lnd-stop__live {
+  cursor: pointer;
 }
 
 .button--ghost {

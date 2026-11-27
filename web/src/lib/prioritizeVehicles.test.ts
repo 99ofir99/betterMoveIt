@@ -1,10 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import type { FavoriteLine, Journey, VehiclePosition } from '../types';
 import {
+  journeyHasLiveTrackableLeg,
   lineKeysFromFavoriteLines,
   lineKeysFromJourneys,
   prioritizeVehicles,
   toPreferredKeySet,
+  vehicleMatchesPreferred,
 } from './prioritizeVehicles';
 
 function bus(
@@ -122,7 +124,7 @@ describe('prioritizeVehicles', () => {
 });
 
 describe('lineKeysFromFavoriteLines', () => {
-  it('collects id / shortName / displayName tokens', () => {
+  it('collects shortName / displayName tokens for bus favourites', () => {
     const favs = [
       {
         id: 'line-1',
@@ -138,14 +140,14 @@ describe('lineKeysFromFavoriteLines', () => {
       },
     ] as FavoriteLine[];
     const keys = toPreferredKeySet(lineKeysFromFavoriteLines(favs));
-    expect(keys.has('line-1')).toBe(true);
+    expect(keys.has('line-1')).toBe(false);
     expect(keys.has('184')).toBe(true);
     expect(keys.has('184 dan')).toBe(true);
   });
 });
 
 describe('lineKeysFromJourneys', () => {
-  it('extracts short names from transit legs and journey.routes', () => {
+  it('extracts short names from bus legs', () => {
     const journey = {
       routes: ['480'],
       legs: [
@@ -179,7 +181,94 @@ describe('lineKeysFromJourneys', () => {
     } as Journey;
 
     const keys = toPreferredKeySet(lineKeysFromJourneys([journey]));
-    expect(keys.has('480')).toBe(true);
     expect(keys.has('184')).toBe(true);
+  });
+});
+
+function leg(route: Partial<Journey['legs'][number] & { mode: 'transit' }>['route']) {
+  return {
+    mode: 'transit',
+    route,
+    headsign: 'x',
+    fromName: 'a',
+    toName: 'b',
+    from: { lat: 0, lon: 0 },
+    to: { lat: 1, lon: 1 },
+    departure: 0,
+    arrival: 1,
+    durationSec: 1,
+    intermediateStops: [],
+  };
+}
+
+function journeyOf(...legs: ReturnType<typeof leg>[]): Journey {
+  return {
+    legs,
+    departSeconds: 0,
+    arrivalSeconds: 1,
+    durationSec: 1,
+    transfers: 0,
+    walkMeters: 0,
+  } as Journey;
+}
+
+const R1 = {
+  index: 6350,
+  shortName: '1',
+  displayName: 'R1',
+  longName: 'Bat Yam – Petah Tikva',
+  agency: 'תבל',
+  agencyId: '22',
+  type: 0,
+  typeName: 'tram',
+};
+const DAN_18 = {
+  index: 470,
+  shortName: '18',
+  displayName: '18',
+  longName: 'x',
+  agency: 'דן',
+  agencyId: '5',
+  type: 3,
+  typeName: 'bus',
+};
+
+describe('light rail is never live-tracked', () => {
+  it('an R1 journey yields no live keys, so bus 1 never shows', () => {
+    const j = journeyOf(leg(R1));
+    expect(lineKeysFromJourneys([j])).toEqual([]);
+    expect(journeyHasLiveTrackableLeg(j)).toBe(false);
+    const dan1 = { ...bus('dan-1', 32.07, 34.78, '1'), operatorRef: '5' };
+    const out = prioritizeVehicles([dan1], {
+      near: NEAR,
+      preferredKeys: lineKeysFromJourneys([j]),
+      preferredOnly: true,
+    });
+    expect(out).toEqual([]);
+  });
+
+  it('keeps the bus leg of a mixed bus + R1 journey', () => {
+    const j = journeyOf(leg(DAN_18), leg(R1));
+    expect(lineKeysFromJourneys([j])).toEqual(['5|18']);
+    expect(journeyHasLiveTrackableLeg(j)).toBe(true);
+  });
+
+  it('skips tram favourites', () => {
+    const favs = [{ id: '6350', line: { ...R1, id: '6350' } }] as FavoriteLine[];
+    expect(lineKeysFromFavoriteLines(favs)).toEqual([]);
+  });
+});
+
+describe('operator-scoped matching', () => {
+  const keys = toPreferredKeySet(['5|18']);
+  it('matches the same operator and line', () => {
+    expect(vehicleMatchesPreferred({ ...bus('a', 0, 0, '18'), operatorRef: '5' }, keys)).toBe(true);
+  });
+  it('rejects another operator running the same number', () => {
+    expect(vehicleMatchesPreferred({ ...bus('b', 0, 0, '18'), operatorRef: '3' }, keys)).toBe(false);
+  });
+  it('falls back to the line number when the feed has no operator', () => {
+    expect(vehicleMatchesPreferred(bus('c', 0, 0, '18'), keys)).toBe(true);
+    expect(vehicleMatchesPreferred(bus('d', 0, 0, '180'), keys)).toBe(false);
   });
 });

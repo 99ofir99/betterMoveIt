@@ -4,6 +4,7 @@
  */
 
 import { haversine } from './store.js';
+import { modeFamily } from './lightRailBrand.js';
 import {
   buildAccuracyFields,
   distanceToPolyline,
@@ -41,6 +42,9 @@ function speedMsFromFeed(raw) {
  */
 export function etaFromVehicles(stop, vehicles, route, shortNameForLineRef) {
   if (!stop || !vehicles?.length || !route) return null;
+  // Light rail / trains have no bus GPS feed; a "1" bus must never drive R1's ETA.
+  if (route.type != null && modeFamily(route.type, route.typeName) !== 'bus') return null;
+  const agencyId = route.agencyId != null ? String(route.agencyId) : '';
 
   const names = new Set(
     [route.shortName, route.displayName].filter(Boolean).map((n) => String(n).trim())
@@ -54,6 +58,8 @@ export function etaFromVehicles(stop, vehicles, route, shortNameForLineRef) {
       (v.routeId ? shortNameForLineRef(v.routeId) : '') ||
       '';
     if (!line || !names.has(line)) continue;
+    // Same number, different operator (Dan 1 vs Kavim 1) — not this line.
+    if (agencyId && v.operatorRef && String(v.operatorRef) !== agencyId) continue;
 
     const distanceM = haversine(v.lat, v.lon, stop.lat, stop.lon);
     if (!Number.isFinite(distanceM) || distanceM > MAX_DISTANCE_M) continue;

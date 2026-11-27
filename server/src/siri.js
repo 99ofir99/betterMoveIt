@@ -57,6 +57,7 @@ async function refreshMotVehicles() {
         vehicleId: String(j.VehicleRef ?? `${j.LineRef}-${lat}-${lon}`),
         routeId: String(j.LineRef ?? ''),
         lineName: String(j.PublishedLineName ?? ''),
+        operatorRef: j.OperatorRef != null ? String(j.OperatorRef) : undefined,
         lat,
         lon,
         bearing: j.Bearing != null ? Number(j.Bearing) : undefined,
