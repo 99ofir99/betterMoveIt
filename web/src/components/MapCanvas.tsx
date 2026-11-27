@@ -5,6 +5,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import maplibregl, { type LngLatBoundsLike } from 'maplibre-gl';
+import { ensureRtlTextPlugin } from '../lib/rtlTextPlugin';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import type { Journey, LatLon, Stop, VehiclePosition } from '../types';
 import { routeColor } from '../lib/format';
@@ -232,6 +233,7 @@ export function MapCanvas({
   useEffect(() => {
     if (!containerRef.current || mapRef.current) return;
     // Moovit night map: dark vector first, then Carto dark / Google-night raster.
+    ensureRtlTextPlugin();
     const map = new maplibregl.Map({
       container: containerRef.current,
       style: DEFAULT_MAP_STYLE_URL,

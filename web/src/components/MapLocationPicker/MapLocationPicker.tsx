@@ -5,6 +5,7 @@
 
 import { useEffect, useRef } from 'react';
 import maplibregl from 'maplibre-gl';
+import { ensureRtlTextPlugin } from '../../lib/rtlTextPlugin';
 import { DEFAULT_MAP_STYLE_URL, buildRasterStyle } from '../../lib/mapStyle';
 import { Icon } from '../icons/Icon';
 import { useMapLocationPicker } from './useMapLocationPicker';
@@ -25,6 +26,7 @@ export function MapLocationPicker({
 
   useEffect(() => {
     if (!mapEl.current || mapRef.current) return;
+    ensureRtlTextPlugin();
     const map = new maplibregl.Map({
       container: mapEl.current,
       style: DEFAULT_MAP_STYLE_URL,
