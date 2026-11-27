@@ -51,7 +51,7 @@ export function JourneyList({ journeys, selected, onSelect, departNow, insights 
                   <div className="journey-card__times">
                     <span className="journey-card__clock">{formatClock12h(j.departSeconds)}</span>
                     <span className="journey-card__times-rail" aria-hidden="true" />
-                    <span className="journey-card__clock">{formatClock12h(j.arrivalSeconds)}</span>
+                    <span className="journey-card__clock journey-card__clock--arrive">{formatClock12h(j.arrivalSeconds)}</span>
                   </div>
                 </div>
 
