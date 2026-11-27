@@ -6,7 +6,6 @@
 
 import {
   useEffect,
-  useLayoutEffect,
   useRef,
   type HTMLAttributes,
   type MouseEvent,
@@ -17,11 +16,13 @@ import {
 interface SwipeRailProps extends HTMLAttributes<HTMLDivElement> {
   children: ReactNode;
   /**
-   * In RTL, open scrolled to the left edge (the end of a right-to-left leg
-   * sequence) instead of the browser default right edge. Only for rows the
-   * user wants to see from the left, such as the result-card leg chips.
+   * A leg sequence (walk › bus › train) that reads left to right in every
+   * language, in trip order, while staying aligned to the inline end in RTL.
+   * The row is dir="ltr"; its first chip takes margin-left:auto so the chips
+   * sit on the right in Hebrew (the auto margin drops to 0 when the row
+   * overflows, so it still scrolls from the trip's start).
    */
-  startAtLeft?: boolean;
+  ltrSequence?: boolean;
 }
 
 function nearestVerticalScrollParent(from: HTMLElement): HTMLElement | null {
@@ -42,7 +43,7 @@ export function SwipeRail({
   className,
   onPointerDown,
   onClick,
-  startAtLeft = false,
+  ltrSequence = false,
   ...rest
 }: SwipeRailProps) {
   const railRef = useRef<HTMLDivElement>(null);
@@ -66,21 +67,7 @@ export function SwipeRail({
     return () => el.removeEventListener('wheel', onWheel);
   }, []);
 
-  // In RTL (Hebrew) the browser opens a scroller at its right edge, which hid
-  // the left end of the leg row. Open at the left edge instead, until the user
-  // swipes it themselves. A large negative scrollLeft clamps to the left edge
-  // in both the standard RTL model (0 = right) and old Chrome's (0 = left).
-  const touched = useRef(false);
-  useLayoutEffect(() => {
-    const el = railRef.current;
-    if (!startAtLeft || !el || touched.current) return;
-    if (getComputedStyle(el).direction !== 'rtl') return;
-    if (el.scrollWidth <= el.clientWidth) return;
-    el.scrollLeft = -el.scrollWidth;
-  });
-
   const handlePointerDown = (e: PointerEvent<HTMLDivElement>) => {
-    touched.current = true;
     originX.current = e.clientX;
     panned.current = false;
     onPointerDown?.(e);
@@ -105,7 +92,8 @@ export function SwipeRail({
     <div
       {...rest}
       ref={railRef}
-      className={className}
+      dir={ltrSequence ? 'ltr' : rest.dir}
+      className={[className, ltrSequence ? 'swipe-rail--ltr-seq' : ''].filter(Boolean).join(' ')}
       onPointerDown={handlePointerDown}
       onPointerMove={handlePointerMove}
       onClick={handleClick}

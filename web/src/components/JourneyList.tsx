@@ -80,7 +80,7 @@ function ClampedRouteSequence({
 }) {
   let transitIdx = 0;
   return (
-    <SwipeRail className="journey-card__legs" startAtLeft aria-label={t("Route legs")}>
+    <SwipeRail className="journey-card__legs" ltrSequence aria-label={t("Route legs")}>
       {previewLegs(journey.legs).map((leg, li) => {
         const sep =
           li > 0 ? (

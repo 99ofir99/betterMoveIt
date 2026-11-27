@@ -9939,6 +9939,11 @@ button.ld-option {
 
 /* Leg-sequence separators keep pointing right (›) in Hebrew too, as asked;
    the row order and alignment still follow RTL. */
+/* Leg sequences are dir="ltr" (trip order left to right) but stay right-aligned. */
+[dir='rtl'] .swipe-rail--ltr-seq > :first-child {
+  margin-left: auto;
+}
+
 [dir='rtl'] .directions__timeline-arrow.rtl-flip,
 [dir='rtl'] .journey-card__leg-sep-icon.rtl-flip,
 [dir='rtl'] .fdcard__arrow.rtl-flip {
