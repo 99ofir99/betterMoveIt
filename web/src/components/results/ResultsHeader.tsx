@@ -34,7 +34,7 @@ export function ResultsHeader({
             </span>
           </button>
           <button type="button" className="results-header__field results-header__field--to" onClick={onEditTo}>
-            <span className="results-header__pin" aria-hidden="true" />
+            <Icon name="place" size={18} className="results-header__pin" />
             <span className="results-header__field-text">
               {displayPlaceLabel(to?.label) || t('Where to?')}
             </span>

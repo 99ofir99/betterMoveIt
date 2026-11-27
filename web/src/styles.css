@@ -7753,12 +7753,11 @@ button.ld-option {
   border: 2px solid rgba(255, 255, 255, 0.65);
 }
 
+/* Destination: the same red map pin as the destination marker on the map. */
 .results-header__pin {
   flex: none;
-  width: 10px;
-  height: 10px;
-  border-radius: 2px 2px 8px 8px;
-  background: #f59e0b;
+  margin-inline: -4px;
+  color: var(--danger);
 }
 
 .results-header__swap {
