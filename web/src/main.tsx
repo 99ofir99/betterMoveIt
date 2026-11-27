@@ -2,6 +2,7 @@ import React from 'react';
 import { createRoot } from 'react-dom/client';
 import App from './App';
 import './styles.css';
+import { startPwaAutoUpdate } from './pwaUpdate';
 
 // Dev/ngrok: drop any leftover production service worker so the phone loads Vite.
 if (import.meta.env.DEV && 'serviceWorker' in navigator) {
@@ -14,6 +15,8 @@ if (import.meta.env.DEV && 'serviceWorker' in navigator) {
     });
   }
 }
+
+if (import.meta.env.PROD) startPwaAutoUpdate();
 
 createRoot(document.getElementById('root')!).render(
   <React.StrictMode>

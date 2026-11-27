@@ -524,7 +524,8 @@ if (fs.existsSync(webDist)) {
   app.use(express.static(webDist, {
     index: false,
     setHeaders(res, filePath) {
-      if (filePath.endsWith('.html')) {
+      // sw.js too: phones must see a new deploy's worker right away.
+      if (filePath.endsWith('.html') || /[\\/](sw|registerSW)\.js$/.test(filePath)) {
         res.setHeader('Cache-Control', 'no-store');
       } else {
         res.setHeader('Cache-Control', 'public, max-age=300');
