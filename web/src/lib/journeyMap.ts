@@ -71,15 +71,23 @@ export function journeyEndpoints(journey: Journey): { start: LatLon; end: LatLon
 }
 
 /** Polylines for journeys that are not the selected list index. */
+/** Non-selected journeys with their card index, so a tap on the map finds the card. */
+export function ghostJourneyRoutes(
+  journeys: Journey[],
+  selectedIndex: number
+): { index: number; coords: [number, number][] }[] {
+  const out: { index: number; coords: [number, number][] }[] = [];
+  journeys.forEach((j, i) => {
+    if (i === selectedIndex) return;
+    const coords = journeyPolylineCoords(j);
+    if (coords.length >= 2) out.push({ index: i, coords });
+  });
+  return out;
+}
+
 export function ghostJourneyPolylines(
   journeys: Journey[],
   selectedIndex: number
 ): [number, number][][] {
-  const out: [number, number][][] = [];
-  journeys.forEach((j, i) => {
-    if (i === selectedIndex) return;
-    const coords = journeyPolylineCoords(j);
-    if (coords.length >= 2) out.push(coords);
-  });
-  return out;
+  return ghostJourneyRoutes(journeys, selectedIndex).map((g) => g.coords);
 }

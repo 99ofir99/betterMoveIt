@@ -10,6 +10,8 @@ export interface FrequentDestResult {
   place: Place;
   journey: Journey | null;
   loading: boolean;
+  /** Still waiting for the user's location, so the destination isn't decided yet (skeleton). */
+  pending?: boolean;
   /** Rounded minutes until departure (null if unavailable or past). */
   leavesInMin: number | null;
   /** The planned trip runs tomorrow (no more service today). */

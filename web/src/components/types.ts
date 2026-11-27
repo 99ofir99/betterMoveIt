@@ -6,6 +6,8 @@ export interface JourneyListProps {
   /** Moovit-clamped route cards (alternatives merged onto first/last legs). */
   journeys: ClampedJourney[];
   selected: number;
+  /** Card to highlight briefly (tapped on the map). */
+  flash?: number | null;
   onSelect: (index: number) => void;
   /** When true, footer may show live-style minutes-until departure. */
   departNow?: boolean;
