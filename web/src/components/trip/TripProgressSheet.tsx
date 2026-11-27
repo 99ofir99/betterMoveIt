@@ -64,6 +64,7 @@ export function TripProgressSheet({
   onBack,
   onToggleLiveBuses,
   liveBusesActive = false,
+  liveBusCount,
   onSelectLeg,
   onToggleAlerts,
   onSelectCorridorLine,
@@ -336,6 +337,7 @@ export function TripProgressSheet({
         onStop={onEnd}
         onToggleLiveBuses={onToggleLiveBuses}
         liveBusesActive={liveBusesActive}
+        liveBusCount={liveBusCount}
         onShare={handleShare}
       />
 

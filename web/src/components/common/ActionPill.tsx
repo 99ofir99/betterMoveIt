@@ -10,6 +10,7 @@ export function ActionPill({
   pressed,
   ariaLabel,
   className,
+  badge,
 }: ActionPillProps) {
   // Moovit keeps the "Live location" label; pressed = green glow, not a label swap.
   const liveOn = Boolean(pressed && tone === 'blue' && /live/i.test(label));
@@ -33,6 +34,11 @@ export function ActionPill({
       {liveOn && <span className="action-pill__live-dot" aria-hidden="true" />}
       <span className="action-pill__icon">{icon}</span>
       <span className="action-pill__label">{label}</span>
+      {badge != null && badge > 0 && (
+        <span className="action-pill__badge" aria-label={String(badge)}>
+          {badge}
+        </span>
+      )}
     </button>
   );
 }

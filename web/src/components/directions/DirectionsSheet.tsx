@@ -23,6 +23,7 @@ export function DirectionsSheet({
   onStartTrip,
   onToggleLiveBuses,
   liveBusesActive,
+  liveBusCount,
   onShare,
   onStopClick,
   onFavorite,
@@ -68,6 +69,7 @@ export function DirectionsSheet({
         onStartTrip={onStartTrip}
         onToggleLiveBuses={onToggleLiveBuses}
         liveBusesActive={liveBusesActive}
+        liveBusCount={liveBusCount}
         onShare={onShare}
       />
     </div>

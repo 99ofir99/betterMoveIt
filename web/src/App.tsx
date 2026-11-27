@@ -55,7 +55,8 @@ import {
   liveKeysForRoute,
   prioritizeVehicles,
 } from "./lib/prioritizeVehicles";
-import { LiveStatusChip } from "./components/live";
+import { LiveToast } from "./components/live";
+import type { LiveToastState } from "./components/live/types";
 import { t, useLocale } from './lib/i18n';
 
 export default function App() {
@@ -238,7 +239,6 @@ export default function App() {
   const {
     vehicles: rawVehicles,
     loading: vehiclesLoading,
-    updatedAt: vehiclesUpdatedAt,
   } = useVehicles(showVehicles, vehicleBbox);
   const liveLineLabels = useMemo(
     () => [...new Set(preferredLineKeys.map(liveKeyLabel))],
@@ -247,6 +247,8 @@ export default function App() {
   /** Bumped by Live location presses: MapCanvas flies to the buses and blinks them. */
   /** Line detail sheet lowered while showing live buses on the map. */
   const [lineSheetPeek, setLineSheetPeek] = useState(false);
+  /** One-line answer after a Live location press (replaces the old floating bar). */
+  const [liveToast, setLiveToast] = useState<LiveToastState | null>(null);
   const [liveFocus, setLiveFocus] = useState<{ key: number; near: LatLon | null } | null>(null);
 
   const vehicles = useMemo(
@@ -266,6 +268,10 @@ export default function App() {
       state.center.lon,
     ],
   );
+  const vehiclesCountRef = useRef(0);
+  vehiclesCountRef.current = vehicles.length;
+  /** Buses shown on the Live location button (only when tracking is on). */
+  const liveBusCount = liveBuses ? vehicles.length : 0;
 
   const journeyGhosts = useMemo(() => {
     if (activeTab !== "directions" || state.panel !== "journeys" || primaryJourneys.length < 2) {
@@ -562,13 +568,17 @@ export default function App() {
   const requestLiveFocus = useCallback((near: LatLon | null) => {
     setLiveBuses(true);
     saveSettings({ showLiveBuses: true });
-    setLiveFocus({ key: Date.now(), near });
+    const key = Date.now();
+    setLiveFocus({ key, near });
+    setLiveToast({ key, count: null });
   }, []);
+  const dismissLiveToast = useCallback(() => setLiveToast(null), []);
 
   const turnOffLiveBuses = useCallback(() => {
     setLiveBuses(false);
     saveSettings({ showLiveBuses: false });
     setLiveFocus(null);
+    setLiveToast(null);
   }, []);
 
   /** Boarding stop of the first bus leg at/after `fromLeg` — where the user waits. */
@@ -593,23 +603,6 @@ export default function App() {
   const handleTripLive = useCallback(() => {
     requestLiveFocus(liveAnchorForJourney(activeTrip?.journey, activeTrip?.legIndex ?? 0));
   }, [requestLiveFocus, liveAnchorForJourney, activeTrip?.journey, activeTrip?.legIndex]);
-
-  /** Re-find from the LIVE chip: use whatever context is on screen. */
-  const handleChipFind = useCallback(() => {
-    if (tripLive && activeTrip) return handleTripLive();
-    if (activeTab === "directions" && activeJourney) return handleDirectionsLive();
-    requestLiveFocus(state.userLocation ?? state.center);
-  }, [
-    tripLive,
-    activeTrip,
-    handleTripLive,
-    activeTab,
-    activeJourney,
-    handleDirectionsLive,
-    requestLiveFocus,
-    state.userLocation,
-    state.center,
-  ]);
 
   /** Recenter + unlock compass (iOS needs a gesture for heading). */
   const handleLocate = useCallback(async () => {
@@ -804,19 +797,17 @@ export default function App() {
           onLiveFocusDone={(n) => {
             // Live focus moved the camera — stop auto-follow so it stays on the buses.
             if (n > 0 && tripLive) setMapUserPanned(true);
+            setLiveToast((cur) => (cur ? { ...cur, count: n > 0 ? vehiclesCountRef.current : 0 } : cur));
           }}
         />
       )}
 
-      {showMap && showVehicles && !showFullScreenTab && (
-        <LiveStatusChip
+      {showMap && !showFullScreenTab && (
+        <LiveToast
+          toast={liveToast}
           lines={liveLineLabels}
-          count={vehicles.length}
-          loading={vehiclesLoading}
-          updatedAt={vehiclesUpdatedAt}
-          requestedAt={liveFocus?.key ?? null}
-          onFind={handleChipFind}
-          onClose={turnOffLiveBuses}
+          onDismiss={dismissLiveToast}
+          onTurnOff={turnOffLiveBuses}
         />
       )}
 
@@ -898,6 +889,7 @@ export default function App() {
             journeyHasLiveTrackableLeg(activeTrip.journey) ? handleTripLive : undefined
           }
           liveBusesActive={liveBuses}
+          liveBusCount={liveBusCount}
           onSelectLeg={handleSelectTripLeg}
           onToggleAlerts={() => setAlertsEnabled(!activeTrip.alertsEnabled)}
           onSelectCorridorLine={selectCorridorLine}
@@ -949,6 +941,7 @@ export default function App() {
                 journeyHasLiveTrackableLeg(activeJourney) ? handleDirectionsLive : undefined
               }
               liveBusesActive={liveBuses}
+              liveBusCount={liveBusCount}
               onShare={() => void shareTrip()}
               onStopClick={async (stopId) => {
                 const detail = await api.stopDetail(stopId).catch(() => null);

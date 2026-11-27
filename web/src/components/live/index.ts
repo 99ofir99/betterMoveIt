@@ -1,1 +1,1 @@
-export { LiveStatusChip } from './LiveStatusChip';
+export { LiveToast } from './LiveToast';

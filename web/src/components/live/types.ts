@@ -1,16 +1,15 @@
-export interface LiveStatusChipProps {
-  /** Line numbers being tracked (bus lines only). */
+export interface LiveToastState {
+  /** Changes on every Live location press so the toast re-animates. */
+  key: number;
+  /** null while the first answer is pending. */
+  count: number | null;
+}
+
+export interface LiveToastProps {
+  toast: LiveToastState | null;
+  /** Tracked line numbers (bus lines only). */
   lines: string[];
-  /** Matching buses currently on the map. */
-  count: number;
-  /** First poll still in flight. */
-  loading: boolean;
-  /** Server snapshot time (ms). */
-  updatedAt: number | null;
-  /** Fly to the nearest buses and make them blink. */
-  onFind: () => void;
-  /** When Live location was last pressed (ms); a "none" answer shows only then. */
-  requestedAt?: number | null;
+  onDismiss: () => void;
   /** Turn Live location off. */
-  onClose: () => void;
+  onTurnOff: () => void;
 }

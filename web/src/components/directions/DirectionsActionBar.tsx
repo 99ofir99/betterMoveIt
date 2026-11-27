@@ -9,6 +9,7 @@ export function DirectionsActionBar({
   onStartTrip,
   onToggleLiveBuses,
   liveBusesActive,
+  liveBusCount,
   onShare,
 }: DirectionsActionBarProps) {
   return (
@@ -21,6 +22,7 @@ export function DirectionsActionBar({
           icon={<LiveBusIcon size={22} />}
           onClick={onToggleLiveBuses}
           pressed={liveBusesActive}
+          badge={liveBusCount}
         />
       )}
       {onShare && (

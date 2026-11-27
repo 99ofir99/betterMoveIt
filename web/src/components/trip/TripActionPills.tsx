@@ -9,6 +9,7 @@ export function TripActionPills({
   onStop,
   onToggleLiveBuses,
   liveBusesActive = false,
+  liveBusCount,
   onShare,
 }: TripActionPillsProps) {
   return (
@@ -28,6 +29,7 @@ export function TripActionPills({
           icon={<LiveBusIcon size={22} />}
           onClick={onToggleLiveBuses}
           pressed={liveBusesActive}
+          badge={liveBusCount}
         />
       )}
       <ActionPill

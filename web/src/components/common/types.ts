@@ -29,6 +29,8 @@ export interface ActionPillProps {
   onClick: () => void;
   /** Toggle state (e.g. live location on). */
   pressed?: boolean;
+  /** Small count bubble (e.g. live buses on the map). */
+  badge?: number;
   /** Overrides the accessible name when it differs from `label`. */
   ariaLabel?: string;
   className?: string;

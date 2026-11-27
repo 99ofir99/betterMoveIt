@@ -10,6 +10,8 @@ export interface DirectionsSheetProps {
   onStartTrip: () => void;
   onToggleLiveBuses?: () => void;
   liveBusesActive?: boolean;
+  /** Live buses of this trip's lines now on the map (badge on the pill). */
+  liveBusCount?: number;
   onShare?: () => void;
   onStopClick: (stopId: string) => void;
   /** Called when the star is toggled (`next` = new saved state). */
@@ -49,6 +51,8 @@ export interface DirectionsActionBarProps {
   onStartTrip: () => void;
   onToggleLiveBuses?: () => void;
   liveBusesActive?: boolean;
+  /** Live buses of this trip's lines now on the map (badge on the pill). */
+  liveBusCount?: number;
   onShare?: () => void;
 }
 

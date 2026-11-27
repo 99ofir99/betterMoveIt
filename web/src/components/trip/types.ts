@@ -62,6 +62,8 @@ export interface TripProgressSheetProps {
   onToggleLiveBuses?: () => void;
   /** Whether the live-vehicle overlay is currently on. */
   liveBusesActive?: boolean;
+  /** Live buses of this trip's lines now on the map (badge on the pill). */
+  liveBusCount?: number;
   /** Fired when the user pages to another leg (informational — the active leg is unaffected). */
   onSelectLeg?: (legIndex: number) => void;
   /** Fired when user toggles the bell button. */
@@ -215,6 +217,8 @@ export interface TripActionPillsProps {
   onStop: () => void;
   onToggleLiveBuses?: () => void;
   liveBusesActive?: boolean;
+  /** Live buses of this trip's lines now on the map (badge on the pill). */
+  liveBusCount?: number;
   onShare: () => void;
 }
 

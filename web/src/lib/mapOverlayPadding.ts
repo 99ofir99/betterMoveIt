@@ -15,7 +15,7 @@ const BOTTOM_SELECTORS = [
   '.bottom-nav',
 ].join(', ');
 
-const TOP_SELECTORS = ['.topbar', '.directions-topbar', '.ld-shell__pager', '.live-chip'].join(
+const TOP_SELECTORS = ['.topbar', '.directions-topbar', '.ld-shell__pager', '.live-toast'].join(
   ', '
 );
 
