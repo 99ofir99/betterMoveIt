@@ -6,6 +6,7 @@
 
 import {
   useEffect,
+  useLayoutEffect,
   useRef,
   type HTMLAttributes,
   type MouseEvent,
@@ -52,7 +53,21 @@ export function SwipeRail({ children, className, onPointerDown, onClick, ...rest
     return () => el.removeEventListener('wheel', onWheel);
   }, []);
 
+  // In RTL (Hebrew) the browser opens a scroller at its right edge, which hid
+  // the left end of the leg row. Open at the left edge instead, until the user
+  // swipes it themselves. A large negative scrollLeft clamps to the left edge
+  // in both the standard RTL model (0 = right) and old Chrome's (0 = left).
+  const touched = useRef(false);
+  useLayoutEffect(() => {
+    const el = railRef.current;
+    if (!el || touched.current) return;
+    if (getComputedStyle(el).direction !== 'rtl') return;
+    if (el.scrollWidth <= el.clientWidth) return;
+    el.scrollLeft = -el.scrollWidth;
+  });
+
   const handlePointerDown = (e: PointerEvent<HTMLDivElement>) => {
+    touched.current = true;
     originX.current = e.clientX;
     panned.current = false;
     onPointerDown?.(e);
