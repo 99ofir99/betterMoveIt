@@ -62,14 +62,41 @@ function transferDominated(extra, simpler) {
   return true;
 }
 
-/** Route indices that board/alight at any of the given stops. */
-function routesServingStops(s, stopIds) {
+/** Route indices that board/alight at any of the given stops (active day only). */
+function routesServingStops(s, stopIds, day) {
   const out = new Set();
   for (const stop of stopIds) {
-    const start = s.stopTripStart[stop];
-    const end = s.stopTripStart[stop + 1];
-    for (let idx = start; idx < end; idx++) {
-      out.add(s.tripRoute[s.stopTripTrip[idx]]);
+    if (day) {
+      const start = day.start[stop];
+      const end = day.start[stop + 1];
+      for (let idx = start; idx < end; idx++) {
+        out.add(s.tripRoute[day.trips[idx]]);
+      }
+    } else {
+      const start = s.stopTripStart[stop];
+      const end = s.stopTripStart[stop + 1];
+      for (let idx = start; idx < end; idx++) {
+        out.add(s.tripRoute[s.stopTripTrip[idx]]);
+      }
+    }
+  }
+  return out;
+}
+
+/** Clone only the parent chain needed to reconstruct one destination stop. */
+function cloneParentChain(parents, destStop) {
+  const out = new Map();
+  let stop = destStop;
+  let guard = 0;
+  while (guard++ < 64) {
+    const p = parents.get(stop);
+    if (!p) break;
+    out.set(stop, p);
+    if (p.type === 'walk') {
+      if (p.fromStop === undefined) break;
+      stop = p.fromStop;
+    } else {
+      stop = p.boardStop;
     }
   }
   return out;
@@ -81,6 +108,25 @@ export class JourneyPlanner {
     // Defaults so planOnce() is usable on its own; plan() overrides per request.
     this.walkSpeedMps = 1.35;
     this.maxWalkM = 1200;
+    /** @type {Int32Array|null} reused earliest-arrival labels across planOnce calls */
+    this._bestBuf = null;
+    /** @type {Int32Array|null} trip → board row for the current round */
+    this._boardRowBuf = null;
+    /** @type {Int32Array|null} generation stamp matching _boardRowBuf */
+    this._boardGenBuf = null;
+    this._boardGen = 1;
+  }
+
+  /** Reuse typed buffers so repeated planOnce calls don't thrash the GC. */
+  _ensureSearchBuffers(stopCount, tripCount) {
+    if (!this._bestBuf || this._bestBuf.length !== stopCount) {
+      this._bestBuf = new Int32Array(stopCount);
+    }
+    if (!this._boardRowBuf || this._boardRowBuf.length !== tripCount) {
+      this._boardRowBuf = new Int32Array(tripCount);
+      this._boardGenBuf = new Int32Array(tripCount);
+      this._boardGen = 1;
+    }
   }
 
   /**
@@ -97,17 +143,14 @@ export class JourneyPlanner {
     this.walkSpeedMps = walkSpeedMps;
     this.maxWalkM = maxWalkM;
 
-    const activeService = new Uint8Array(s.services.length);
+    const day = s.ensureDayIndex(dateInt, dow);
+    const activeService = day.activeSvc;
     let activeCount = 0;
-    for (let i = 0; i < s.services.length; i++) {
-      if (s.serviceActive(i, dateInt, dow)) {
-        activeService[i] = 1;
-        activeCount++;
-      }
-    }
+    for (let i = 0; i < activeService.length; i++) if (activeService[i]) activeCount++;
     if (activeCount === 0) {
       return { journeys: [], reason: 'no_active_service', diagnostics: { activeCount } };
     }
+    this._ensureSearchBuffers(s.stopCount, s.tripCount);
 
     // Stops reachable on foot from each endpoint. For long trips the nearest
     // stops are often local-only, so we also consider a wider ring and let the
@@ -126,7 +169,7 @@ export class JourneyPlanner {
       };
     }
 
-    const ctx = { access, egressByStop, destPoint, originPoint: from, activeService, s };
+    const ctx = { access, egressByStop, destPoint, originPoint: from, activeService, day, s };
     const MAX_RESULTS = 8;
 
     // Primary answer: leave now, arrive as early as possible.
@@ -156,28 +199,19 @@ export class JourneyPlanner {
 
     const pullRoundAlternatives = (snapshots, queryDepart) => {
       if (!snapshots?.length) return;
-      // One best egress per round, fewest rides first — avoids flooding with
-      // 3–4 bus chains that only beat a 2-bus by a minute.
-      const bestByRound = new Map();
+      // One best egress per round (already computed while searching).
+      const ordered = [];
       for (let k = 1; k < snapshots.length; k++) {
-        for (const [stop, walkSec] of egressByStop) {
-          const v =
-            snapshots[k].label instanceof Map
-              ? snapshots[k].label.get(stop)
-              : snapshots[k].label[stop];
-          if (v === undefined || v === INF) continue;
-          const arrive = v + walkSec;
-          const prev = bestByRound.get(k);
-          if (!prev || arrive < prev.arrive) {
-            bestByRound.set(k, { k, stop, walkSec, arrive });
-          }
-        }
+        const snap = snapshots[k];
+        if (snap.bestStop < 0 || snap.bestArrive === INF) continue;
+        ordered.push({
+          k,
+          stop: snap.bestStop,
+          walkSec: snap.bestWalk,
+          arrive: snap.bestArrive,
+        });
       }
-      const ordered = [...bestByRound.values()].sort(
-        (a, b) =>
-          a.k - b.k ||
-          a.arrive - b.arrive
-      );
+      ordered.sort((a, b) => a.k - b.k || a.arrive - b.arrive);
       for (const c of ordered) {
         if (journeys.length >= MAX_RESULTS) break;
         const legs = this.reconstruct(snapshots[c.k].parents, c.stop, c.walkSec, destPoint, from);
@@ -231,6 +265,7 @@ export class JourneyPlanner {
 
     // 3) Profile / range query: keep searching after each boarding so we get
     //    later leave options instead of re-hitting the same first trip.
+    //    Round alts are already covered by leave-now / ban searches.
     let cursor = firstBoardSec(journeys[0]);
     if (cursor == null) cursor = secondsSinceMidnight;
     else cursor += 60;
@@ -240,7 +275,6 @@ export class JourneyPlanner {
       if (!later?.journey) break;
       const before = journeys.length;
       pushJourney(later.journey, 'later');
-      pullRoundAlternatives(later.snapshots, cursor);
       const board = firstBoardSec(later.journey);
       if (board == null || board + 60 <= cursor) {
         cursor += 20 * 60;
@@ -255,7 +289,7 @@ export class JourneyPlanner {
     //    surface at least one feeder→R1/R3 itinerary even if buses are faster.
     //    Runs even when MAX_RESULTS is full — buses must not hide the tram card.
     if (!journeys.some(journeyHasRailMode)) {
-      const destRoutes = routesServingStops(s, egressByStop.keys());
+      const destRoutes = routesServingStops(s, egressByStop.keys(), day);
       const tramDestRoutes = [];
       const banDestBuses = new Set();
       for (const ri of destRoutes) {
@@ -386,6 +420,7 @@ export class JourneyPlanner {
       for (const alt of this.findLastLegCorridorAlts(j, {
         egressByStop,
         activeService,
+        day,
         s,
       })) {
         if (withCorridor.length >= MAX_RESULTS + CORRIDOR_ALT_LIMIT) break;
@@ -414,6 +449,7 @@ export class JourneyPlanner {
         activeServices: activeCount,
         accessStops: access.length,
         egressStops: egressByStop.size,
+        dayTrips: day.total,
         computeMs: Date.now() - t0,
       },
     };
@@ -449,6 +485,28 @@ export class JourneyPlanner {
     return label;
   }
 
+  /** Best door-to-door egress + the parent chain needed to reconstruct it. */
+  snapshotRound(best, bestParents, egressByStop) {
+    let bestStop = -1;
+    let bestArrive = INF;
+    let bestWalk = 0;
+    for (const [stop, walkSec] of egressByStop) {
+      const v = best[stop];
+      if (v !== INF && v + walkSec < bestArrive) {
+        bestArrive = v + walkSec;
+        bestStop = stop;
+        bestWalk = walkSec;
+      }
+    }
+    return {
+      label: this.snapshotEgressLabels(best, egressByStop),
+      parents: bestStop < 0 ? new Map() : cloneParentChain(bestParents, bestStop),
+      bestStop,
+      bestWalk,
+      bestArrive,
+    };
+  }
+
   /**
    * One RAPTOR search from a fixed departure time.
    *
@@ -458,14 +516,32 @@ export class JourneyPlanner {
    * improves, the number of rides a stop was first reached with is what shapes
    * the resulting itinerary, and no round can silently chain extra rides.
    */
-  planOnce({ access, egressByStop, destPoint, originPoint, departAt, activeService, s, bannedRoutes }) {
+  planOnce({
+    access,
+    egressByStop,
+    destPoint,
+    originPoint,
+    departAt,
+    activeService,
+    day,
+    s,
+    bannedRoutes,
+  }) {
     const walk = (m) => Math.round(m / this.walkSpeedMps);
     const banned = bannedRoutes instanceof Set ? bannedRoutes : null;
+    this._ensureSearchBuffers(s.stopCount, s.tripCount);
 
     // best[stop] = earliest arrival seen so far (any number of rides).
-    const best = new Int32Array(s.stopCount).fill(INF);
+    const best = this._bestBuf;
+    best.fill(INF);
     const bestParents = new Map();
     const snapshots = [];
+    const boardRowBuf = this._boardRowBuf;
+    const boardGenBuf = this._boardGenBuf;
+    const dayStart = day?.start;
+    const dayTrips = day?.trips;
+    const dayRows = day?.rows;
+    const useDay = Boolean(dayStart && dayTrips && dayRows);
 
     // Round 0: walk from the origin to the first stops.
     const reach0 = [];
@@ -473,15 +549,16 @@ export class JourneyPlanner {
       const arrive = departAt + walk(a.distance);
       if (arrive < best[a.stop]) {
         best[a.stop] = arrive;
-        bestParents.set(a.stop, { type: 'walk', from: 'origin', distance: a.distance, duration: walk(a.distance) });
+        bestParents.set(a.stop, {
+          type: 'walk',
+          from: 'origin',
+          distance: a.distance,
+          duration: walk(a.distance),
+        });
         reach0.push(a.stop);
       }
     }
-    snapshots.push({
-      label: this.snapshotEgressLabels(best, egressByStop),
-      parents: new Map(bestParents),
-      reached: reach0.slice(),
-    });
+    snapshots.push(this.snapshotRound(best, bestParents, egressByStop));
 
     let frontier = reach0.slice();
     const transferStart = s.transferStart;
@@ -526,25 +603,39 @@ export class JourneyPlanner {
           if (v !== INF && v + walkSec < boardDepCap) boardDepCap = v + walkSec;
         }
       }
-      const boardRowByTrip = new Map();
+
+      let boardGen = this._boardGen + 1;
+      if (boardGen >= 0x7fffffff) {
+        boardGenBuf.fill(0);
+        boardGen = 1;
+      }
+      this._boardGen = boardGen;
+
       for (const stop of reachableNow) {
         const boardTime = best[stop];
         if (boardTime === INF) continue;
-        // Index is departure-sorted — skip past trips with binary search.
-        const start = s.lowerBoundStopTrip(stop, boardTime);
-        const end = s.stopTripStart[stop + 1];
+
+        let start;
+        let end;
+        if (useDay) {
+          start = s.lowerBoundDayStopTrip(day, stop, boardTime);
+          end = dayStart[stop + 1];
+        } else {
+          start = s.lowerBoundStopTrip(stop, boardTime);
+          end = s.stopTripStart[stop + 1];
+        }
 
         for (let idx = start; idx < end; idx++) {
-          const dep = s.stopTripDepAt(idx);
+          const dep = useDay ? s.dayStopTripDepAt(day, idx) : s.stopTripDepAt(idx);
           if (dep >= boardDepCap) break;
-          const trip = s.stopTripTrip[idx];
+          const trip = useDay ? dayTrips[idx] : s.stopTripTrip[idx];
           if (banned && banned.has(s.tripRoute[trip])) continue;
-          if (!activeService[s.tripService[trip]]) continue;
+          if (!useDay && activeService && !activeService[s.tripService[trip]]) continue;
 
-          const row = s.stopTripRow[idx];
-          const seen = boardRowByTrip.get(trip);
-          if (seen !== undefined && seen <= row) continue;
-          boardRowByTrip.set(trip, row);
+          const row = useDay ? dayRows[idx] : s.stopTripRow[idx];
+          if (boardGenBuf[trip] === boardGen && boardRowBuf[trip] <= row) continue;
+          boardGenBuf[trip] = boardGen;
+          boardRowBuf[trip] = row;
 
           const tEnd = s.tripStopStart[trip + 1];
           for (let r = row + 1; r < tEnd; r++) {
@@ -568,47 +659,38 @@ export class JourneyPlanner {
         }
       }
 
-      snapshots.push({
-        label: this.snapshotEgressLabels(best, egressByStop),
-        parents: new Map(bestParents),
-        reached: improved.slice(),
-      });
+      const snap = this.snapshotRound(best, bestParents, egressByStop);
+      snapshots.push(snap);
       frontier = improved;
 
       // Stop once more rides no longer beat the previous round by the Moovit slack.
-      let bestArriveNow = INF;
-      for (const [stop, walkSec] of egressByStop) {
-        const v = best[stop];
-        if (v !== INF && v + walkSec < bestArriveNow) bestArriveNow = v + walkSec;
-      }
-      if (bestArriveNow < INF && round >= 2) {
-        const prevBest =
-          snapshots.length > 1
-            ? this.bestEgress(snapshots[snapshots.length - 2].label, egressByStop)
-            : INF;
-        if (bestArriveNow + 30 >= prevBest) break;
+      if (snap.bestArrive < INF && round >= 2) {
+        const prevBest = snapshots[snapshots.length - 2]?.bestArrive ?? INF;
+        if (snap.bestArrive + 30 >= prevBest) break;
       }
     }
 
     // ---- choose destination: Moovit Best = arrival + transfer penalty
+    // Within a round, best arrival == best score, so one egress per round is enough.
     let pick = null;
     for (let k = 0; k < snapshots.length; k++) {
-      for (const [stop, walkSec] of egressByStop) {
-        const v =
-          snapshots[k].label instanceof Map
-            ? snapshots[k].label.get(stop)
-            : snapshots[k].label[stop];
-        if (v === undefined || v === INF) continue;
-        const arrive = v + walkSec;
-        const score = arrive + k * TRANSFER_PENALTY_SEC;
-        if (
-          !pick ||
-          score < pick.score ||
-          (score === pick.score && k < pick.k) ||
-          (score === pick.score && k === pick.k && arrive < pick.arrive)
-        ) {
-          pick = { k, stop, walkSec, arrive, score };
-        }
+      const snap = snapshots[k];
+      if (snap.bestStop < 0 || snap.bestArrive === INF) continue;
+      const arrive = snap.bestArrive;
+      const score = arrive + k * TRANSFER_PENALTY_SEC;
+      if (
+        !pick ||
+        score < pick.score ||
+        (score === pick.score && k < pick.k) ||
+        (score === pick.score && k === pick.k && arrive < pick.arrive)
+      ) {
+        pick = {
+          k,
+          stop: snap.bestStop,
+          walkSec: snap.bestWalk,
+          arrive,
+          score,
+        };
       }
     }
     if (!pick) return { journey: null, snapshots, debug: 'no_pick' };
@@ -781,7 +863,7 @@ export class JourneyPlanner {
    * alight / destination (Moovit "take any of 1 / 66 / 50 / 82"). Returns
    * full sibling journeys so client-side clamp can merge the badges.
    */
-  findLastLegCorridorAlts(journey, { egressByStop, activeService, s }) {
+  findLastLegCorridorAlts(journey, { egressByStop, activeService, day, s }) {
     const legs = journey?.legs;
     if (!legs?.length) return [];
     let lastIdx = -1;
@@ -824,17 +906,20 @@ export class JourneyPlanner {
     const arrivalCap = last.arrival + CORRIDOR_ARRIVAL_SLACK_SEC;
     /** @type {Map<string, { routeIdx: number, trip: number, boardStop: number, boardRow: number, alightStop: number, alightRow: number, departure: number, arrival: number }>} */
     const bestByName = new Map();
+    const useDay = Boolean(day?.start && day?.trips && day?.rows);
 
     const depCap = readySec + 2.5 * 3600;
     for (const n of boardStops) {
       const stop = n.stop;
-      const start = s.lowerBoundStopTrip(stop, readySec);
-      const end = s.stopTripStart[stop + 1];
+      const start = useDay
+        ? s.lowerBoundDayStopTrip(day, stop, readySec)
+        : s.lowerBoundStopTrip(stop, readySec);
+      const end = useDay ? day.start[stop + 1] : s.stopTripStart[stop + 1];
       for (let idx = start; idx < end; idx++) {
-        const dep = s.stopTripDepAt(idx);
+        const dep = useDay ? s.dayStopTripDepAt(day, idx) : s.stopTripDepAt(idx);
         if (dep > depCap) break; // sorted by dep
-        const trip = s.stopTripTrip[idx];
-        if (!activeService[s.tripService[trip]]) continue;
+        const trip = useDay ? day.trips[idx] : s.stopTripTrip[idx];
+        if (!useDay && activeService && !activeService[s.tripService[trip]]) continue;
         const routeIdx = s.tripRoute[trip];
         const cand = s.routeObject(routeIdx);
         // Never bundle light rail into a bus corridor chip (Moovit keeps R1 separate).
@@ -844,7 +929,7 @@ export class JourneyPlanner {
         const prev = bestByName.get(sn);
         if (prev && prev.departure <= dep) continue;
 
-        const row = s.stopTripRow[idx];
+        const row = useDay ? day.rows[idx] : s.stopTripRow[idx];
         const tEnd = s.tripStopStart[trip + 1];
         let hit = null;
         for (let r = row + 1; r < tEnd; r++) {

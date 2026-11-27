@@ -285,6 +285,82 @@ export class TransitStore {
   }
 
   /**
+   * Compact stop→trip index containing only trips active on `dateInt`/`dow`.
+   * Built once per service day and reused across plan/departure queries so the
+   * hot RAPTOR loop never pays for inactive calendar rows.
+   * Keeps a small LRU (today + tomorrow) so night boards don't evict the plan day.
+   */
+  ensureDayIndex(dateInt, dow) {
+    const key = dateInt * 10 + (dow | 0);
+    if (!this._dayIndexes) this._dayIndexes = new Map();
+    const cached = this._dayIndexes.get(key);
+    if (cached) {
+      this._dayIndexes.delete(key);
+      this._dayIndexes.set(key, cached);
+      return cached;
+    }
+
+    const activeSvc = new Uint8Array(this.services.length);
+    for (let i = 0; i < this.services.length; i++) {
+      if (this.serviceActive(i, dateInt, dow)) activeSvc[i] = 1;
+    }
+
+    const start = new Int32Array(this.stopCount + 1);
+    let total = 0;
+    for (let stop = 0; stop < this.stopCount; stop++) {
+      const a = this.stopTripStart[stop];
+      const b = this.stopTripStart[stop + 1];
+      let n = 0;
+      for (let idx = a; idx < b; idx++) {
+        if (activeSvc[this.tripService[this.stopTripTrip[idx]]]) n++;
+      }
+      start[stop] = total;
+      total += n;
+    }
+    start[this.stopCount] = total;
+
+    const trips = new Int32Array(total);
+    const rows = new Int32Array(total);
+    let cursor = 0;
+    for (let stop = 0; stop < this.stopCount; stop++) {
+      const a = this.stopTripStart[stop];
+      const b = this.stopTripStart[stop + 1];
+      for (let idx = a; idx < b; idx++) {
+        const trip = this.stopTripTrip[idx];
+        if (!activeSvc[this.tripService[trip]]) continue;
+        trips[cursor] = trip;
+        rows[cursor] = this.stopTripRow[idx];
+        cursor++;
+      }
+    }
+
+    const day = { key, dateInt, dow, start, trips, rows, activeSvc, total };
+    while (this._dayIndexes.size >= 2) {
+      const oldest = this._dayIndexes.keys().next().value;
+      this._dayIndexes.delete(oldest);
+    }
+    this._dayIndexes.set(key, day);
+    return day;
+  }
+
+  /** Departure seconds for an entry in a day-filtered stop→trip index. */
+  dayStopTripDepAt(day, idx) {
+    return this.stDeparture[day.rows[idx]];
+  }
+
+  /** First day-index entry at `stop` with dep >= timeSec. */
+  lowerBoundDayStopTrip(day, stop, timeSec) {
+    let lo = day.start[stop];
+    let hi = day.start[stop + 1];
+    while (lo < hi) {
+      const mid = (lo + hi) >> 1;
+      if (this.dayStopTripDepAt(day, mid) < timeSec) lo = mid + 1;
+      else hi = mid;
+    }
+    return lo;
+  }
+
+  /**
    * Precompute foot-transfer neighbors (radius 500 m, limit 6, exclude self).
    * Same selection as RAPTOR's former per-round nearby() calls.
    */
@@ -576,27 +652,44 @@ export class TransitStore {
 
   tripPolyline(shapeIdx) {
     if (shapeIdx < 0 || shapeIdx >= this.shapeCount) return [];
+    if (!this._shapeLru) this._shapeLru = new Map();
+    const cached = this._shapeLru.get(shapeIdx);
+    if (cached) {
+      // Refresh insertion order for a simple LRU.
+      this._shapeLru.delete(shapeIdx);
+      this._shapeLru.set(shapeIdx, cached);
+      return cached;
+    }
+
     const o = shapeIdx * 12;
     const offset = this.shapeMeta.getInt32(o, true);
     const count = this.shapeMeta.getInt32(o + 4, true);
     if (count <= 0) return [];
     // Prefer in-memory points when a host loaded the full buffer; else read
     // just this shape's range from the open shapes.bin fd.
+    let out;
     if (this.shapePoints) {
-      const out = new Array(count);
+      out = new Array(count);
       for (let k = 0; k < count; k++) {
         out[k] = [this.shapePoints[(offset + k) * 2], this.shapePoints[(offset + k) * 2 + 1]];
       }
-      return out;
+    } else {
+      const bytes = count * 8;
+      const buf = Buffer.allocUnsafe(bytes);
+      fs.readSync(this._shapesFd, buf, 0, bytes, this._shapesPtsFileOff + offset * 8);
+      const view = new Float32Array(buf.buffer, buf.byteOffset, count * 2);
+      out = new Array(count);
+      for (let k = 0; k < count; k++) {
+        out[k] = [view[k * 2], view[k * 2 + 1]];
+      }
     }
-    const bytes = count * 8;
-    const buf = Buffer.allocUnsafe(bytes);
-    fs.readSync(this._shapesFd, buf, 0, bytes, this._shapesPtsFileOff + offset * 8);
-    const view = new Float32Array(buf.buffer, buf.byteOffset, count * 2);
-    const out = new Array(count);
-    for (let k = 0; k < count; k++) {
-      out[k] = [view[k * 2], view[k * 2 + 1]];
+
+    // Cap cached shapes so popular corridors stay hot without unbounded RAM.
+    if (this._shapeLru.size >= 256) {
+      const oldest = this._shapeLru.keys().next().value;
+      this._shapeLru.delete(oldest);
     }
+    this._shapeLru.set(shapeIdx, out);
     return out;
   }
 }

@@ -70,6 +70,17 @@ function feedClock(dateParam, timeParam) {
   return { dateInt, seconds, dow };
 }
 
+{
+  // Prebuild today's active-trip index so the first /api/plan is not cold.
+  const warm = feedClock();
+  const tDay = Date.now();
+  const day = store.ensureDayIndex(warm.dateInt, warm.dow);
+  console.log(
+    `[transit] day index ${warm.dateInt}: ${day.total.toLocaleString()} active stop-visits ` +
+      `in ${Date.now() - tDay}ms`
+  );
+}
+
 // ------------------------------------------------------------------ health
 
 app.get('/api/health', (_req, res) => {
