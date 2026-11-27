@@ -20,6 +20,7 @@ import {
 import { isHeavyRailRoute, transitDestinationLabel } from '../lib/railLabel';
 import { api } from '../lib/api';
 import { previewLegs } from '../lib/previewLegs';
+import { dayOffsetOf, journeyDayLabel } from '../lib/journeyStale';
 import { BundledLineBadge } from './common/BundledLineBadge';
 import { SwipeRail } from './common/SwipeRail';
 import { ChevronRightIcon, WalkIcon } from './icons';
@@ -47,8 +48,8 @@ export function JourneyList({ journeys, selected, flash, onSelect, departNow, in
               <div className="journey-card__layout">
                 <div className="journey-card__left">
                   <div className="journey-card__duration-big">{formatDurationMins(j.durationSec)}</div>
-                  {j.nextDay ? (
-                    <div className="journey-card__day">{t('Tomorrow')}</div>
+                  {journeyDayLabel(j) ? (
+                    <div className="journey-card__day">{journeyDayLabel(j)}</div>
                   ) : null}
                   <div className="journey-card__times">
                     <span className="journey-card__clock">{formatClock12h(j.departSeconds)}</span>
@@ -171,7 +172,7 @@ function JourneyCardFooter({
           const planned = minutesUntilDepart(
             firstTransit.departure,
             undefined,
-            journey.nextDay
+            dayOffsetOf(journey)
           );
           const minMinutes = planned.nextDay
             ? 0
@@ -182,7 +183,7 @@ function JourneyCardFooter({
             return;
           }
           // Schedule fallback from plan clock.
-          const { minutes, nextDay } = minutesUntilDepart(journey.departSeconds, undefined, journey.nextDay);
+          const { minutes, nextDay } = minutesUntilDepart(journey.departSeconds, undefined, dayOffsetOf(journey));
           setEtas([
             {
               minutes,
@@ -196,7 +197,7 @@ function JourneyCardFooter({
         })
         .catch(() => {
           if (ctrl.signal.aborted) return;
-          const { minutes, nextDay } = minutesUntilDepart(journey.departSeconds, undefined, journey.nextDay);
+          const { minutes, nextDay } = minutesUntilDepart(journey.departSeconds, undefined, dayOffsetOf(journey));
           setEtas([
             {
               minutes,
@@ -241,7 +242,7 @@ function JourneyCardFooter({
       ? etas
       : [
           (() => {
-            const { minutes, nextDay } = minutesUntilDepart(journey.departSeconds, undefined, journey.nextDay);
+            const { minutes, nextDay } = minutesUntilDepart(journey.departSeconds, undefined, dayOffsetOf(journey));
             return {
               minutes,
               departure: journey.departSeconds,

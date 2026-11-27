@@ -1,5 +1,6 @@
 /** Vertical itinerary (Moovit style): orange origin ring, white track, leg rows, destination. */
 
+import { displayPlaceLabel, placeKindOf } from '../../lib/placeLabel';
 import type { Leg } from '../../types';
 import { formatClock12h, formatDistance, formatDuration } from '../../lib/format';
 import { transitDestinationLabel } from '../../lib/railLabel';
@@ -57,7 +58,7 @@ function originOf(legs: Leg[]): Endpoint {
 
 function destinationOf(leg: Leg | undefined): string {
   if (!leg) return t('Destination');
-  return leg.toName ?? t('Destination');
+  return leg.toName ? displayPlaceLabel(leg.toName) : t('Destination');
 }
 
 function WalkRow({ leg }: ItineraryWalkRowProps) {
@@ -66,7 +67,7 @@ function WalkRow({ leg }: ItineraryWalkRowProps) {
       <div className="itin__title">{t('Walk {dist}', { dist: formatDistance(leg.distanceM) })}</div>
       <div className="itin__sub">
         {t('{n} min', { n: Math.max(1, Math.round(leg.durationSec / 60)) })}
-        {leg.toName ? ` · ${t('to {name}', { name: leg.toName })}` : ''}
+        {leg.toName ? ` · ${t('to {name}', { name: displayPlaceLabel(leg.toName) })}` : ''}
       </div>
     </>
   );
@@ -184,7 +185,7 @@ export function ItineraryTimeline({ journey, transitAlternatives, onStopClick }:
         );
       })}
 
-      <ItineraryRow node="destination" connector="none">
+      <ItineraryRow node="destination" connector="none" place={placeKindOf(last?.toName)}>
         <div className="itin__head">
           <div className="itin__place">{destinationOf(last)}</div>
           <div className="itin__when">

@@ -84,6 +84,8 @@ export interface TransitLeg {
   tripId?: string;
   /** Runs tomorrow (the planner rolled over after tonight's last bus). */
   nextDay?: boolean;
+  /** ISO date (Israel) these clock times belong to, when known. */
+  serviceDate?: string;
 }
 
 export type Leg = WalkLeg | TransitLeg;
@@ -106,6 +108,8 @@ export interface Journey {
   kind?: "fastest" | "fewest" | "best" | string;
   /** Leaves tomorrow: no more service today, so the planner searched the next day. */
   nextDay?: boolean;
+  /** ISO date (Israel) these clock times belong to, when known. */
+  serviceDate?: string;
 }
 
 export interface PlanResponse {
@@ -115,6 +119,8 @@ export interface PlanResponse {
   query?: unknown;
   /** Server rolled "depart now" over to tomorrow morning. */
   nextDay?: boolean;
+  /** Feed date (YYYYMMDD) the journeys' clock times belong to. */
+  serviceDate?: number;
 }
 
 export interface SearchResult {

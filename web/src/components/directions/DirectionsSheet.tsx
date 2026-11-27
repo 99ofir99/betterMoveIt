@@ -10,6 +10,7 @@ import { ItineraryTimeline } from './ItineraryTimeline';
 import { RouteSequence } from './RouteSequence';
 import { ShiftStrip } from './ShiftStrip';
 import type { DirectionsSheetProps } from './types';
+import { dayOffsetOf, departureDayLabel, journeyDayLabel } from '../../lib/journeyStale';
 
 function formatFare(fareIls: number | undefined): string | undefined {
   return fareIls != null && Number.isFinite(fareIls) ? `₪${fareIls.toFixed(2)}` : undefined;
@@ -29,6 +30,8 @@ export function DirectionsSheet({
   onFavorite,
 }: DirectionsSheetProps) {
   const [saved, setSaved] = useState(false);
+  const departDay = journeyDayLabel(journey);
+  const arrivalDay = departureDayLabel(journey.arrivalSeconds, dayOffsetOf(journey));
 
   const handleToggleSaved = () => {
     const next = !saved;
@@ -43,7 +46,7 @@ export function DirectionsSheet({
           <DirectionsSummary
             durationSec={journey.durationSec}
             arrivalSeconds={journey.arrivalSeconds}
-            nextDay={journey.nextDay}
+            dayLabel={arrivalDay}
             fare={formatFare(journey.fareIls)}
             saved={saved}
             onToggleSaved={handleToggleSaved}
@@ -57,7 +60,7 @@ export function DirectionsSheet({
         <ShiftStrip
           departSeconds={journey.departSeconds}
           arrivalSeconds={journey.arrivalSeconds}
-          nextDay={journey.nextDay}
+          dayLabel={departDay}
           onEarlier={onEarlier}
           onLater={onLater}
         />

@@ -3,6 +3,7 @@
  * Logic and data come from props (computed by useFrequentDestination).
  */
 
+import { journeyDayLabel } from '../../lib/journeyStale';
 import { displayPlaceLabel } from '../../lib/placeLabel';
 import type { Journey, TransitLeg, WalkLeg } from '../../types';
 import type { FrequentDestinationCardProps } from './types';
@@ -96,12 +97,19 @@ export function FrequentDestinationCard({ dest, onTap, onPickTime, onLiveBoardin
   // Skeleton until we know where the user is and have a trip to show.
   const skeleton = Boolean(pending) || (loading && !journey);
 
+  // Same-day trip many hours away (Saturday 18:39 planned at 00:35): name the day.
+  const farDay =
+    journey && !leavesTomorrow && leavesInMin != null && !shouldShowRelativeEta(leavesInMin)
+      ? journeyDayLabel(journey)
+      : '';
   // Tomorrow's trip (no more service today): "Leaves tomorrow 18:39", never a countdown.
   const leaveLabel =
     leavesInMin != null
       ? leavesTomorrow && leavesDepartureSec != null
         ? t('Tomorrow {time}', { time: formatClock(leavesDepartureSec) })
-        : formatEtaLabel(leavesInMin, { departureSec: leavesDepartureSec ?? undefined })
+        : farDay && leavesDepartureSec != null
+          ? `${farDay} ${formatClock(leavesDepartureSec)}`
+          : formatEtaLabel(leavesInMin, { departureSec: leavesDepartureSec ?? undefined })
       : null;
   const relativeLeave =
     !leavesTomorrow && leavesInMin != null && shouldShowRelativeEta(leavesInMin);

@@ -11,3 +11,11 @@ export function displayPlaceLabel(label: string | null | undefined): string {
   if (!label) return '';
   return DEFAULT_NAMES.has(label) ? t(label) : label;
 }
+
+/** Saved Home / Work by its label (English default or the translated name), else null. */
+export function placeKindOf(label: string | null | undefined): 'home' | 'work' | null {
+  if (!label) return null;
+  if (label === 'Home' || label === t('Home')) return 'home';
+  if (label === 'Work' || label === t('Work')) return 'work';
+  return null;
+}

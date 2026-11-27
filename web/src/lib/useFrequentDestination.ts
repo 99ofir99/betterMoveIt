@@ -14,7 +14,7 @@ import { normalizeJourneyTiming } from './journeyTiming';
 import { sortJourneys } from './sort';
 import { bestBoardingMinutes } from './boardingEta';
 import { minutesUntilDepart, secondsSinceLocalMidnight } from './format';
-import { journeyHasDeparted, markNextDay, plannedRideMinMinutes } from './journeyStale';
+import { dayOffsetOf, journeyHasDeparted, markNextDay, plannedRideMinMinutes, tagServiceDate } from './journeyStale';
 import type { Journey, LatLon, Place, TransitLeg } from '../types';
 import type { FrequentDestResult } from '../components/home/types';
 import { getLocale } from './i18n';
@@ -66,7 +66,7 @@ function deriveDisplay(
   | 'boardingStop'
 > {
   const now = nowSeconds();
-  const scheduled = minutesUntilDepart(journey.departSeconds, now, journey.nextDay);
+  const scheduled = minutesUntilDepart(journey.departSeconds, now, dayOffsetOf(journey));
   const scheduleMin = scheduled.minutes;
   // Prefer live board / vehicle ETA when available (Moovit).
   const leavesInMin =
@@ -216,7 +216,11 @@ export function useFrequentDestination(
       .then(async (res) => {
         if (ctrl.signal.aborted) return;
         // Fastest = shortest duration (same default as results).
-        const planned = res.nextDay ? markNextDay(res.journeys) : res.journeys;
+        const planned = res.serviceDate
+          ? tagServiceDate(res.journeys, res.serviceDate)
+          : res.nextDay
+            ? markNextDay(res.journeys)
+            : res.journeys;
         const ranked = sortJourneys(planned.map(normalizeJourneyTiming), 'fastest');
         const journey: Journey | null = ranked[0] ?? null;
         if (isAtDestination(planOrigin, destSnap, journey)) {
@@ -236,7 +240,7 @@ export function useFrequentDestination(
                 board.departures,
                 firstTransit,
                 undefined,
-                plannedRideMinMinutes(firstTransit.departure, undefined, firstTransit.nextDay)
+                plannedRideMinMinutes(firstTransit.departure, undefined, dayOffsetOf(firstTransit))
               );
               if (best) boardLeave = best;
             }
@@ -278,7 +282,7 @@ export function useFrequentDestination(
                 board.departures,
                 firstTransit,
                 undefined,
-                plannedRideMinMinutes(firstTransit.departure, undefined, firstTransit.nextDay)
+                plannedRideMinMinutes(firstTransit.departure, undefined, dayOffsetOf(firstTransit))
               );
           if (best == null) return;
           setResult((prev) =>

@@ -20,8 +20,8 @@ export interface DirectionsSheetProps {
 
 export interface DirectionsSummaryProps {
   durationSec: number;
-  /** Trip runs tomorrow. */
-  nextDay?: boolean;
+  /** Day the trip arrives ("Tomorrow", a weekday), '' when soon today. */
+  dayLabel?: string;
   arrivalSeconds: number;
   /** Optional formatted fare (e.g. `₪16.00`) — omitted when the journey has none. */
   fare?: string;
@@ -37,8 +37,8 @@ export interface RouteSequenceProps {
 
 export interface ShiftStripProps {
   departSeconds: number;
-  /** Trip runs tomorrow. */
-  nextDay?: boolean;
+  /** Day the trip leaves ("Tomorrow", a weekday), '' when soon today. */
+  dayLabel?: string;
   arrivalSeconds: number;
   onEarlier: () => void;
   onLater: () => void;
@@ -66,6 +66,8 @@ export interface ItineraryRowProps {
   node: ItineraryNodeKind;
   /** Style of the connector drawn below the node (`none` for the last row). */
   connector: 'solid' | 'dotted' | 'none';
+  /** Destination is the saved Home / Work: show that place's icon instead of the pin. */
+  place?: 'home' | 'work' | null;
   children: import('react').ReactNode;
 }
 

@@ -90,9 +90,16 @@ const JUST_LEFT_WINDOW_SEC = 6 * 3600;
 export function minutesUntilDepart(
   departSeconds: number,
   nowSec = secondsSinceLocalMidnight(),
-  /** The departure is known to be tomorrow (planner rolled over to the next day). */
-  tomorrow = false
+  /**
+   * The departure's day: a number is its offset from today (0 today, 1 tomorrow);
+   * true means tomorrow; false/null means unknown (guess from the clock).
+   */
+  tomorrow: boolean | number | null = false
 ): { minutes: number; nextDay: boolean } {
+  if (typeof tomorrow === 'number') {
+    const abs = departSeconds + tomorrow * 86400;
+    return { minutes: Math.max(0, Math.round((abs - nowSec) / 60)), nextDay: abs >= 86400 };
+  }
   if (tomorrow) {
     return { minutes: Math.max(0, Math.round((departSeconds + 86400 - nowSec) / 60)), nextDay: true };
   }

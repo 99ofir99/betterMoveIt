@@ -455,6 +455,8 @@ app.post('/api/plan', (req, res) => {
   // UI can still show a nearest bus. Explicit depart-at / arrive-by must keep
   // the requested clock (Moovit) — never silently jump to 4:00.
   let usedNextDay = false;
+  /** Feed date the returned clock times belong to (YYYYMMDD). */
+  let serviceDateInt = dateInt;
   const explicitTime = Boolean(time);
   if (!result.journeys?.length && !explicitTime) {
     const y = Math.floor(dateInt / 10000);
@@ -474,11 +476,13 @@ app.post('/api/plan', (req, res) => {
       maxWalkM: Number(maxWalk) || 1200,
     });
     usedNextDay = Boolean(result.journeys?.length);
+    if (usedNextDay) serviceDateInt = nextDateInt;
   }
 
   res.json({
     ...result,
     nextDay: usedNextDay,
+    serviceDate: serviceDateInt,
     query: { from: a, to: b, dateInt, seconds, dow, maxWalk: Number(maxWalk) || 1200 },
     elapsedMs: Date.now() - t0,
   });

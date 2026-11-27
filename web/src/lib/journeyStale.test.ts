@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { journeyHasDeparted, markNextDay } from './journeyStale';
+import { dayOffsetOf, departureDayLabel, departureHasPassed, journeyHasDeparted, markNextDay } from './journeyStale';
 import { minutesUntilDepart } from './format';
 import type { Journey } from '../types';
 
@@ -32,5 +32,29 @@ describe('tomorrow trips', () => {
       minutes: 1345,
       nextDay: true,
     });
+  });
+});
+
+describe('day-aware departures', () => {
+  const sat0035 = { isoDate: '2026-11-28', seconds: 35 * 60 };
+  const dep = 18 * 3600 + 39 * 60;
+  it('a same-day trip 18 h ahead has not departed', () => {
+    expect(departureHasPassed(dep, sat0035.seconds, 0)).toBe(false);
+    expect(departureHasPassed(dep, sat0035.seconds)).toBe(true); // old clock-wrap guess
+  });
+  it('a known-today trip that left 10 min ago has departed', () => {
+    expect(departureHasPassed(dep, dep + 600, 0)).toBe(true);
+  });
+  it('names the day of a far same-day trip, says Tomorrow for the next day', () => {
+    expect(departureDayLabel(dep, 0, sat0035)).toBe('Saturday');
+    expect(departureDayLabel(dep, 1, sat0035)).toBe('Tomorrow');
+    expect(departureDayLabel(sat0035.seconds + 1200, 0, sat0035)).toBe('');
+    expect(departureDayLabel(86400 + 600, 0, { isoDate: '2026-11-28', seconds: 23 * 3600 })).toBe('Tomorrow');
+  });
+  it('dayOffsetOf reads the service date', () => {
+    expect(dayOffsetOf({ serviceDate: '2026-11-29' }, '2026-11-28')).toBe(1);
+    expect(dayOffsetOf({ serviceDate: '2026-11-28' }, '2026-11-28')).toBe(0);
+    expect(dayOffsetOf({ nextDay: true }, '2026-11-28')).toBe(1);
+    expect(dayOffsetOf({}, '2026-11-28')).toBe(null);
   });
 });

@@ -1,5 +1,6 @@
 /** Phase cards for walking / onboard / alight / done, plus the preview for a paged-to leg. */
 
+import { displayPlaceLabel } from '../../lib/placeLabel';
 import { formatClock12h, formatDistance, formatDuration, routeColor } from '../../lib/format';
 import { railTrainNumber, transitDestinationLabel } from '../../lib/railLabel';
 import { RouteBadge } from '../common/RouteBadge';
@@ -41,7 +42,7 @@ export function WalkPhaseCard({ state }: TripPhaseCardProps) {
     walkSec != null ? t('{n} min', { n: Math.max(1, Math.round(walkSec / 60)) }) : '';
 
   // Destination name: use the leg's toName directly for a clean display.
-  const toName = walkLeg?.toName ?? '';
+  const toName = displayPlaceLabel(walkLeg?.toName);
 
   return (
     <div className="ld-walk">
@@ -118,7 +119,7 @@ export function LegPreviewCard({ leg, isPast }: LegPreviewCardProps) {
         <>
           <div className="trip-progress__title">{t('Walk {dist}', { dist: formatDistance(leg.distanceM) })}</div>
           <div className="trip-progress__subtitle">
-            {t('{n} min', { n: Math.max(1, Math.round(leg.durationSec / 60)) })}{leg.toName ? ` · ${t('to {name}', { name: leg.toName })}` : ''}
+            {t('{n} min', { n: Math.max(1, Math.round(leg.durationSec / 60)) })}{leg.toName ? ` · ${t('to {name}', { name: displayPlaceLabel(leg.toName) })}` : ''}
           </div>
         </>
       ) : (

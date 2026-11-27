@@ -8,7 +8,7 @@ import { t } from '../../lib/i18n';
 export function ShiftStrip({
   departSeconds,
   arrivalSeconds,
-  nextDay,
+  dayLabel,
   onEarlier,
   onLater,
 }: ShiftStripProps) {
@@ -19,7 +19,7 @@ export function ShiftStrip({
         {t("Earlier")}
       </button>
       <span className="directions__shift-range">
-        {nextDay ? `${t('Tomorrow')} ` : ''}
+        {dayLabel ? `${dayLabel} ` : ''}
         {formatClock12h(departSeconds)} - {formatClock12h(arrivalSeconds)}
       </span>
       <button type="button" className="directions__shift-btn" onClick={onLater}>
