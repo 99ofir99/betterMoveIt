@@ -688,6 +688,7 @@ export default function App() {
       state.selectPlace(place, "to");
       setToQuery("");
       setActiveTab("directions");
+      state.setWhen("now");
       void state.useMyLocationAsOrigin();
     },
     [state],
@@ -726,10 +727,10 @@ export default function App() {
       state.selectPlace(place, "to");
       setToQuery("");
       setActiveTab("directions");
+      // Home shortcuts always mean "go now", never an earlier depart-at time.
+      state.setWhen("now");
       const origin = await state.useMyLocationAsOrigin();
       if (origin) {
-        // From the home screen it's always "leave now", even if an earlier
-        // plan picked another departure time.
         void searchRoutes(origin, place, { forceNow: true });
       } else {
         setShowPlanForm(true);
@@ -743,7 +744,7 @@ export default function App() {
       state.selectPlace(from, "from");
       state.selectPlace(to, "to");
       setActiveTab("directions");
-      void searchRoutes(from, to);
+      void searchRoutes(from, to, { forceNow: true });
     },
     [searchRoutes, state],
   );
