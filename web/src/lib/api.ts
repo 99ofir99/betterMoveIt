@@ -22,9 +22,89 @@ import type {
 // Always same-origin so Vite's `/api` proxy works in dev and Express serves both in prod.
 const BASE = '';
 
+/**
+ * Statuses worth retrying: the host's proxy answers 502/503/504 while the server
+ * restarts (a redeploy, or waking from idle on the free plan, takes ~20-40 s).
+ */
+const RETRY_STATUS = new Set([502, 503, 504]);
+/** Waits between attempts: ~25 s in all, enough to ride out a restart. */
+const RETRY_DELAYS_MS = [1200, 2500, 5000, 8000, 8000];
+
+/** Endpoints that proxy third parties (Nominatim, OSRM, vehicle feeds): their 502 is
+ *  the upstream failing, so retrying only delays the fallback. */
+const NO_RETRY = /^\/api\/(geocode|walk|vehicles)\b/;
+
+/** Listeners told when a core request is being retried (UI: "still searching…"). */
+const retryListeners = new Set<(retrying: boolean) => void>();
+export function onApiRetry(fn: (retrying: boolean) => void): () => void {
+  retryListeners.add(fn);
+  return () => {
+    retryListeners.delete(fn);
+  };
+}
+let retryingCount = 0;
+function setRetrying(delta: number) {
+  const before = retryingCount > 0;
+  retryingCount = Math.max(0, retryingCount + delta);
+  const after = retryingCount > 0;
+  if (before !== after) retryListeners.forEach((fn) => fn(after));
+}
+
+function wait(ms: number, signal?: AbortSignal): Promise<void> {
+  return new Promise((resolve, reject) => {
+    if (signal?.aborted) return reject(new DOMException('Aborted', 'AbortError'));
+    const id = setTimeout(resolve, ms);
+    signal?.addEventListener(
+      'abort',
+      () => {
+        clearTimeout(id);
+        reject(new DOMException('Aborted', 'AbortError'));
+      },
+      { once: true }
+    );
+  });
+}
+
+/** Error carrying the HTTP status so callers can word it (never shown raw). */
+export class ApiError extends Error {
+  constructor(public status: number, path: string) {
+    super(`${status} for ${path}`);
+    this.name = 'ApiError';
+  }
+}
+
+/**
+ * fetch with quiet retries on a restarting server (5xx gateway errors) and dropped
+ * connections. Requests here are all safe to repeat (reads, and the planner POST).
+ */
+async function fetchRetry(path: string, init: RequestInit = {}): Promise<Response> {
+  const signal = init.signal ?? undefined;
+  let retrying = false;
+  try {
+    for (let attempt = 0; ; attempt++) {
+      try {
+        const res = await fetch(`${BASE}${path}`, init);
+        if (!RETRY_STATUS.has(res.status) || attempt >= RETRY_DELAYS_MS.length) return res;
+      } catch (e) {
+        if ((e as Error).name === 'AbortError') throw e;
+        // Offline: no point hammering; let the caller say so.
+        if (typeof navigator !== 'undefined' && navigator.onLine === false) throw e;
+        if (attempt >= RETRY_DELAYS_MS.length) throw e;
+      }
+      if (!retrying) {
+        retrying = true;
+        setRetrying(1);
+      }
+      await wait(RETRY_DELAYS_MS[attempt]!, signal);
+    }
+  } finally {
+    if (retrying) setRetrying(-1);
+  }
+}
+
 async function getJson<T>(path: string, signal?: AbortSignal): Promise<T> {
-  const res = await fetch(`${BASE}${path}`, { signal });
-  if (!res.ok) throw new Error(`${res.status} ${res.statusText} for ${path}`);
+  const res = NO_RETRY.test(path) ? await fetch(`${BASE}${path}`, { signal }) : await fetchRetry(path, { signal });
+  if (!res.ok) throw new ApiError(res.status, path);
   return (await res.json()) as T;
 }
 
@@ -88,13 +168,13 @@ export const api = {
       // Place uses `label`; server reads `name` for walk leg place names.
       name: p.name ?? p.label,
     });
-    const res = await fetch(`${BASE}/api/plan`, {
+    const res = await fetchRetry('/api/plan', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ from: endpoint(from), to: endpoint(to), ...when }),
       signal,
     });
-    if (!res.ok) throw new Error(`plan failed: ${res.status}`);
+    if (!res.ok) throw new ApiError(res.status, '/api/plan');
     return (await res.json()) as PlanResponse;
   },
 

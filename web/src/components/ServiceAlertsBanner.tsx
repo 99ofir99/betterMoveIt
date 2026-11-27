@@ -5,11 +5,13 @@
 
 import type { ServiceAlert } from '../types';
 import { t } from '../lib/i18n';
+import { BellIcon, InfoIcon } from './shared/icons';
 
-const SEVERITY_ICON: Record<ServiceAlert['severity'], string> = {
-  info: 'ℹ️',
-  warning: '⚠️',
-  critical: '🚨',
+// Drawn icons, not emoji: emoji render as colour pictures that clash with the UI.
+const SEVERITY_ICON: Record<ServiceAlert['severity'], JSX.Element> = {
+  info: <InfoIcon size={18} />,
+  warning: <BellIcon size={18} />,
+  critical: <BellIcon size={18} />,
 };
 
 interface ServiceAlertsBannerProps {

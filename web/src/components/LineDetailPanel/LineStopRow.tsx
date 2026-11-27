@@ -6,6 +6,7 @@
 import { departsTomorrow, formatClock12h } from '../../lib/format';
 import type { LineStopRowProps } from './types';
 import { t } from '../../lib/i18n';
+import { BusIcon } from '../shared/icons';
 
 export function LineStopRow({
   stop,
@@ -97,6 +98,7 @@ export function LineStopRow({
                     onLiveLocation(stop);
                   }}
                 >
+                  <BusIcon size={14} />
                   {t("Live location")}
                 </span>
               </span>

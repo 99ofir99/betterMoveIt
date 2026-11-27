@@ -1131,9 +1131,8 @@ select {
   font-weight: 700;
 }
 
-.lnd-stop__live::before {
-  content: '🚌';
-  font-size: 12px;
+.lnd-stop__live svg {
+  flex-shrink: 0;
 }
 
 .lnd-actions {
@@ -1176,8 +1175,7 @@ select {
 }
 
 .lnd-actions__start-icon {
-  font-size: 14px;
-  transform: translateY(1px);
+  display: inline-flex;
 }
 
 .lnd-actions__fav {
@@ -2185,11 +2183,11 @@ select {
 }
 
 .leg__intermediate summary::before {
-  content: "â–¸ ";
+  content: "\25B8  ";
 }
 
 .leg__intermediate[open] summary::before {
-  content: "â–¾ ";
+  content: "\25BE  ";
 }
 
 .leg__intermediate ol {
@@ -5515,7 +5513,7 @@ select {
 }
 
 .trip-progress__itinerary-toggle::before {
-  content: "â–¸";
+  content: "\25B8";
   display: inline-block;
   font-size: 11px;
   transition: transform 0.2s;

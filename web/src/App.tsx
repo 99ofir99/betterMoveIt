@@ -1,4 +1,5 @@
-﻿import { ResultsEmptyState } from "./components/results/ResultsEmptyState";
+﻿import { useApiRetrying } from "./lib/useApiRetrying";
+import { ResultsEmptyState } from "./components/results/ResultsEmptyState";
 import { displayPlaceLabel } from "./lib/placeLabel";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useAppState, type AppState } from "./lib/useAppState";
@@ -94,6 +95,7 @@ export default function App() {
   const [bestTimeDismissed, setBestTimeDismissed] = useState(false);
   // Directions detail (Moovit trip sheet) — separate from the results list.
   const [showJourneyDetail, setShowJourneyDetail] = useState(false);
+  const apiRetrying = useApiRetrying();
   // Results open raised to the top (user request); drag down or tap Map for the map.
   const resultsRef = useRef<HTMLDivElement>(null);
   const resultsCompact = useCompactOnScroll(resultsRef, state.panel === "journeys");
@@ -1137,7 +1139,13 @@ export default function App() {
               />
             </div>
 
-            {state.plan.loading && <p className="muted">{t("Finding the best routes…")}</p>}
+            {state.plan.loading && (
+              <p className="muted">
+                {apiRetrying
+                  ? t("Still searching… the server is waking up, this can take a few seconds.")
+                  : t("Finding the best routes…")}
+              </p>
+            )}
             {!state.plan.loading && journeys.length === 0 && (
               <ResultsEmptyState
                 reason={state.plan.reason}

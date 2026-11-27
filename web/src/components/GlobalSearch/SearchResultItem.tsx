@@ -1,8 +1,9 @@
 /** One search hit row — locations always show an empty/filled star. Visual only. */
 
 import { Icon } from '../icons/Icon';
+import { TransitModeIcon } from '../icons';
 import type { Line, Place, SearchResult, Stop } from '../../types';
-import { contrastText, modeIcon, routeColor } from '../../lib/format';
+import { contrastText, routeColor } from '../../lib/format';
 import { formatRailFinalCity } from '../../lib/lineCategory';
 import { isHeavyRailRoute, railTrainNumber } from '../../lib/railLabel';
 import { SearchFavButton } from './SearchFavButton';
@@ -70,7 +71,7 @@ export function SearchResultItem({
               .join(' ')}
             style={{ background: bg, color: contrastText(bg) }}
           >
-            {isTram ? null : modeIcon(line.typeName)} {badgeLabel}
+            {isTram ? null : <TransitModeIcon typeName={line.typeName || 'bus'} size={14} />} {badgeLabel}
           </span>
           <span className="suggestions__text">
             <span className="suggestions__name">{subtitle}</span>

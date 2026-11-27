@@ -431,4 +431,5 @@ export const HE: Record<string, string> = {
   'Allow location access in your browser or phone settings to see the nearest station and its departures.': 'כדי לראות את התחנה הקרובה והיציאות ממנה, צריך לאשר גישה למיקום בהגדרות הדפדפן או הטלפון.',
   '{n} stops in this area': '{n} תחנות באזור',
   'the stop': 'התחנה',
+  'Still searching… the server is waking up, this can take a few seconds.': 'עדיין מחפשים… השרת מתעורר, זה יכול לקחת כמה שניות.',
 };

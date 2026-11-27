@@ -3,6 +3,7 @@
  * Visual only; geocode / confirm live in useMapLocationPicker.
  */
 
+import { PinIcon } from '../icons';
 import { useEffect, useRef } from 'react';
 import maplibregl from 'maplibre-gl';
 import { ensureRtlTextPlugin } from '../../lib/rtlTextPlugin';
@@ -95,7 +96,7 @@ export function MapLocationPicker({
       <footer className="map-pick__footer">
         <div className="map-pick__location">
           <span className="map-pick__location-icon" aria-hidden="true">
-            📍
+            <PinIcon size={20} />
           </span>
           <div className="map-pick__location-text">
             <span className="map-pick__location-label">

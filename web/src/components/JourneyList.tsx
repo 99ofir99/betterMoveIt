@@ -23,6 +23,7 @@ import { previewLegs } from '../lib/previewLegs';
 import { BundledLineBadge } from './common/BundledLineBadge';
 import { SwipeRail } from './common/SwipeRail';
 import { ChevronRightIcon, WalkIcon } from './icons';
+import { LiveSignalIcon } from './shared/icons';
 import { TripStartBar } from './trip/TripStartBar';
 import { TripTips } from './results/TripTips';
 import type { JourneyDetailProps, JourneyListProps } from './types';
@@ -265,7 +266,7 @@ function JourneyCardFooter({
         {leaveLabel}
         {isLive && confidence !== 'off_route' && (
           <span className="journey-card__live-icon" aria-hidden="true">
-            ◉
+            <LiveSignalIcon size={12} />
           </span>
         )}
         {confidence === 'off_route' && (
