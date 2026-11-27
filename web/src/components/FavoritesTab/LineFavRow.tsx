@@ -1,5 +1,6 @@
 /** Favourite line row — uses shared LineBadge. Visual only. */
 
+import { LineEndpoints } from '../shared/LineEndpoints';
 import { LineBadge } from '../shared/LineBadge';
 import { StarIcon } from '../shared/icons';
 import { formatLineLongName, formatRailFinalCity } from '../../lib/lineCategory';
@@ -28,7 +29,7 @@ export function LineFavRow({ item, onOpen, onRemove }: LineRowProps) {
         <LineBadge label={name} mode={favLineMode(item.line)} />
         <span className="fav-row__body">
           <span className="fav-row__name" dir="auto">
-            {subtitle || item.line.agency}
+            {subtitle ? <LineEndpoints text={subtitle} /> : item.line.agency}
           </span>
           {item.stopName && <span className="fav-row__meta">{item.stopName}</span>}
         </span>

@@ -3291,6 +3291,13 @@ select {
   font-variant-numeric: tabular-nums;
 }
 
+.line-endpoints__arrow {
+  display: inline-block;
+  vertical-align: middle;
+  margin: -2px 6px 0;
+  opacity: 0.7;
+}
+
 .line-row__name {
   flex: 1;
   min-width: 0;

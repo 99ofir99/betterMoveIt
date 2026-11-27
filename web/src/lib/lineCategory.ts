@@ -39,8 +39,8 @@ export function lineMatchesCategory(line: Line, filter: LineCategoryFilter): boo
 function endpointCity(side: string): string {
   let s = side.trim();
   if (!s) return '';
-  // Strip trailing direction / variant codes: -10, -20, _תחנת…
-  s = s.replace(/[-_]\d{1,3}$/u, '').trim();
+  // Strip trailing direction / variant codes: -10, -20, -1#, _תחנת…
+  s = s.replace(/[-_]\d{1,3}#?$/u, '').trim();
   // Prefer text after the last slash (stop/area-city pattern).
   const afterSlash = s.includes('/') ? (s.split('/').pop() || s) : s;
   // Street-city hyphen: take the last hyphen segment when it looks like a place.

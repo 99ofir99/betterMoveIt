@@ -1,6 +1,7 @@
 import { formatLineLongName, formatRailFinalCity } from '../../lib/lineCategory';
 import { isHeavyRailRoute, railTrainNumber } from '../../lib/railLabel';
 import { isLightRailRoute } from '../../lib/transportMode';
+import { LineEndpoints } from '../shared/LineEndpoints';
 import { LineBadge } from '../shared/LineBadge';
 import type { LineRowProps } from './types';
 
@@ -23,7 +24,7 @@ export function LineRow({ line, onOpen, showDivider = true }: LineRowProps) {
       <button type="button" className="line-row__btn" onClick={() => onOpen(line)}>
         <LineBadge label={name} mode={lineBadgeMode(line)} />
         <span className="line-row__name" dir="auto">
-          {subtitle}
+          <LineEndpoints text={subtitle} />
         </span>
       </button>
     </div>
