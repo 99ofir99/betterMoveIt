@@ -7498,6 +7498,9 @@ button.ld-option {
 }
 
 /* Skeleton while the location / trip is still loading */
+.fdcard.is-loading {
+  cursor: default;
+}
 .fdcard__skel {
   display: block;
   height: 14px;
