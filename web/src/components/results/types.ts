@@ -13,7 +13,8 @@ export interface ResultsHeaderProps {
   onSwap: () => void;
   onEditFrom: () => void;
   onEditTo: () => void;
-  onOpenPreferences: () => void;
+  /** Omitted on the results screen, where the prefs chip sits with the filters. */
+  onOpenPreferences?: () => void;
   prefsBadgeCount?: number;
 }
 
@@ -30,6 +31,9 @@ export interface ResultsToolbarProps {
   onToggleMapView: () => void;
   sortMode: SortMode;
   onSortMode: (mode: SortMode) => void;
+  /** Route preferences chip, first in the filter row. */
+  onOpenPreferences?: () => void;
+  prefsBadgeCount?: number;
 }
 
 // ── Preferences ──────────────────────────────────────────────────────────────

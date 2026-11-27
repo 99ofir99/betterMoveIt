@@ -1,4 +1,5 @@
-﻿import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+﻿import { displayPlaceLabel } from "./lib/placeLabel";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useAppState, type AppState } from "./lib/useAppState";
 import { MapCanvas } from "./components/MapCanvas";
 import { JourneyList } from "./components/JourneyList";
@@ -573,7 +574,7 @@ export default function App() {
 
   const shareTrip = useCallback(async () => {
     if (!activeJourney || !state.from || !state.to) return;
-    const text = `${state.from.label} → ${state.to.label}\n${formatClock12h(activeJourney.departSeconds)} – ${formatClock12h(activeJourney.arrivalSeconds)}`;
+    const text = `${displayPlaceLabel(state.from.label)} → ${displayPlaceLabel(state.to.label)}\n${formatClock12h(activeJourney.departSeconds)} – ${formatClock12h(activeJourney.arrivalSeconds)}`;
     try {
       if (navigator.share) await navigator.share({ text });
       else await navigator.clipboard.writeText(text);
@@ -1096,8 +1097,6 @@ export default function App() {
               }}
               onEditFrom={() => openSearch("from")}
               onEditTo={() => openSearch("to")}
-              onOpenPreferences={() => setShowPreferences(true)}
-              prefsBadgeCount={prefsBadgeCount}
             />
 
             <ResultsToolbar
@@ -1109,6 +1108,8 @@ export default function App() {
               }
               sortMode={sortMode}
               onSortMode={setSortMode}
+              onOpenPreferences={() => setShowPreferences(true)}
+              prefsBadgeCount={prefsBadgeCount}
             />
 
             {state.plan.loading && <p className="muted">{t("Finding the best routes…")}</p>}
@@ -1484,7 +1485,7 @@ function PlanForm({
                   <Icon name="history" size={18} />
                 </span>
                 <span className="suggestions__text">
-                  <span className="suggestions__name">{place.label}</span>
+                  <span className="suggestions__name">{displayPlaceLabel(place.label)}</span>
                 </span>
               </button>
             ))}

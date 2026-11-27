@@ -1,5 +1,6 @@
 /** Recent location row with favourite star — visual only. */
 
+import { displayPlaceLabel } from '../../lib/placeLabel';
 import type { Place } from '../../types';
 import { Icon } from '../icons/Icon';
 import { SearchFavButton } from './SearchFavButton';
@@ -24,7 +25,7 @@ export function RecentPlaceRow({
           <Icon name="history" size={18} />
         </span>
         <span className="suggestions__text">
-          <span className="suggestions__name">{place.label}</span>
+          <span className="suggestions__name">{displayPlaceLabel(place.label)}</span>
         </span>
       </button>
       <SearchFavButton

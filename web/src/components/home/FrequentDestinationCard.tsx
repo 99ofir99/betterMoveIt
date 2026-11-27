@@ -3,6 +3,7 @@
  * Logic and data come from props (computed by useFrequentDestination).
  */
 
+import { displayPlaceLabel } from '../../lib/placeLabel';
 import type { Journey, TransitLeg, WalkLeg } from '../../types';
 import type { FrequentDestinationCardProps } from './types';
 import {
@@ -117,7 +118,7 @@ export function FrequentDestinationCard({ dest, onTap, onPickTime, onLiveBoardin
           onTap();
         }
       }}
-      aria-label={t('Quick trip to {name}', { name: place.label })}
+      aria-label={t('Quick trip to {name}', { name: displayPlaceLabel(place.label) })}
     >
       <div className="fdcard__header">
         <span className="fdcard__label">{t("My Frequent Destination")}</span>
@@ -152,7 +153,7 @@ export function FrequentDestinationCard({ dest, onTap, onPickTime, onLiveBoardin
       <div className="fdcard__body">
         <p className="fdcard__destination" dir="auto">
           <span className="fdcard__to-prefix">{t("To:")} </span>
-          <span className="fdcard__to-name">{place.label}</span>
+          <span className="fdcard__to-name">{displayPlaceLabel(place.label)}</span>
         </p>
 
         {loading && !journey && (
