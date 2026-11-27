@@ -1,7 +1,8 @@
-import { TransitStore } from '../server/src/store.js';
+import { TransitStore, getStore } from '../server/src/store.js';
 import { JourneyPlanner } from '../server/src/raptor.js';
 
-const store = new TransitStore(process.env.GTFS_DATA_DIR);
+// GTFS_DATA_DIR wins; otherwise the same lookup the server uses (data/gtfs-dist, then data/gtfs-sample).
+const store = process.env.GTFS_DATA_DIR ? new TransitStore(process.env.GTFS_DATA_DIR) : getStore();
 const planner = new JourneyPlanner(store);
 
 const fmt = (s) => `${String(Math.floor(s / 3600)).padStart(2, '0')}:${String(Math.floor((s % 3600) / 60)).padStart(2, '0')}`;

@@ -623,6 +623,9 @@ export function getStore() {
     path.resolve(process.cwd(), '../data/gtfs-dist'),
     path.resolve(process.cwd(), 'data/gtfs-dist'),
     'C:/Users/ofir/betterMoveIt-work/gtfs/dist',
+    // Last resort: the tiny synthetic feed from `npm run data:sample`.
+    path.resolve(process.cwd(), '../data/gtfs-sample'),
+    path.resolve(process.cwd(), 'data/gtfs-sample'),
   ].filter(Boolean);
 
   const dir = candidates.find((d) => {
@@ -635,9 +638,17 @@ export function getStore() {
   if (!dir) {
     throw new Error(
       `No transit data found. Looked in:\n  ${candidates.join('\n  ')}\n\n` +
-        'Run the ingest step first:\n' +
+        'Quick start with synthetic data:  npm run data:sample\n' +
+        'Real data:  npm run data  (bundled LFS archive or MOT download)\n\n' +
+        'Or run the ingest step yourself:\n' +
         '  npm run ingest -- <gtfs-raw-dir> <output-dir>\n' +
         'then set GTFS_DATA_DIR to that output directory.'
+    );
+  }
+  if (/gtfs-sample$/.test(dir.replace(/[\\/]+$/, ''))) {
+    console.warn(
+      `[transit] using SAMPLE data from ${dir} (synthetic, Tel Aviv only). ` +
+        'Run `npm run data` for the real national feed.'
     );
   }
   singleton = new TransitStore(dir);

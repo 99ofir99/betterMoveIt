@@ -58,7 +58,18 @@ async function extractArchive(src) {
   console.log('[prepare-data] prebuilt store ready');
 }
 
-if (fs.existsSync(bundledArchive)) {
+/** A Git LFS pointer is a ~130-byte text stub, not the real archive. */
+function isLfsPointer(file) {
+  if (fs.statSync(file).size > 1024) return false;
+  return fs.readFileSync(file, 'utf8').startsWith('version https://git-lfs');
+}
+
+if (fs.existsSync(bundledArchive) && isLfsPointer(bundledArchive)) {
+  console.warn(
+    `[prepare-data] ${path.relative(root, bundledArchive)} is a Git LFS pointer, not the archive.\n` +
+      '  Run `git lfs install && git lfs pull` to fetch it (64 MB). Falling back to the next source.'
+  );
+} else if (fs.existsSync(bundledArchive)) {
   console.log(`[prepare-data] using bundled ${bundledArchive}`);
   await extractArchive(bundledArchive);
   process.exit(0);

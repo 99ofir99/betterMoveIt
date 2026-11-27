@@ -6,6 +6,7 @@
   "main": "src/index.js",
   "scripts": {
     "dev": "node --watch src/index.js",
+    "dev:debug": "node --inspect --watch src/index.js",
     "start": "node src/index.js"
   },
   "dependencies": {

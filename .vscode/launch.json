@@ -1,0 +1,68 @@
+{
+  // Debug configs. F5 → "Full stack" is the usual starting point.
+  // Breakpoints work in server/src/*.js, web/src/**/*.ts(x) and tools/*.mjs.
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Server: launch API (:8787)",
+      "type": "node",
+      "request": "launch",
+      "cwd": "${workspaceFolder}/server",
+      "program": "${workspaceFolder}/server/src/index.js",
+      "runtimeArgs": ["--watch"],
+      "restart": true,
+      "console": "integratedTerminal",
+      "skipFiles": ["<node_internals>/**", "**/node_modules/**"]
+    },
+    {
+      "name": "Server: attach (:9229, after `npm run dev:debug`)",
+      "type": "node",
+      "request": "attach",
+      "port": 9229,
+      "restart": true,
+      "skipFiles": ["<node_internals>/**", "**/node_modules/**"]
+    },
+    {
+      "name": "Web: Chrome on Vite (:5173)",
+      "type": "chrome",
+      "request": "launch",
+      "url": "http://localhost:5173",
+      "webRoot": "${workspaceFolder}/web",
+      "preLaunchTask": "vite"
+    },
+    {
+      "name": "Tests: debug current test file",
+      "type": "node",
+      "request": "launch",
+      "cwd": "${workspaceFolder}/web",
+      "program": "${workspaceFolder}/node_modules/vitest/vitest.mjs",
+      "args": ["run", "${file}"],
+      "autoAttachChildProcesses": true,
+      "console": "integratedTerminal",
+      "skipFiles": ["<node_internals>/**", "**/node_modules/**"]
+    },
+    {
+      "name": "Tools: plan sample journeys (RAPTOR)",
+      "type": "node",
+      "request": "launch",
+      "cwd": "${workspaceFolder}",
+      "program": "${workspaceFolder}/tools/test-routes.mjs",
+      "console": "integratedTerminal"
+    },
+    {
+      "name": "Tools: run current .mjs file",
+      "type": "node",
+      "request": "launch",
+      "cwd": "${workspaceFolder}",
+      "program": "${file}",
+      "console": "integratedTerminal"
+    }
+  ],
+  "compounds": [
+    {
+      "name": "Full stack (API + Vite + Chrome)",
+      "configurations": ["Server: launch API (:8787)", "Web: Chrome on Vite (:5173)"],
+      "stopAll": true
+    }
+  ]
+}

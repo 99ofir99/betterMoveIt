@@ -23,7 +23,10 @@ _tmp_*
 
 # Editor / OS
 .idea/
-.vscode/
+.vscode/*
+!.vscode/launch.json
+!.vscode/tasks.json
+!.vscode/extensions.json
 
 # Env / local Vite PWA output
 .env

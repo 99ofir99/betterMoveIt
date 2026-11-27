@@ -59,6 +59,27 @@ Three deliberate decisions:
    `web/src/lib/`; components receive props and render. Shared types live in
    `web/src/types.ts`.
 
+## Quick start (development)
+
+```bash
+npm run setup     # deps + transit data + typecheck + tests (~15 s)
+npm run dev       # API :8787 + Vite :5173 with hot reload → http://localhost:5173
+```
+
+Without the real data, setup builds a tiny synthetic Tel Aviv feed (`data/gtfs-sample`) so
+the server boots instantly. For the national feed: `git lfs pull && npm run data`.
+
+| Task | Command |
+| --- | --- |
+| Debug the API | `npm run dev:debug`, then VS Code "Server: attach" or `chrome://inspect` |
+| Debug in VS Code | F5 → "Full stack (API + Vite + Chrome)" |
+| Unit tests | `npm test` · `npm run test:watch` |
+| Everything before pushing | `npm run verify` (typecheck + tests + build) |
+| Check every endpoint | `npm run smoke` |
+| Config (MOT key, ports…) | copy `.env.example` → `.env` |
+
+`CLAUDE.md` is a map of the codebase (what lives where, data format gotchas).
+
 ## Running it
 
 Prerequisites: Node 20+.
