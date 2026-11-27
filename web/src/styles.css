@@ -1607,6 +1607,12 @@ select {
   white-space: nowrap;
 }
 
+/* Arrival is what people plan around: bold and brighter than the departure above it. */
+.journey-card__clock--arrive {
+  font-weight: 700;
+  color: var(--text);
+}
+
 .journey-card__times-rail {
   width: 2px;
   height: 14px;
