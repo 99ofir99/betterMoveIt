@@ -31,6 +31,7 @@ run current tool script, and a "Full stack" compound.
   ~130-byte pointer; `tools/prepare-data.mjs` detects this and moves on to the next source.
 - GTFS CSV is parsed by `tools/lib/csv.mjs` (ingest + filter-gtfs). MOT writes Hebrew abbreviations with a bare `"` (e.g. `ת"א`) in unquoted fields; a quote only opens a quoted field at the start of a field. The old per-line quote counting merged/dropped ~3.4% of trips.
 - `ingest.mjs --days=N [--from=YYYYMMDD]` (or `INGEST_DAYS`) keeps only trips running in that window. Measured server RSS on the 2026-11-26 MOT feed: whole feed ~800 MB peak, 14 days ~620 MB, 7 days ~495 MB (Render free tier is 512 MB). A windowed store must be rebuilt before the window runs out (`meta.json` → `serviceWindow`).
+- Nightly data: `.github/workflows/gtfs-data.yml` builds a `GTFS_DAYS`-day store (default 10; 14 days boots ~460 MB, too close to 512) and publishes it as release asset `gtfs-data/gtfs-dist.tgz`, then POSTs every URL in secret `RENDER_DEPLOY_HOOKS`. A Render service picks it up with `GTFS_DIST_URL=https://github.com/99ofir99/betterMoveIt/releases/download/gtfs-data/gtfs-dist.tgz` and a build that removes `deploy/gtfs-dist.tgz` first (the bundled archive wins otherwise). `schedule` only runs from the default branch.
 - Binary format is written by `tools/ingest/ingest.mjs` and read by `TransitStore` in
   `store.js` — change both together. `stop_times.bin` is unpadded typed-array columns: an odd
   stop_times row count misaligns the Float32 column; `TransitStore` then copies that one column
