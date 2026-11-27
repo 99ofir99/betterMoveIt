@@ -171,7 +171,8 @@ export function FrequentDestinationCard({ dest, onTap, onPickTime, onLiveBoardin
 
             <LegChips journey={journey} />
 
-            {(leaveLabel != null || boardingStop) && (
+            {/* Walk-only: no departure to time, so no "Leaves now / Based on schedule". */}
+            {journey.legs.some((l) => l.mode === 'transit') && (leaveLabel != null || boardingStop) && (
               <div className="fdcard__leaves-block">
                 <p className="fdcard__leaves">
                   {leaveLabel != null ? (

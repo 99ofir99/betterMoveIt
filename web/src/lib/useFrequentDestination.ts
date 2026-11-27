@@ -18,6 +18,7 @@ import { journeyHasDeparted, markNextDay, plannedRideMinMinutes } from './journe
 import type { Journey, LatLon, Place, TransitLeg } from '../types';
 import type { FrequentDestResult } from '../components/home/types';
 import { getLocale } from './i18n';
+import { isAtDestination, isNearDestination } from './atDestination';
 
 /** ~50m — ignore GPS jitter so we don't abort / re-plan on every watch tick. */
 const REPLAN_DELTA = 0.00045;
@@ -180,6 +181,14 @@ export function useFrequentDestination(
       return;
     }
 
+    // Already at the destination: no card ("0 min, leaves now" is noise).
+    if (isNearDestination(planOrigin, destSnap)) {
+      abortRef.current?.abort();
+      journeyRef.current = null;
+      setResult(null);
+      return;
+    }
+
     abortRef.current?.abort();
     const ctrl = new AbortController();
     abortRef.current = ctrl;
@@ -208,6 +217,11 @@ export function useFrequentDestination(
         const planned = res.nextDay ? markNextDay(res.journeys) : res.journeys;
         const ranked = sortJourneys(planned.map(normalizeJourneyTiming), 'fastest');
         const journey: Journey | null = ranked[0] ?? null;
+        if (isAtDestination(planOrigin, destSnap, journey)) {
+          journeyRef.current = null;
+          setResult(null);
+          return;
+        }
         journeyRef.current = journey;
 
         let boardLeave: BoardLeave = null;

@@ -302,7 +302,9 @@ export function TripProgressSheet({
           {!gpsAllowed && !isDone && (
             <div className="trip-progress__gps-warn">
               <PinIcon size={14} />
-              {t("Using schedule · GPS unavailable")}
+              {legs.some((l) => l.mode === 'transit')
+                ? t("Using schedule · GPS unavailable")
+                : t("GPS unavailable")}
             </div>
           )}
 

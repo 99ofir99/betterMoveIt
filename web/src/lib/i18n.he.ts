@@ -331,6 +331,7 @@ export const HE: Record<string, string> = {
   'Use current location': 'שימוש במיקום הנוכחי',
   'Use my location': 'שימוש במיקום שלי',
   'Using schedule · GPS unavailable': 'לפי לוח הזמנים · GPS לא זמין',
+  'GPS unavailable': 'GPS לא זמין',
   'Wait for one of these options': 'המתנה לאחת מהאפשרויות',
   'Wait for {line}': 'ממתינים ל{line}',
   'Waiting to board': 'ממתינים לעלייה',
