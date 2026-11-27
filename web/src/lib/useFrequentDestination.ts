@@ -13,7 +13,8 @@ import { api } from './api';
 import { normalizeJourneyTiming } from './journeyTiming';
 import { sortJourneys } from './sort';
 import { bestBoardingMinutes } from './boardingEta';
-import { minutesUntilDepart } from './format';
+import { minutesUntilDepart, secondsSinceLocalMidnight } from './format';
+import { journeyHasDeparted } from './journeyStale';
 import type { Journey, LatLon, Place, TransitLeg } from '../types';
 import type { FrequentDestResult } from '../components/home/types';
 import { getLocale } from './i18n';
@@ -21,10 +22,9 @@ import { getLocale } from './i18n';
 /** ~50m — ignore GPS jitter so we don't abort / re-plan on every watch tick. */
 const REPLAN_DELTA = 0.00045;
 
-/** Seconds from midnight for the current local time. */
+/** Seconds from midnight, Israel time (feed clock). */
 function nowSeconds(): number {
-  const d = new Date();
-  return d.getHours() * 3600 + d.getMinutes() * 60 + d.getSeconds();
+  return secondsSinceLocalMidnight();
 }
 
 /** Format seconds-from-midnight as "h:mm AM/PM". */
@@ -118,6 +118,15 @@ export function useFrequentDestination(
   const [planOrigin, setPlanOrigin] = useState<LatLon | null>(null);
   const abortRef = useRef<AbortController | null>(null);
   const journeyRef = useRef<Journey | null>(null);
+  /** Bumped when the planned bus has left, so the card plans again from now. */
+  const [replan, setReplan] = useState(0);
+  const lastReplanRef = useRef(0);
+  /** At most one automatic re-plan a minute, so a skewed device clock can't loop. */
+  const requestReplan = () => {
+    if (Date.now() - lastReplanRef.current < 60_000) return;
+    lastReplanRef.current = Date.now();
+    setReplan((n) => n + 1);
+  };
 
   // Stabilize GPS so continuous watchPosition updates don't thrash planning.
   useEffect(() => {
@@ -222,9 +231,20 @@ export function useFrequentDestination(
         }
       });
 
-    // Refresh live boarding ETA every 25s without re-planning the whole trip.
+    // Refresh live boarding ETA every 25s; re-plan only once the planned bus has left.
+    const onVisible = () => {
+      const j = journeyRef.current;
+      if (document.visibilityState !== 'hidden' && j && journeyHasDeparted(j)) {
+        requestReplan();
+      }
+    };
+    document.addEventListener('visibilitychange', onVisible);
     const refreshId = window.setInterval(() => {
       const j = journeyRef.current;
+      if (j && journeyHasDeparted(j)) {
+        requestReplan();
+        return;
+      }
       const firstTransit = j?.legs.find((l): l is TransitLeg => l.mode === 'transit');
       if (!j || !firstTransit?.from.stopId) return;
       void api
@@ -244,9 +264,10 @@ export function useFrequentDestination(
     return () => {
       ctrl.abort();
       window.clearInterval(refreshId);
+      document.removeEventListener('visibilitychange', onVisible);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [planOrigin?.lat, planOrigin?.lon, tick]);
+  }, [planOrigin?.lat, planOrigin?.lon, tick, replan]);
 
   return result;
 }

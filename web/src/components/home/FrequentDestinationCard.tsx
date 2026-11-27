@@ -139,7 +139,12 @@ export function FrequentDestinationCard({ dest, onTap }: FrequentDestinationCard
                   {leaveLabel != null ? (
                     <>
                       <span className="fdcard__leaves-label">
-                        {relativeLeave ? t('Leaves in') : t('Leaves at')}
+                        {/* "Leaves now", not "Leaves in now". */}
+                        {leavesInMin != null && leavesInMin <= 0
+                          ? t('Leaves')
+                          : relativeLeave
+                            ? t('Leaves in')
+                            : t('Leaves at')}
                       </span>
                       {leavesLive && leavesConfidence !== 'off_route' && (
                         <LiveSignalIcon size={14} className={`fdcard__live-icon ${accClass}`} />

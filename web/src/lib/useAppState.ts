@@ -8,6 +8,7 @@
 
 import { arriveBySearchStart, rankForArriveBy } from './arriveBy';
 import { israelClock } from './format';
+import { journeyHasDeparted } from './journeyStale';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { api } from './api';
 import { saveHistoryEntry } from './history';
@@ -314,6 +315,34 @@ export function useAppState(opts?: { watchLocation?: boolean }) {
     },
     [departTime, from, planDate, to, when]
   );
+
+  // "Depart now" results left open go stale: once a listed bus has left, plan again
+  // from the current time (checked every 30 s and when the app comes back to front).
+  const planTripRef = useRef(planTrip);
+  planTripRef.current = planTrip;
+  /** At most one automatic re-plan a minute, so a skewed device clock can't loop. */
+  const lastAutoReplanRef = useRef(0);
+  useEffect(() => {
+    if (when !== 'now' || panel !== 'journeys' || plan.loading || plan.journeys.length === 0) {
+      return;
+    }
+    const journeys = plan.journeys;
+    const check = () => {
+      if (document.visibilityState === 'hidden') return;
+      if (Date.now() - lastAutoReplanRef.current < 60_000) return;
+      if (journeys.some((j) => journeyHasDeparted(j))) {
+        lastAutoReplanRef.current = Date.now();
+        void planTripRef.current(undefined, undefined, { forceNow: true });
+      }
+    };
+    check();
+    const id = window.setInterval(check, 30_000);
+    document.addEventListener('visibilitychange', check);
+    return () => {
+      window.clearInterval(id);
+      document.removeEventListener('visibilitychange', check);
+    };
+  }, [when, panel, plan.loading, plan.journeys]);
 
   const swapEnds = useCallback(() => {
     setFrom(to);
