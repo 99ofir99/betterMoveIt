@@ -9,6 +9,7 @@ export function LineStopList({
   boardIndex,
   pickingDestination,
   onSelectStop,
+  onLiveLocation,
 }: LineStopListProps) {
   return (
     <ol className="lnd-stops" aria-label="Stops along this line">
@@ -30,6 +31,7 @@ export function LineStopList({
             pickingDestination={pickingDestination}
             disabled={disabled}
             onSelect={onSelectStop}
+            onLiveLocation={onLiveLocation}
           />
         );
       })}

@@ -1,6 +1,6 @@
 /** Types for Moovit-style line detail (direction swap + ride-from-stop). */
 
-import type { Journey, LineScheduleStop, Stop } from '../../types';
+import type { Journey, Line, LineScheduleStop, Stop } from '../../types';
 
 export interface LineDetailPanelProps {
   lineId: string;
@@ -11,6 +11,10 @@ export interface LineDetailPanelProps {
   onStartLineRide?: (journey: Journey) => void;
   /** Open the paired opposite-corridor route (Israel GTFS A↔B / B↔A). */
   onSwitchLine?: (lineId: string) => void;
+  /** Line metadata loaded (App derives live-bus match keys from it). */
+  onLineLoaded?: (line: Line) => void;
+  /** "Live location" on a stop card: show this line's buses heading there. */
+  onLiveLocation?: (stop: Stop) => void;
 }
 
 export interface LineDirectionHeaderProps {
@@ -35,6 +39,8 @@ export interface LineStopRowProps {
   pickingDestination: boolean;
   disabled: boolean;
   onSelect: (index: number) => void;
+  /** Present only for bus lines (light rail / trains have no live location). */
+  onLiveLocation?: (stop: Stop) => void;
 }
 
 export interface LineStopListProps {
@@ -43,6 +49,7 @@ export interface LineStopListProps {
   boardIndex: number | null;
   pickingDestination: boolean;
   onSelectStop: (index: number) => void;
+  onLiveLocation?: (stop: Stop) => void;
 }
 
 export interface LineDetailActionsProps {

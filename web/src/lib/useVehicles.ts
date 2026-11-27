@@ -12,13 +12,17 @@ export function useVehicles(enabled: boolean, bbox?: [number, number, number, nu
   const [configured, setConfigured] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [updatedAt, setUpdatedAt] = useState<number | null>(null);
+  /** True until the first response after enabling (UI shows "Finding buses…"). */
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     if (!enabled) {
       setVehicles([]);
+      setLoading(false);
       return;
     }
     let cancelled = false;
+    setLoading(true);
     const load = async () => {
       try {
         const r = await api.vehicles({ bbox: bbox ?? undefined, routeId: routeId ?? undefined });
@@ -29,6 +33,8 @@ export function useVehicles(enabled: boolean, bbox?: [number, number, number, nu
         setError(r.error);
       } catch (e) {
         if (!cancelled) setError(String((e as Error).message ?? e));
+      } finally {
+        if (!cancelled) setLoading(false);
       }
     };
     void load();
@@ -39,5 +45,5 @@ export function useVehicles(enabled: boolean, bbox?: [number, number, number, nu
     };
   }, [enabled, bbox?.[0], bbox?.[1], bbox?.[2], bbox?.[3], routeId]);
 
-  return { vehicles, configured, error, updatedAt };
+  return { vehicles, configured, error, updatedAt, loading };
 }

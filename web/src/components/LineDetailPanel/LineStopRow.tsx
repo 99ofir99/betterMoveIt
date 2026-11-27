@@ -15,6 +15,7 @@ export function LineStopRow({
   disabled,
   onSelect,
   index,
+  onLiveLocation,
 }: LineStopRowProps) {
   const times = stop.next.slice(0, 3);
   const primary = times[0];
@@ -73,9 +74,28 @@ export function LineStopRow({
                 </span>
               )}
             </span>
-            <span className="lnd-stop__card-actions" aria-hidden>
-              <span className="lnd-stop__live">Live location</span>
-            </span>
+            {onLiveLocation && (
+              <span className="lnd-stop__card-actions">
+                {/* span, not button: the whole row is already a button */}
+                <span
+                  className="lnd-stop__live"
+                  role="button"
+                  tabIndex={0}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onLiveLocation(stop);
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key !== 'Enter' && e.key !== ' ') return;
+                    e.preventDefault();
+                    e.stopPropagation();
+                    onLiveLocation(stop);
+                  }}
+                >
+                  Live location
+                </span>
+              </span>
+            )}
           </span>
         ) : (
           <span className="lnd-stop__plain">

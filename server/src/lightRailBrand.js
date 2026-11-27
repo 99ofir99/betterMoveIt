@@ -13,6 +13,12 @@ export const TEVEL_AGENCY_IDS = new Set(['22']);
 /** Jerusalem light rail (Cfir / כפיר). */
 export const JERUSALEM_TRAM_AGENCY_IDS = new Set(['21']);
 
+/** SIRI OperatorRef values for light rail — no live bus tracking for these. */
+export function isLightRailOperator(operatorRef) {
+  const id = String(operatorRef ?? '');
+  return TEVEL_AGENCY_IDS.has(id) || JERUSALEM_TRAM_AGENCY_IDS.has(id);
+}
+
 /** Moovit Red Line fill when the feed leaves route_color empty. */
 export const LIGHT_RAIL_RED = '#E53935';
 

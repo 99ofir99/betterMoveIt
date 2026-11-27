@@ -9,6 +9,7 @@ import { JourneyPlanner } from './raptor.js';
 import { departuresAtStop, nextForRouteAtStop } from './departures.js';
 import { fetchActiveVehicles, fetchStopMonitoring, siriConfigured } from './siri.js';
 import { applyVehicleEtas } from './vehicleEta.js';
+import { isLightRailOperator } from './lightRailBrand.js';
 import {
   buildAccuracyFields,
   distanceToPolyline,
@@ -332,7 +333,11 @@ app.get('/api/vehicles', async (req, res) => {
     : null;
   const routeId = req.query.routeId ? String(req.query.routeId) : undefined;
   const result = await fetchActiveVehicles({ bbox, routeId });
-  res.json(result);
+  // Light rail runs on its own timetable and isn't shown as Live location (R1 ≠ bus 1).
+  res.json({
+    ...result,
+    vehicles: (result.vehicles ?? []).filter((v) => !isLightRailOperator(v.operatorRef)),
+  });
 });
 
 /** Lightweight service-status banner (SIRI configured / feed age). */

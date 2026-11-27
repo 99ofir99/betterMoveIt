@@ -64,6 +64,8 @@ function mapRow(row, now) {
     vehicleId: String(row.siri_ride__vehicle_ref ?? row.id),
     routeId,
     lineName: resolveLineName(routeId),
+    operatorRef:
+      row.siri_route__operator_ref != null ? String(row.siri_route__operator_ref) : undefined,
     lat,
     lon,
     bearing: row.bearing != null ? Number(row.bearing) : undefined,

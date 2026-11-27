@@ -482,6 +482,8 @@ export class TransitStore {
       displayName,
       longName,
       agency,
+      // GTFS agency_id == SIRI OperatorRef; lets live buses match the exact operator's line.
+      agencyId,
       color,
       type,
       typeName,

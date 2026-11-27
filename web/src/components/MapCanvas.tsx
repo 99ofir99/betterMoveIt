@@ -16,6 +16,7 @@ import {
   DEFAULT_MAP_STYLE_URL,
 } from '../lib/mapStyle';
 import { getOverlayCameraPadding, visibleTargetOffset } from '../lib/mapOverlayPadding';
+import { LiveVehicleLayer, pickSpotlight } from './map/liveVehicleLayer';
 
 interface MapCanvasProps {
   center: LatLon;
@@ -60,6 +61,15 @@ interface MapCanvasProps {
    * Used by the parent to show a "Recenter" button.
    */
   onUserPan?: () => void;
+  /**
+   * Bumping `key` (Live location pressed) fits the camera to the tracked buses
+   * nearest `near` (e.g. the boarding stop) and makes them blink.
+   */
+  liveFocus?: { key: number; near: LatLon | null } | null;
+  /** Vehicles still loading — a pending focus waits instead of giving up. */
+  liveFocusLoading?: boolean;
+  /** Reports how many buses were spotlighted (0 = none reporting right now). */
+  onLiveFocusDone?: (count: number) => void;
 }
 
 /** @deprecated Prefer VECTOR_STYLE_URL / mapStyle helpers. Kept for external imports. */
@@ -189,11 +199,16 @@ export function MapCanvas({
   followUser = false,
   focusLegIndex = null,
   onUserPan,
+  liveFocus = null,
+  liveFocusLoading = false,
+  onLiveFocusDone,
 }: MapCanvasProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<maplibregl.Map | null>(null);
   const markersRef = useRef<maplibregl.Marker[]>([]);
-  const vehicleMarkersRef = useRef<maplibregl.Marker[]>([]);
+  const vehicleLayerRef = useRef<LiveVehicleLayer | null>(null);
+  const onLiveFocusDoneRef = useRef(onLiveFocusDone);
+  onLiveFocusDoneRef.current = onLiveFocusDone;
   const tripMarkersRef = useRef<maplibregl.Marker[]>([]);
   const previewMarkersRef = useRef<maplibregl.Marker[]>([]);
   const youMarkerRef = useRef<maplibregl.Marker | null>(null);
@@ -422,53 +437,84 @@ export function MapCanvas({
     return () => cancelAnimationFrame(raf);
   }, [headingDeg, userLocation?.lat, userLocation?.lon]);
 
-  // Live bus markers - optimized for performance
+  // Live bus markers: persistent per vehicle, glide between GPS pings.
   useEffect(() => {
     const map = mapRef.current;
     if (!map) return;
-    
-    // Clear old markers
-    for (const m of vehicleMarkersRef.current) m.remove();
-    vehicleMarkersRef.current = [];
-    
-    // Caller (App) already prioritizes nearest + journey lines; keep a safety cap.
-    const visibleVehicles = vehicles.slice(0, 100);
-    
-    const now = Date.now();
-    for (const v of visibleVehicles) {
-      const el = document.createElement('div');
-      const label = v.lineName || v.routeId || '🚌';
-      const ageSec = Number.isFinite(v.timestamp)
-        ? Math.max(0, Math.round((now - v.timestamp) / 1000))
-        : null;
-      // Moovit Live Location: green / yellow / red from GPS freshness.
-      const acc =
-        ageSec == null
-          ? 'none'
-          : ageSec <= 45
-            ? 'high'
-            : ageSec <= 120
-              ? 'medium'
-              : ageSec <= 240
-                ? 'low'
-                : 'none';
-      const ageText =
-        ageSec == null
-          ? 'no signal'
-          : ageSec < 5
-            ? 'just now'
-            : ageSec < 60
-              ? `${ageSec}s ago`
-              : `${Math.floor(ageSec / 60)}m ago`;
-      el.className = `bus-marker is-acc-${acc}${acc === 'high' ? ' is-fresh' : acc === 'none' ? ' is-stale' : ''}`;
-      el.title = `Line ${label} · updated ${ageText}`;
-      el.innerHTML = `<span class="bus-marker__label">${label}</span><span class="bus-marker__age">${ageText}</span>`;
-      const marker = new maplibregl.Marker({ element: el, anchor: 'center' })
-        .setLngLat([v.lon, v.lat])
-        .addTo(map);
-      vehicleMarkersRef.current.push(marker);
-    }
+    if (!vehicleLayerRef.current) vehicleLayerRef.current = new LiveVehicleLayer(map);
+    // Caller (App) already filters to the tracked lines; keep a safety cap.
+    vehicleLayerRef.current.update(vehicles.slice(0, 100));
   }, [vehicles]);
+
+  useEffect(
+    () => () => {
+      vehicleLayerRef.current?.destroy();
+      vehicleLayerRef.current = null;
+    },
+    [],
+  );
+
+  // Live location pressed: fly to the nearest tracked buses and make them blink.
+  const pendingFocusRef = useRef<{ key: number; near: LatLon | null; since: number } | null>(null);
+  const [focusTick, setFocusTick] = useState(0);
+  useEffect(() => {
+    if (!liveFocus) return;
+    pendingFocusRef.current = { key: liveFocus.key, near: liveFocus.near, since: Date.now() };
+    // Re-check once the first poll has had time to land, even if nothing changed.
+    const t = window.setTimeout(() => setFocusTick((n) => n + 1), 2500);
+    const t2 = window.setTimeout(() => setFocusTick((n) => n + 1), 9500);
+    return () => {
+      window.clearTimeout(t);
+      window.clearTimeout(t2);
+    };
+  }, [liveFocus?.key]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    const map = mapRef.current;
+    const layer = vehicleLayerRef.current;
+    const pending = pendingFocusRef.current;
+    if (!map || !pending) return;
+    const positions = layer?.positions() ?? [];
+    if (!positions.length) {
+      // First poll may still be in flight — give it a few seconds before giving up.
+      const waited = Date.now() - pending.since;
+      if (waited > 9000 || (waited > 2000 && !liveFocusLoading)) {
+        pendingFocusRef.current = null;
+        onLiveFocusDoneRef.current?.(0);
+      }
+      return;
+    }
+    pendingFocusRef.current = null;
+    const picked = pickSpotlight(positions, pending.near);
+    layer?.spotlight(picked.map((p) => p.id));
+    const pts = picked.map((p) => [p.lon, p.lat] as [number, number]);
+    if (pending.near) pts.push([pending.near.lon, pending.near.lat]);
+    let minLon = Infinity, minLat = Infinity, maxLon = -Infinity, maxLat = -Infinity;
+    for (const [lon, lat] of pts) {
+      minLon = Math.min(minLon, lon);
+      maxLon = Math.max(maxLon, lon);
+      minLat = Math.min(minLat, lat);
+      maxLat = Math.max(maxLat, lat);
+    }
+    const pad = getOverlayCameraPadding(map.getContainer());
+    map.fitBounds(
+      [
+        [minLon, minLat],
+        [maxLon, maxLat],
+      ],
+      {
+        padding: {
+          top: Math.max(pad.top, 80) + 24,
+          bottom: Math.max(pad.bottom, 160) + 24,
+          left: Math.max(pad.left, 48),
+          right: Math.max(pad.right, 48),
+        },
+        maxZoom: 16,
+        duration: 900,
+      },
+    );
+    onLiveFocusDoneRef.current?.(picked.length);
+  }, [vehicles, liveFocus?.key, liveFocusLoading, focusTick]);
 
   // Selected line geometry (Lines tab).
   useEffect(() => {

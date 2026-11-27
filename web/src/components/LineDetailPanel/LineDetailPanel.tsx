@@ -3,7 +3,9 @@
  * expanded schedule card, Start → onboard ride.
  */
 
-import { railTrainNumber } from '../../lib/railLabel';
+import { useEffect, useRef } from 'react';
+import { isLiveTrackableRoute } from '../../lib/prioritizeVehicles';
+import { isHeavyRailRoute, railTrainNumber } from '../../lib/railLabel';
 import { RouteBadge } from '../common/RouteBadge';
 import { Icon } from '../icons/Icon';
 import { LineDestinationBar } from './LineDestinationBar';
@@ -27,8 +29,17 @@ export function LineDetailPanel({
   onGeometryChange,
   onStartLineRide,
   onSwitchLine,
+  onLineLoaded,
+  onLiveLocation,
 }: LineDetailPanelProps) {
   const s = useLineDetail(lineId, onGeometryChange, onSwitchLine);
+  const onLineLoadedRef = useRef(onLineLoaded);
+  onLineLoadedRef.current = onLineLoaded;
+  useEffect(() => {
+    if (s.line) onLineLoadedRef.current?.(s.line);
+  }, [s.line]);
+  // No live location for light rail / trains (R1 would otherwise match bus 1).
+  const liveHandler = s.line && isLiveTrackableRoute(s.line) ? onLiveLocation : undefined;
   const boardStop =
     s.boardIndex != null && s.data ? s.data.stops[s.boardIndex] : null;
   const agency = agencyLabel(s.line?.agency);
@@ -51,7 +62,7 @@ export function LineDetailPanel({
         {s.line && (
           <RouteBadge
             className="lnd-header__badge"
-            label={railTrainNumber(s.line)}
+            label={isHeavyRailRoute(s.line) ? railTrainNumber(s.line) : s.line.displayName || s.line.shortName}
             typeName={s.line.typeName}
             color={s.line.color}
           />
@@ -85,6 +96,7 @@ export function LineDetailPanel({
           boardIndex={s.boardIndex}
           pickingDestination={s.pickingDestination}
           onSelectStop={handleSelectStop}
+          onLiveLocation={liveHandler}
         />
       )}
 
