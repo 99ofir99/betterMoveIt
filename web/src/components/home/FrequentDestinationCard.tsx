@@ -91,7 +91,10 @@ export function FrequentDestinationCard({ dest, onTap, onPickTime, onLiveBoardin
     arriveLabel,
     durationMin,
     boardingStop,
+    pending,
   } = dest;
+  // Skeleton until we know where the user is and have a trip to show.
+  const skeleton = Boolean(pending) || (loading && !journey);
 
   // Tomorrow's trip (no more service today): "Leaves tomorrow 18:39", never a countdown.
   const leaveLabel =
@@ -122,7 +125,7 @@ export function FrequentDestinationCard({ dest, onTap, onPickTime, onLiveBoardin
     >
       <div className="fdcard__header">
         <span className="fdcard__label">{t("My Frequent Destination")}</span>
-        <span className="fdcard__chips">
+        {!pending && <span className="fdcard__chips">
           <button
             type="button"
             className="fdcard__chip"
@@ -147,18 +150,22 @@ export function FrequentDestinationCard({ dest, onTap, onPickTime, onLiveBoardin
             <LiveSignalIcon size={14} />
             <BusIcon size={16} />
           </button>
-        </span>
+        </span>}
       </div>
 
+      {skeleton ? (
+        <div className="fdcard__body" aria-hidden="true">
+          <span className="fdcard__skel fdcard__skel--title" />
+          <span className="fdcard__skel fdcard__skel--line" />
+          <span className="fdcard__skel fdcard__skel--legs" />
+          <span className="fdcard__skel fdcard__skel--short" />
+        </div>
+      ) : (
       <div className="fdcard__body">
         <p className="fdcard__destination" dir="auto">
           <span className="fdcard__to-prefix">{t("To:")} </span>
           <span className="fdcard__to-name">{displayPlaceLabel(place.label)}</span>
         </p>
-
-        {loading && !journey && (
-          <p className="fdcard__loading muted">{t("Planning route…")}</p>
-        )}
 
         {journey && (
           <>
@@ -217,6 +224,7 @@ export function FrequentDestinationCard({ dest, onTap, onPickTime, onLiveBoardin
           <p className="fdcard__tap-hint muted">{t("Tap to plan a trip")}</p>
         )}
       </div>
+      )}
     </div>
   );
 }

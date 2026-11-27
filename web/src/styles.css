@@ -7497,6 +7497,27 @@ button.ld-option {
   margin: 4px 0 0;
 }
 
+/* Skeleton while the location / trip is still loading */
+.fdcard__skel {
+  display: block;
+  height: 14px;
+  border-radius: 7px;
+  background: linear-gradient(90deg, var(--surface-3) 25%, #3a3b40 50%, var(--surface-3) 75%);
+  background-size: 200% 100%;
+  animation: fdcard-shimmer 1.4s ease-in-out infinite;
+}
+.fdcard__skel--title { width: 45%; height: 20px; border-radius: 10px; }
+.fdcard__skel--line { width: 62%; }
+.fdcard__skel--legs { width: 55%; height: 44px; border-radius: 12px; margin-top: 6px; }
+.fdcard__skel--short { width: 38%; margin-top: 6px; }
+@keyframes fdcard-shimmer {
+  from { background-position: 100% 0; }
+  to { background-position: -100% 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .fdcard__skel { animation: none; }
+}
+
 .fdcard__tap-hint {
   margin: 4px 0 0;
   font-size: 14px;

@@ -20,6 +20,9 @@ import type { FrequentDestResult } from '../components/home/types';
 import { getLocale } from './i18n';
 import { isAtDestination, pickFrequentDestination } from './atDestination';
 
+/** How long the card waits for a GPS fix before falling back to the first saved place. */
+const LOCATION_WAIT_MS = 8000;
+
 /** ~50m — ignore GPS jitter so we don't abort / re-plan on every watch tick. */
 const REPLAN_DELTA = 0.00045;
 
@@ -131,6 +134,15 @@ export function useFrequentDestination(
     setReplan((n) => n + 1);
   };
 
+  // While there is no fix yet the card shows a skeleton, not a guessed
+  // destination (the user may be standing at it). Give up after a while.
+  const [locationWaitOver, setLocationWaitOver] = useState(false);
+  useEffect(() => {
+    if (userLocation) return;
+    const id = window.setTimeout(() => setLocationWaitOver(true), LOCATION_WAIT_MS);
+    return () => window.clearTimeout(id);
+  }, [userLocation == null]);
+
   // Stabilize GPS so continuous watchPosition updates don't thrash planning.
   useEffect(() => {
     if (!userLocation) {
@@ -168,11 +180,12 @@ export function useFrequentDestination(
     const destSnap = dest; // capture for closure
 
     if (!planOrigin) {
-      // Show destination name without journey detail.
+      // No fix yet: skeleton; no fix at all: destination name with "tap to plan".
       setResult({
         place: destSnap,
         journey: null,
-        loading: false,
+        loading: !locationWaitOver,
+        pending: !locationWaitOver,
         ...emptyDerived,
       });
       return;
@@ -238,7 +251,7 @@ export function useFrequentDestination(
       })
       .catch(() => {
         if (!ctrl.signal.aborted) {
-          setResult((prev) => (prev ? { ...prev, loading: false } : null));
+          setResult((prev) => (prev ? { ...prev, loading: false, pending: false } : null));
         }
       });
 
@@ -283,7 +296,7 @@ export function useFrequentDestination(
       document.removeEventListener('visibilitychange', onVisible);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [planOrigin?.lat, planOrigin?.lon, tick, replan]);
+  }, [planOrigin?.lat, planOrigin?.lon, tick, replan, locationWaitOver]);
 
   return result;
 }
