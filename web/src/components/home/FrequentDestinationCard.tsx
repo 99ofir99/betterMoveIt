@@ -202,7 +202,7 @@ export function FrequentDestinationCard({ dest, onTap, onPickTime, onLiveBoardin
                     <>
                       <span className="fdcard__leaves-label">
                         {/* "Leaves now", not "Leaves in now". */}
-                        {leavesTomorrow || (leavesInMin != null && leavesInMin <= 0)
+                        {leavesTomorrow || farDay || (leavesInMin != null && leavesInMin <= 0)
                           ? t('Leaves')
                           : relativeLeave
                             ? t('Leaves in')

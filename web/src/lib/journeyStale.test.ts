@@ -49,6 +49,9 @@ describe('day-aware departures', () => {
     expect(departureDayLabel(dep, 0, sat0035)).toBe('Saturday');
     expect(departureDayLabel(dep, 1, sat0035)).toBe('Tomorrow');
     expect(departureDayLabel(sat0035.seconds + 1200, 0, sat0035)).toBe('');
+    // Daytime: later the same day never gets a day name, even 8 hours ahead.
+    expect(departureDayLabel(22 * 3600, 0, { isoDate: '2026-11-28', seconds: 14 * 3600 })).toBe('');
+    expect(departureDayLabel(dep, 2, sat0035)).toBe('Monday');
     expect(departureDayLabel(86400 + 600, 0, { isoDate: '2026-11-28', seconds: 23 * 3600 })).toBe('Tomorrow');
   });
   it('dayOffsetOf reads the service date', () => {
