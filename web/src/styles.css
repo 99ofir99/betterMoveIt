@@ -7041,9 +7041,10 @@ button.ld-option {
   gap: 20px;
   overflow: hidden;
   /* Dusk sky — keep the palette, soften the falloff */
+  /* Dusk sky: a soft horizon glow behind the skyline, then down to the page. */
   background:
-    radial-gradient(90% 55% at 50% 108%, rgba(58, 110, 190, 0.42) 0%, rgba(58, 110, 190, 0) 62%),
-    linear-gradient(180deg, #060a10 0%, #0c1728 42%, #16304e 100%);
+    radial-gradient(120% 42% at 50% 46%, rgba(58, 110, 190, 0.3) 0%, rgba(58, 110, 190, 0) 70%),
+    linear-gradient(180deg, #060a10 0%, #0c1728 38%, #0b1626 62%, var(--bg) 100%);
 }
 
 .home-hero::before {
@@ -7064,8 +7065,8 @@ button.ld-option {
   inset-inline-start: 0;
   inset-inline-end: 0;
   bottom: 0;
-  height: 48px;
-  background: linear-gradient(180deg, rgba(0, 0, 0, 0) 0%, var(--bg) 100%);
+  height: 96px;
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0) 0%, var(--bg) 85%);
   z-index: 1;
   pointer-events: none;
 }
@@ -7115,9 +7116,7 @@ button.ld-option {
 .home-hero__art-svg {
   width: 100%;
   height: 100%;
-  opacity: 0.88;
-  /* Bias the skyline into the upper band; keep the pill over clean haze */
-  transform: translateY(-8%);
+  opacity: 0.92;
 }
 
 /* â”€â”€ Search pill â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
