@@ -20,6 +20,8 @@ export interface DirectionsSheetProps {
 
 export interface DirectionsSummaryProps {
   durationSec: number;
+  /** Trip runs tomorrow. */
+  nextDay?: boolean;
   arrivalSeconds: number;
   /** Optional formatted fare (e.g. `₪16.00`) — omitted when the journey has none. */
   fare?: string;
@@ -35,6 +37,8 @@ export interface RouteSequenceProps {
 
 export interface ShiftStripProps {
   departSeconds: number;
+  /** Trip runs tomorrow. */
+  nextDay?: boolean;
   arrivalSeconds: number;
   onEarlier: () => void;
   onLater: () => void;
