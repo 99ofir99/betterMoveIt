@@ -81,7 +81,7 @@ function TransitRow({ leg, hideBoardStop, onStopClick, alternatives }: Itinerary
   return (
     <>
       <div className="itin__line-row">
-        <SwipeRail className="itin__line">
+        <SwipeRail className="itin__line" rtlOpenAtEnd={false}>
           <BundledLineBadge routes={routes} />
           {destination ? <span className="itin__headsign">{destination}</span> : null}
         </SwipeRail>

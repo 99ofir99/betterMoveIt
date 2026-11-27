@@ -28,7 +28,7 @@ export function ShowingStopsForBar({
           </button>
         ) : null}
       </div>
-      <SwipeRail className="ld-ride__line-row">
+      <SwipeRail className="ld-ride__line-row" rtlOpenAtEnd={false}>
         <BundledLineBadge routes={[route]} />
         {headsign ? (
           <span className="ld-ride__headsign" dir="auto">

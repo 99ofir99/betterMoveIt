@@ -16,6 +16,11 @@ import {
 
 interface SwipeRailProps extends HTMLAttributes<HTMLDivElement> {
   children: ReactNode;
+  /**
+   * In RTL, open scrolled to the far (left) end. Right for leg chains, where the
+   * end is cut; wrong for a line row (badge + headsign), whose start is the badge.
+   */
+  rtlOpenAtEnd?: boolean;
 }
 
 function nearestVerticalScrollParent(from: HTMLElement): HTMLElement | null {
@@ -31,7 +36,14 @@ function nearestVerticalScrollParent(from: HTMLElement): HTMLElement | null {
   return null;
 }
 
-export function SwipeRail({ children, className, onPointerDown, onClick, ...rest }: SwipeRailProps) {
+export function SwipeRail({
+  children,
+  className,
+  onPointerDown,
+  onClick,
+  rtlOpenAtEnd = true,
+  ...rest
+}: SwipeRailProps) {
   const railRef = useRef<HTMLDivElement>(null);
   const originX = useRef(0);
   const panned = useRef(false);
@@ -60,7 +72,7 @@ export function SwipeRail({ children, className, onPointerDown, onClick, ...rest
   const touched = useRef(false);
   useLayoutEffect(() => {
     const el = railRef.current;
-    if (!el || touched.current) return;
+    if (!el || touched.current || !rtlOpenAtEnd) return;
     if (getComputedStyle(el).direction !== 'rtl') return;
     if (el.scrollWidth <= el.clientWidth) return;
     el.scrollLeft = -el.scrollWidth;
