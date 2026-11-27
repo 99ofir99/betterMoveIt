@@ -28,7 +28,7 @@ import { TripTips } from './results/TripTips';
 import type { JourneyDetailProps, JourneyListProps } from './types';
 import { t, tn, seqArrow } from '../lib/i18n';
 
-export function JourneyList({ journeys, selected, onSelect, departNow, insights }: JourneyListProps) {
+export function JourneyList({ journeys, selected, flash, onSelect, departNow, insights }: JourneyListProps) {
   return (
     <ul className="journey-list" role="listbox" aria-label={t("Journey options")}>
       {journeys.map((card, i) => {
@@ -39,7 +39,8 @@ export function JourneyList({ journeys, selected, onSelect, departNow, insights 
               type="button"
               role="option"
               aria-selected={i === selected}
-              className={`journey-card ${i === selected ? 'is-selected' : ''}`}
+              data-journey-index={i}
+              className={`journey-card ${i === selected ? 'is-selected' : ''} ${i === flash ? 'is-flash' : ''}`}
               onClick={() => onSelect(i)}
             >
               <div className="journey-card__layout">

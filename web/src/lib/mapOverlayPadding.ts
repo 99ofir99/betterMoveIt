@@ -66,7 +66,9 @@ export function getOverlayCameraPadding(
   if (top > 0) top += BREATHING;
 
   // Keep a usable map band even when the sheet is tall.
-  const maxBottom = Math.max(0, mapRect.height * 0.72);
+  // A raised results sheet can cover most of the map: still leave ~140px so the
+  // camera fits into what is actually visible above it.
+  const maxBottom = Math.max(0, mapRect.height * 0.72, mapRect.height - 140);
   const maxTop = Math.max(0, mapRect.height * 0.28);
 
   return {

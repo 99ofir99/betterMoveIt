@@ -10381,3 +10381,19 @@ button.home-card-dots__dot {
   font-size: 12px;
   color: var(--text-dim);
 }
+
+/* Card picked by tapping its grey route on the map: a short highlight pulse. */
+.journey-card.is-flash {
+  animation: journey-flash 1.4s ease-out;
+}
+@keyframes journey-flash {
+  0%,
+  35% {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(var(--accent-rgb), 0.45);
+    background: rgba(var(--accent-rgb), 0.12);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(var(--accent-rgb), 0);
+  }
+}

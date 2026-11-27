@@ -41,6 +41,10 @@ interface MapCanvasProps {
   lineGeometry?: [number, number][] | null;
   /** Faint alternate journey paths ([lat, lon][] per journey). */
   ghostJourneyPolylines?: [number, number][][];
+  /** Card index of each ghost path (same order); enables tapping a grey route. */
+  ghostJourneyIndices?: number[];
+  /** Tap on a grey alternative route → its card index. */
+  onGhostClick?: (index: number) => void;
   vehicles?: VehiclePosition[];
   /**
    * When set, non-active journey legs are dimmed to this leg index.
@@ -196,6 +200,8 @@ export function MapCanvas({
   onLocate,
   lineGeometry = null,
   ghostJourneyPolylines = [],
+  ghostJourneyIndices,
+  onGhostClick,
   vehicles = [],
   activeLegIndex = null,
   followUser = false,
@@ -216,6 +222,10 @@ export function MapCanvas({
   const youMarkerRef = useRef<maplibregl.Marker | null>(null);
   const onStopClickRef = useRef(onStopClick);
   const onMapClickRef = useRef(onMapClick);
+  const onGhostClickRef = useRef(onGhostClick);
+  const ghostIndicesRef = useRef(ghostJourneyIndices);
+  onGhostClickRef.current = onGhostClick;
+  ghostIndicesRef.current = ghostJourneyIndices;
   const onLocateRef = useRef(onLocate);
   const onUserPanRef = useRef(onUserPan);
   const locateControlRef = useRef<LocateFabControl | null>(null);
@@ -294,6 +304,21 @@ export function MapCanvas({
       }
     });
     map.on('click', (e) => {
+      // A tap near a grey alternative route focuses that route's card.
+      const hitLayers = Array.from({ length: 8 }, (_, i) => `journey-ghost-hit-${i}`).filter((id) =>
+        map.getLayer(id),
+      );
+      if (hitLayers.length && onGhostClickRef.current) {
+        const hit = map.queryRenderedFeatures(e.point, { layers: hitLayers })[0];
+        if (hit) {
+          const slot = Number(hit.layer.id.slice('journey-ghost-hit-'.length));
+          const index = ghostIndicesRef.current?.[slot];
+          if (index != null) {
+            onGhostClickRef.current(index);
+            return;
+          }
+        }
+      }
       onMapClickRef.current({ lat: e.lngLat.lat, lon: e.lngLat.lng });
     });
     // Detect user-initiated panning (originalEvent is set by touch/mouse, absent on programmatic moves).
@@ -303,6 +328,10 @@ export function MapCanvas({
       }
     });
     mapRef.current = map;
+    // ?debugmap exposes the map to end-to-end checks (no effect otherwise).
+    if (new URLSearchParams(window.location.search).has('debugmap')) {
+      (window as unknown as { __bmiMap?: maplibregl.Map }).__bmiMap = map;
+    }
 
     return () => {
       map.remove();
@@ -571,6 +600,7 @@ export function MapCanvas({
     const draw = () => {
       for (let i = 0; i < 8; i++) {
         const srcId = `journey-ghost-${i}`;
+        if (map.getLayer(`journey-ghost-hit-${i}`)) map.removeLayer(`journey-ghost-hit-${i}`);
         if (map.getLayer(srcId)) map.removeLayer(srcId);
         if (map.getSource(srcId)) map.removeSource(srcId);
       }
@@ -586,10 +616,18 @@ export function MapCanvas({
           source: srcId,
           layout: { 'line-cap': 'round', 'line-join': 'round' },
           paint: {
-            'line-color': '#7a8494',
-            'line-width': 3.5,
-            'line-opacity': 0.34,
+            'line-color': '#9aa3b2',
+            'line-width': 4,
+            'line-opacity': 0.55,
           },
+        });
+        // Wide invisible twin so a finger can hit the thin grey line.
+        map.addLayer({
+          id: `journey-ghost-hit-${i}`,
+          type: 'line',
+          source: srcId,
+          layout: { 'line-cap': 'round', 'line-join': 'round' },
+          paint: { 'line-color': '#000', 'line-width': 24, 'line-opacity': 0 },
         });
       });
     };
@@ -721,9 +759,11 @@ export function MapCanvas({
           requestAnimationFrame(() => {
             if (!mapRef.current) return;
             const pad = getOverlayCameraPadding(map.getContainer());
+            // Short visible band (sheet raised): don't spend it on a big top margin.
+            const band = map.getContainer().clientHeight - pad.bottom;
             map.fitBounds(bounds, {
               padding: {
-                top: Math.max(pad.top, 72),
+                top: Math.max(pad.top, band < 260 ? 20 : 72),
                 bottom: Math.max(pad.bottom, 160),
                 left: Math.max(pad.left, 36),
                 right: Math.max(pad.right, 36),

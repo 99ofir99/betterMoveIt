@@ -49,7 +49,7 @@ import { rankJourneys, type SortMode } from "./lib/sort";
 import { clampJourneys } from "./lib/clampJourneys";
 import { requestCompassPermission, useCompassHeading } from "./lib/useCompassHeading";
 import { FAVORITES_CHANGED_EVENT, loadFavorites } from "./lib/favorites";
-import { ghostJourneyPolylines } from "./lib/journeyMap";
+import { ghostJourneyRoutes } from "./lib/journeyMap";
 import {
   isLiveTrackableRoute,
   journeyHasLiveTrackableLeg,
@@ -278,8 +278,36 @@ export default function App() {
     if (activeTab !== "directions" || state.panel !== "journeys" || primaryJourneys.length < 2) {
       return [];
     }
-    return ghostJourneyPolylines(primaryJourneys, state.selectedJourney);
+    return ghostJourneyRoutes(primaryJourneys, state.selectedJourney);
   }, [activeTab, primaryJourneys, state.panel, state.selectedJourney]);
+  const journeyGhostLines = useMemo(() => journeyGhosts.map((g) => g.coords), [journeyGhosts]);
+  const journeyGhostIndices = useMemo(() => journeyGhosts.map((g) => g.index), [journeyGhosts]);
+
+  // Re-fit the route into whatever map is visible after the results sheet moves.
+  useEffect(() => {
+    if (state.panel !== "journeys") return;
+    const id = window.setTimeout(() => setJourneyFitKey((k) => k + 1), 380);
+    return () => window.clearTimeout(id);
+    // activeJourney: the first result lands after the sheet has settled.
+  }, [resultsSnap, state.panel, activeJourney]);
+
+  /** Card briefly highlighted after tapping its grey route on the map. */
+  const [flashJourney, setFlashJourney] = useState<number | null>(null);
+  const focusJourneyFromMap = useCallback(
+    (index: number) => {
+      state.setSelectedJourney(index);
+      setResultsSnap("full");
+      setFlashJourney(index);
+      // After the sheet rises, bring that card into view.
+      window.setTimeout(() => {
+        document
+          .querySelector(`[data-journey-index="${index}"]`)
+          ?.scrollIntoView({ behavior: "smooth", block: "center" });
+      }, 320);
+      window.setTimeout(() => setFlashJourney((cur) => (cur === index ? null : cur)), 1600);
+    },
+    [state],
+  );
 
   // Keep selection in range after clamping merges cards.
   useEffect(() => {
@@ -899,7 +927,9 @@ export default function App() {
           fitToJourney={state.panel === "journeys" && activeTab === "directions" && !tripLive}
           fitKey={journeyFitKey}
           lineGeometry={lineGeometry}
-          ghostJourneyPolylines={tripLive ? [] : journeyGhosts}
+          ghostJourneyPolylines={tripLive ? [] : journeyGhostLines}
+          ghostJourneyIndices={journeyGhostIndices}
+          onGhostClick={tripLive ? undefined : focusJourneyFromMap}
           vehicles={vehicles}
           activeLegIndex={tripLive ? (activeTrip?.legIndex ?? null) : null}
           followUser={
@@ -1164,6 +1194,7 @@ export default function App() {
                 journeys={journeys}
                 insights={tripInsights}
                 selected={state.selectedJourney}
+                flash={flashJourney}
                 departNow={state.when === "now"}
                 onSelect={(i) => {
                   state.setSelectedJourney(i);
