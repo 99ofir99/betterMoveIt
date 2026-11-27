@@ -794,16 +794,6 @@ export default function App() {
     }
   }, []);
 
-  const planToFavorite = useCallback(
-    (place: Place) => {
-      state.selectPlace(place, "to");
-      setActiveTab("directions");
-      state.setWhen("now");
-      void state.useMyLocationAsOrigin();
-    },
-    [state],
-  );
-
   /** Stop sheet "Route from here / to here": fill that end and open the planner or results. */
   const planFromStop = useCallback(
     (slot: "from" | "to") => {
@@ -988,7 +978,7 @@ export default function App() {
         <main className="tab-screen">
           {activeTab === "favorites" && (
             <FavoritesTab
-              onPlanTo={planToFavorite}
+              onPlanTo={(place) => void handlePlanFromHome(place)}
               onOpenStop={openStop}
               onOpenLine={(id) => void openLine(id)}
               onGoDirections={() => setActiveTab("directions")}
