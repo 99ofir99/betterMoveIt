@@ -2,7 +2,68 @@
  * HeroArt — dusk skyline for the Directions home hero.
  * The buildings run to the bottom and fade out through a mask, so the
  * skyline melts into the page instead of ending on a flat ground line.
+ *
+ * Ambient motion (CSS, see `.home-hero__art-svg` in styles.css):
+ * windows breathe and now and then switch off and on again, stars twinkle,
+ * and a rare shooting star crosses the sky. All of it stops under
+ * prefers-reduced-motion.
  */
+import type { CSSProperties } from 'react';
+
+type Pt = readonly [number, number];
+
+const STARS: readonly (readonly [number, number, number])[] = [
+  [42, 22, 0.85], [108, 14, 0.6], [176, 28, 0.7], [248, 12, 0.55], [310, 24, 0.75], [358, 16, 0.6],
+  [20, 40, 0.5], [78, 34, 0.45], [142, 8, 0.5], [210, 36, 0.45], [282, 40, 0.5], [336, 34, 0.45],
+  [380, 8, 0.5], [66, 6, 0.4],
+];
+
+const COOL_WINDOWS: readonly Pt[] = [
+  [8, 82], [14, 92], [56, 72], [62, 84], [56, 96], [100, 80], [106, 92], [132, 62], [138, 74],
+  [132, 88], [172, 76], [178, 88], [218, 68], [224, 80], [246, 56], [252, 70], [246, 84], [286, 74],
+  [292, 88], [318, 66], [324, 78], [358, 78], [364, 90], [370, 102],
+];
+
+const WARM_WINDOWS: readonly Pt[] = [
+  [30, 96], [36, 96], [42, 96], [30, 106], [42, 106], [148, 94], [154, 94], [168, 94], [148, 104],
+  [168, 104], [258, 98], [264, 98], [276, 98], [258, 108], [338, 96], [344, 96], [356, 96],
+  [338, 106], [356, 106],
+];
+
+/** Small deterministic PRNG so timings are varied but stable between renders. */
+function prng(seed: number) {
+  let s = seed;
+  return () => {
+    s = (s * 16807) % 2147483647;
+    return s / 2147483647;
+  };
+}
+
+type Timed = { x: number; y: number; r?: number; off: boolean; style: CSSProperties };
+
+function timings<T extends readonly number[]>(pts: readonly T[], seed: number, offShare: number): Timed[] {
+  const rnd = prng(seed);
+  return pts.map(([x, y, r]) => {
+    const off = rnd() < offShare;
+    // Breathing windows: 3–6 s. Switching windows: 6–12 s cycle (dark for ~a third of it).
+    const d = off ? 6 + rnd() * 6 : 3 + rnd() * 3;
+    return {
+      x,
+      y,
+      r,
+      off,
+      style: { '--d': `${d.toFixed(1)}s`, '--dl': `-${(rnd() * d).toFixed(1)}s` } as CSSProperties,
+    };
+  });
+}
+
+const STAR_T = timings(STARS, 11, 0).map((s, i) => ({
+  ...s,
+  // Stars twinkle slower than windows: 4–8 s.
+  style: { '--d': `${(4 + ((i * 7) % 5)).toFixed(1)}s`, '--dl': `-${((i * 1.7) % 6).toFixed(1)}s` } as CSSProperties,
+}));
+const COOL_T = timings(COOL_WINDOWS, 7, 0.35);
+const WARM_T = timings(WARM_WINDOWS, 29, 0.4);
 
 export function HeroArt() {
   return (
@@ -27,6 +88,10 @@ export function HeroArt() {
           <stop offset="0" stopColor="#ffe6b0" stopOpacity="0.85" />
           <stop offset="1" stopColor="#ffc56a" stopOpacity="0.2" />
         </radialGradient>
+        <linearGradient id="hero-trail" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0" stopColor="#fff" />
+          <stop offset="1" stopColor="#fff" stopOpacity="0" />
+        </linearGradient>
         {/* Buildings dissolve downward — no hard ground line or slab. */}
         <linearGradient id="hero-ground-fade" x1="0" y1="0" x2="0" y2="1">
           <stop offset="0.38" stopColor="#fff" stopOpacity="1" />
@@ -38,14 +103,15 @@ export function HeroArt() {
         </mask>
       </defs>
 
+      <g className="hero-stars" fill="#c9d8f0" opacity="0.5">
+        {STAR_T.map((s) => (
+          <circle key={`${s.x},${s.y}`} cx={s.x} cy={s.y} r={s.r} style={s.style} />
+        ))}
+      </g>
 
-      <g fill="#c9d8f0" opacity="0.28">
-        <circle cx="42" cy="22" r="0.85" />
-        <circle cx="108" cy="14" r="0.6" />
-        <circle cx="176" cy="28" r="0.7" />
-        <circle cx="248" cy="12" r="0.55" />
-        <circle cx="310" cy="24" r="0.75" />
-        <circle cx="358" cy="16" r="0.6" />
+      {/* Rare shooting star, top right towards the left */}
+      <g className="hero-shooting-star">
+        <line x1="300" y1="10" x2="318" y2="4" stroke="url(#hero-trail)" strokeWidth="1" strokeLinecap="round" />
       </g>
 
       <g mask="url(#hero-city-mask)">
@@ -65,30 +131,18 @@ export function HeroArt() {
 
         {/* Sparse cool windows on far ridge */}
         <g fill="rgba(170,200,255,0.22)">
-          <rect x="8" y="82" width="2" height="2.6" rx="0.35" />
-          <rect x="14" y="92" width="2" height="2.6" rx="0.35" />
-          <rect x="56" y="72" width="2" height="2.6" rx="0.35" />
-          <rect x="62" y="84" width="2" height="2.6" rx="0.35" />
-          <rect x="56" y="96" width="2" height="2.6" rx="0.35" />
-          <rect x="100" y="80" width="2" height="2.6" rx="0.35" />
-          <rect x="106" y="92" width="2" height="2.6" rx="0.35" />
-          <rect x="132" y="62" width="2" height="2.6" rx="0.35" />
-          <rect x="138" y="74" width="2" height="2.6" rx="0.35" />
-          <rect x="132" y="88" width="2" height="2.6" rx="0.35" />
-          <rect x="172" y="76" width="2" height="2.6" rx="0.35" />
-          <rect x="178" y="88" width="2" height="2.6" rx="0.35" />
-          <rect x="218" y="68" width="2" height="2.6" rx="0.35" />
-          <rect x="224" y="80" width="2" height="2.6" rx="0.35" />
-          <rect x="246" y="56" width="2" height="2.6" rx="0.35" />
-          <rect x="252" y="70" width="2" height="2.6" rx="0.35" />
-          <rect x="246" y="84" width="2" height="2.6" rx="0.35" />
-          <rect x="286" y="74" width="2" height="2.6" rx="0.35" />
-          <rect x="292" y="88" width="2" height="2.6" rx="0.35" />
-          <rect x="318" y="66" width="2" height="2.6" rx="0.35" />
-          <rect x="324" y="78" width="2" height="2.6" rx="0.35" />
-          <rect x="358" y="78" width="2" height="2.6" rx="0.35" />
-          <rect x="364" y="90" width="2" height="2.6" rx="0.35" />
-          <rect x="370" y="102" width="2" height="2.6" rx="0.35" />
+          {COOL_T.map((w) => (
+            <rect
+              key={`${w.x},${w.y}`}
+              className={w.off ? 'hero-win hero-win--off' : 'hero-win'}
+              style={w.style}
+              x={w.x}
+              y={w.y}
+              width="2"
+              height="2.6"
+              rx="0.35"
+            />
+          ))}
         </g>
 
         {/* Near masses — still above the pill, warmer windows */}
@@ -100,25 +154,18 @@ export function HeroArt() {
         </g>
 
         <g fill="url(#hero-win)">
-          <rect x="30" y="96" width="2.3" height="3" rx="0.4" />
-          <rect x="36" y="96" width="2.3" height="3" rx="0.4" />
-          <rect x="42" y="96" width="2.3" height="3" rx="0.4" />
-          <rect x="30" y="106" width="2.3" height="3" rx="0.4" />
-          <rect x="42" y="106" width="2.3" height="3" rx="0.4" />
-          <rect x="148" y="94" width="2.3" height="3" rx="0.4" />
-          <rect x="154" y="94" width="2.3" height="3" rx="0.4" />
-          <rect x="168" y="94" width="2.3" height="3" rx="0.4" />
-          <rect x="148" y="104" width="2.3" height="3" rx="0.4" />
-          <rect x="168" y="104" width="2.3" height="3" rx="0.4" />
-          <rect x="258" y="98" width="2.3" height="3" rx="0.4" />
-          <rect x="264" y="98" width="2.3" height="3" rx="0.4" />
-          <rect x="276" y="98" width="2.3" height="3" rx="0.4" />
-          <rect x="258" y="108" width="2.3" height="3" rx="0.4" />
-          <rect x="338" y="96" width="2.3" height="3" rx="0.4" />
-          <rect x="344" y="96" width="2.3" height="3" rx="0.4" />
-          <rect x="356" y="96" width="2.3" height="3" rx="0.4" />
-          <rect x="338" y="106" width="2.3" height="3" rx="0.4" />
-          <rect x="356" y="106" width="2.3" height="3" rx="0.4" />
+          {WARM_T.map((w) => (
+            <rect
+              key={`${w.x},${w.y}`}
+              className={w.off ? 'hero-win hero-win--off' : 'hero-win'}
+              style={w.style}
+              x={w.x}
+              y={w.y}
+              width="2.3"
+              height="3"
+              rx="0.4"
+            />
+          ))}
         </g>
       </g>
     </svg>
