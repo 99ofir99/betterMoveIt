@@ -234,9 +234,10 @@ export function TimetableIcon({ size = 22, className }: IconProps) {
  * direction. Add `.rtl-flip` so it points left in Hebrew.
  */
 export function NavigateIcon({ size = 18, className }: IconProps) {
+  // Material "navigation" arrowhead (notched), turned to point forward.
   return (
     <svg {...base(size)} className={className} fill="currentColor">
-      <path d="M21.4 11.1 4.3 3.3a1 1 0 0 0-1.35 1.25L5.9 12l-2.95 7.45a1 1 0 0 0 1.35 1.25l17.1-7.8a1 1 0 0 0 0-1.8z" />
+      <path transform="rotate(90 12 12)" d="M12 2 4.5 20.29l.71.71L12 18l6.79 3 .71-.71L12 2z" />
     </svg>
   );
 }

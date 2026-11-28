@@ -952,7 +952,8 @@ select {
 .lnd-stops {
   list-style: none;
   margin: 0;
-  padding: 10px 0 96px;
+  /* Room for the Start / Save bar so the last stops can scroll above it. */
+  padding: 10px 0 88px;
   flex: 1;
   min-height: 0;
   overflow-y: auto;
@@ -1292,54 +1293,63 @@ select {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
-  min-height: 48px;
+  gap: 7px;
+  height: 46px;
   padding: 0 18px;
   border-radius: 999px;
   font-size: 15px;
   font-weight: 700;
+  line-height: 1;
+  /* One line always, even with a large phone font. */
+  white-space: nowrap;
+  overflow: hidden;
 }
 
+/* Primary: takes the room left over by the compact Save pill. */
 .lnd-actions__start {
-  min-width: 112px;
-  flex: 1.4;
-  max-width: 220px;
-  min-height: 52px;
-  padding: 0 22px;
-  background: #19a85a;
+  flex: 1 1 auto;
+  min-width: 0;
+  max-width: 260px;
+  background: #16a05a;
   color: #fff;
-  font-size: 16px;
-  box-shadow: 0 4px 14px rgba(25, 168, 90, 0.4);
+  box-shadow: 0 3px 10px rgba(22, 160, 90, 0.3);
 }
 .lnd-actions__start:active {
   filter: brightness(0.92);
 }
-
 .lnd-actions__start:disabled {
   opacity: 0.45;
 }
-
 .lnd-actions__start-icon {
   display: inline-flex;
+  flex-shrink: 0;
+}
+.lnd-actions__start-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
+/* Secondary: quiet outlined pill, sized to its label. */
 .lnd-actions__fav {
-  min-width: 0;
-  flex: 1;
-  max-width: 150px;
-  min-height: 52px;
-  background: #1c3a5e;
-  color: #e6f0fb;
-  font-size: 16px;
+  flex: 0 0 auto;
+  padding: 0 16px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  color: var(--text);
 }
 .lnd-actions__fav svg {
+  flex-shrink: 0;
   color: #4a9eff;
 }
 .lnd-actions__fav.is-on svg {
   color: #ffd56a;
 }
 .lnd-actions__fav:active {
-  filter: brightness(1.15);
+  background: rgba(255, 255, 255, 0.12);
+}
+.lnd-actions.is-compact .lnd-actions__fav {
+  width: 46px;
+  padding: 0;
 }
 
 .planner__advanced-toggle {
