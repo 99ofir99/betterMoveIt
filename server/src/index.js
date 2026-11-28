@@ -516,34 +516,101 @@ app.post('/api/plan', (req, res) => {
 });
 
 /** Forward geocoding proxy — avoids browser CORS with Nominatim. */
+// Forward geocoding. Nominatim first; Render's shared egress IP gets blocked or
+// rate-limited by Nominatim now and then (it answers with an XML error page),
+// so fall back to Photon (komoot, same OSM data) and back off Nominatim for a while.
+const GEO_UA = { 'User-Agent': 'BetterMoveIt/1.0 (open-source transit app)' };
+const geocodeCache = new Map(); // key -> { at, results }
+const GEOCODE_TTL_MS = 10 * 60 * 1000;
+let nominatimDownUntil = 0;
+
+async function fetchJsonTimeout(url, ms = 6000) {
+  const r = await fetch(url, { headers: GEO_UA, signal: AbortSignal.timeout(ms) });
+  const type = r.headers.get('content-type') || '';
+  if (!r.ok || !type.includes('json')) throw new Error(`HTTP ${r.status} ${type}`);
+  return r.json();
+}
+
+async function nominatimSearch(q, lat, lon) {
+  let url =
+    `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(q)}` +
+    `&format=jsonv2&limit=5&countrycodes=il&accept-language=he,en`;
+  if (lat != null && lon != null) {
+    const delta = 0.5;
+    url += `&viewbox=${lon - delta},${lat - delta},${lon + delta},${lat + delta}&bounded=0`;
+  }
+  const json = await fetchJsonTimeout(url);
+  if (!Array.isArray(json)) throw new Error('unexpected nominatim payload');
+  return json.map((item) => ({
+    kind: 'place',
+    name: item.display_name?.split(',').slice(0, 3).join(', ') ?? item.name,
+    lat: Number(item.lat),
+    lon: Number(item.lon),
+  }));
+}
+
+/** Photon label in the same "name, street, city" shape as the Nominatim one. */
+function photonLabel(p = {}) {
+  const street = p.street ? (p.housenumber ? `${p.street} ${p.housenumber}` : p.street) : null;
+  const parts = [p.name, street, p.city || p.locality || p.district || p.county];
+  const out = [];
+  for (const x of parts) if (x && !out.includes(x)) out.push(x);
+  return out.slice(0, 3).join(', ');
+}
+
+async function photonSearch(q, lat, lon) {
+  // bbox = Israel and the West Bank; Photon has no country filter.
+  let url = `https://photon.komoot.io/api/?q=${encodeURIComponent(q)}&limit=8&bbox=34.2,29.4,35.95,33.4`;
+  if (lat != null && lon != null) url += `&lat=${lat}&lon=${lon}`;
+  const json = await fetchJsonTimeout(url);
+  return (json.features ?? [])
+    .filter((f) => !f.properties?.countrycode || f.properties.countrycode === 'IL' || f.properties.countrycode === 'PS')
+    .slice(0, 5)
+    .map((f) => ({
+      kind: 'place',
+      name: photonLabel(f.properties),
+      lat: Number(f.geometry.coordinates[1]),
+      lon: Number(f.geometry.coordinates[0]),
+    }))
+    .filter((r) => r.name && Number.isFinite(r.lat) && Number.isFinite(r.lon));
+}
+
 app.get('/api/geocode', async (req, res) => {
   const q = String(req.query.q || '').trim();
   if (!q) return res.json({ results: [] });
-  const lat = req.query.lat ? Number(req.query.lat) : null;
-  const lon = req.query.lon ? Number(req.query.lon) : null;
-  try {
-    // Bias to Israel; optionally add a viewbox around the user's position.
-    let url =
-      `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(q)}` +
-      `&format=jsonv2&limit=5&countrycodes=il&accept-language=he,en`;
-    if (lat && lon && Number.isFinite(lat) && Number.isFinite(lon)) {
-      const delta = 0.5;
-      url += `&viewbox=${lon - delta},${lat - delta},${lon + delta},${lat + delta}&bounded=0`;
+  const latN = req.query.lat ? Number(req.query.lat) : NaN;
+  const lonN = req.query.lon ? Number(req.query.lon) : NaN;
+  const hasBias = Number.isFinite(latN) && Number.isFinite(lonN) && latN !== 0 && lonN !== 0;
+  const lat = hasBias ? latN : null;
+  const lon = hasBias ? lonN : null;
+  // Round the bias so nearby users share cache entries.
+  const key = `${q.toLowerCase()}|${hasBias ? `${latN.toFixed(1)},${lonN.toFixed(1)}` : ''}`;
+  const hit = geocodeCache.get(key);
+  if (hit && Date.now() - hit.at < GEOCODE_TTL_MS) return res.json({ results: hit.results });
+
+  let results = null;
+  const errors = [];
+  if (Date.now() >= nominatimDownUntil) {
+    try {
+      results = await nominatimSearch(q, lat, lon);
+    } catch (e) {
+      errors.push(`nominatim: ${e.message || e}`);
+      nominatimDownUntil = Date.now() + 5 * 60 * 1000;
+      console.warn('[geocode] nominatim failed, using photon for 5 min:', e.message || e);
     }
-    const r = await fetch(url, {
-      headers: { 'User-Agent': 'BetterMoveIt/1.0 (open-source transit app)' },
-    });
-    const json = await r.json();
-    const results = json.map((item) => ({
-      kind: 'place',
-      name: item.display_name?.split(',').slice(0, 3).join(', ') ?? item.name,
-      lat: Number(item.lat),
-      lon: Number(item.lon),
-    }));
-    res.json({ results });
-  } catch (e) {
-    res.status(502).json({ error: 'geocode failed', detail: String(e) });
   }
+  if (!results || results.length === 0) {
+    try {
+      const fallback = await photonSearch(q, lat, lon);
+      if (fallback.length || !results) results = fallback;
+    } catch (e) {
+      errors.push(`photon: ${e.message || e}`);
+    }
+  }
+  if (!results) return res.status(502).json({ error: 'geocode failed', detail: errors.join('; ') });
+  if (geocodeCache.size > 2000) geocodeCache.clear();
+  geocodeCache.set(key, { at: Date.now(), results });
+  res.json({ results });
 });
 
 /** Plain walking route via OSRM (used for walking-only options and last mile). */
