@@ -7169,38 +7169,68 @@ button.ld-option {
   opacity: 0.92;
 }
 
-/* Ambient motion: breathing windows (some switch off now and then),
-   twinkling stars and a rare shooting star (every ~28 s). */
+/* Ambient motion: windows that switch on and off like a real building at
+   night (few at a time, quick soft fade, long irregular cycles, one TV),
+   twinkling stars and a shooting star every ~10 s. */
 .home-hero__art-svg .hero-win {
-  animation: hero-win-breath var(--d, 4s) ease-in-out var(--dl, 0s) infinite;
+  animation: hero-win-off-short var(--d, 20s) ease-in-out var(--dl, 0s) infinite;
 }
-.home-hero__art-svg .hero-win--off {
-  animation-name: hero-win-off;
+.home-hero__art-svg .hero-win--off-long {
+  animation-name: hero-win-off-long;
+}
+.home-hero__art-svg .hero-win--on-late {
+  animation-name: hero-win-on-late;
+}
+.home-hero__art-svg .hero-win--tv {
+  fill: #a9c6ff;
+  animation: hero-win-tv 3.7s steps(1, end) infinite;
 }
 .home-hero__art-svg .hero-stars circle {
   animation: hero-twinkle var(--d, 5s) ease-in-out var(--dl, 0s) infinite;
 }
 .home-hero__art-svg .hero-shooting-star {
   opacity: 0;
-  animation: hero-shoot 28s cubic-bezier(0.3, 0.1, 0.5, 1) 6s infinite;
+  animation: hero-shoot 10s cubic-bezier(0.3, 0.1, 0.5, 1) 3s infinite;
 }
-@keyframes hero-win-breath {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.35; }
+/* On most of the time, off for a short while. */
+@keyframes hero-win-off-short {
+  0%, 62% { opacity: 1; }
+  63.5%, 82% { opacity: 0.06; }
+  83.5%, 100% { opacity: 1; }
 }
-@keyframes hero-win-off {
-  0%, 45% { opacity: 1; }
-  50%, 75% { opacity: 0.08; }
-  80%, 100% { opacity: 1; }
+/* On, then off for a long stretch (someone went to bed). */
+@keyframes hero-win-off-long {
+  0%, 30% { opacity: 1; }
+  31.5%, 78% { opacity: 0.06; }
+  79.5%, 100% { opacity: 1; }
+}
+/* Dark, then lit for a while (someone came home). */
+@keyframes hero-win-on-late {
+  0%, 40% { opacity: 0.06; }
+  41.5%, 88% { opacity: 1; }
+  89.5%, 100% { opacity: 0.06; }
+}
+/* TV glow: irregular small jumps in brightness. */
+@keyframes hero-win-tv {
+  0% { opacity: 0.55; }
+  9% { opacity: 0.8; }
+  17% { opacity: 0.5; }
+  31% { opacity: 0.95; }
+  38% { opacity: 0.65; }
+  52% { opacity: 0.75; }
+  61% { opacity: 0.45; }
+  70% { opacity: 0.9; }
+  84% { opacity: 0.6; }
+  92% { opacity: 0.8; }
 }
 @keyframes hero-twinkle {
   0%, 100% { opacity: 0.25; }
   50% { opacity: 1; }
 }
 @keyframes hero-shoot {
-  0%, 94% { transform: translate(0, 0); opacity: 0; }
-  94.6% { opacity: 0.9; }
-  97.5% { transform: translate(-120px, 40px); opacity: 0; }
+  0%, 88% { transform: translate(0, 0); opacity: 0; }
+  89.5% { opacity: 0.9; }
+  97% { transform: translate(-120px, 40px); opacity: 0; }
   100% { transform: translate(-120px, 40px); opacity: 0; }
 }
 @media (prefers-reduced-motion: reduce) {

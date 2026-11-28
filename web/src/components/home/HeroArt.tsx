@@ -4,8 +4,10 @@
  * skyline melts into the page instead of ending on a flat ground line.
  *
  * Ambient motion (CSS, see `.home-hero__art-svg` in styles.css):
- * windows breathe and now and then switch off and on again, stars twinkle,
- * and a rare shooting star crosses the sky. All of it stops under
+ * most windows stay lit at their own steady brightness; a few at a time
+ * switch off or on with a quick soft fade, on long irregular cycles, and one
+ * window flickers bluish like a TV. Stars twinkle and a shooting star
+ * crosses the sky every ~10 s. All of it stops under
  * prefers-reduced-motion.
  */
 import type { CSSProperties } from 'react';
@@ -39,31 +41,45 @@ function prng(seed: number) {
   };
 }
 
-type Timed = { x: number; y: number; r?: number; off: boolean; style: CSSProperties };
+type Timed = { x: number; y: number; r?: number; cls: string; op: number; style: CSSProperties };
 
-function timings<T extends readonly number[]>(pts: readonly T[], seed: number, offShare: number): Timed[] {
+/**
+ * Window behaviour, like a real building at night:
+ * - most windows are simply on, each at a slightly different brightness;
+ * - about a quarter switch: lights go off for a while (or a dark window
+ *   lights up), with a short fade, on cycles of 14–34 s so nothing syncs;
+ * - one window is a TV: a faint bluish irregular flicker.
+ */
+function windowTimings(pts: readonly Pt[], seed: number, switchShare: number, tvIndex: number): Timed[] {
   const rnd = prng(seed);
-  return pts.map(([x, y, r]) => {
-    const off = rnd() < offShare;
-    // Breathing windows: 3–6 s. Switching windows: 6–12 s cycle (dark for ~a third of it).
-    const d = off ? 6 + rnd() * 6 : 3 + rnd() * 3;
+  const kinds = ['hero-win--off-short', 'hero-win--off-long', 'hero-win--on-late'];
+  return pts.map(([x, y], i) => {
+    const op = 0.65 + rnd() * 0.35;
+    if (i === tvIndex) {
+      return { x, y, op, cls: 'hero-win hero-win--tv', style: {} };
+    }
+    if (rnd() >= switchShare) return { x, y, op, cls: '', style: {} };
+    const d = 14 + rnd() * 20;
+    const kind = kinds[Math.floor(rnd() * kinds.length)];
     return {
       x,
       y,
-      r,
-      off,
+      op,
+      cls: `hero-win ${kind}`,
       style: { '--d': `${d.toFixed(1)}s`, '--dl': `-${(rnd() * d).toFixed(1)}s` } as CSSProperties,
     };
   });
 }
 
-const STAR_T = timings(STARS, 11, 0).map((s, i) => ({
-  ...s,
+const STAR_T = STARS.map(([x, y, r], i) => ({
+  x,
+  y,
+  r,
   // Stars twinkle slower than windows: 4–8 s.
   style: { '--d': `${(4 + ((i * 7) % 5)).toFixed(1)}s`, '--dl': `-${((i * 1.7) % 6).toFixed(1)}s` } as CSSProperties,
 }));
-const COOL_T = timings(COOL_WINDOWS, 7, 0.35);
-const WARM_T = timings(WARM_WINDOWS, 29, 0.4);
+const COOL_T = windowTimings(COOL_WINDOWS, 7, 0.22, -1);
+const WARM_T = windowTimings(WARM_WINDOWS, 29, 0.3, 13);
 
 export function HeroArt() {
   return (
@@ -134,8 +150,9 @@ export function HeroArt() {
           {COOL_T.map((w) => (
             <rect
               key={`${w.x},${w.y}`}
-              className={w.off ? 'hero-win hero-win--off' : 'hero-win'}
+              className={w.cls || undefined}
               style={w.style}
+              fillOpacity={w.op}
               x={w.x}
               y={w.y}
               width="2"
@@ -157,8 +174,9 @@ export function HeroArt() {
           {WARM_T.map((w) => (
             <rect
               key={`${w.x},${w.y}`}
-              className={w.off ? 'hero-win hero-win--off' : 'hero-win'}
+              className={w.cls || undefined}
               style={w.style}
+              fillOpacity={w.op}
               x={w.x}
               y={w.y}
               width="2.3"
