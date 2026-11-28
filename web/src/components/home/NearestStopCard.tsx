@@ -14,7 +14,9 @@ import { LineBadge } from '../shared/LineBadge';
 import { BusIcon, ClockIcon, LiveSignalIcon } from '../shared/icons';
 import { t } from '../../lib/i18n';
 
-const MAX_ROWS = 3;
+/** Two lines keep this card about as tall as the saved-destination card beside it
+ *  (the carousel gives both the same height), so neither shows an empty area. */
+const MAX_ROWS = 2;
 /** Walking speed used for the "n min walk" hint (same 80 m/min as the planner). */
 const WALK_M_PER_MIN = 80;
 
