@@ -11,12 +11,22 @@ export interface FavoritesTabProps {
 }
 
 export interface SetPlacePickerProps {
-  kind: 'home' | 'work';
+  /** 'custom' = the Add button: pick any place, then name it. */
+  kind: 'home' | 'work' | 'custom';
   bias: LatLon | null;
   onClose: () => void;
   onPickPlace: (place: Place) => void;
   onPickCurrentLocation: () => void;
   onChooseOnMap?: () => void;
+}
+
+export interface SavePlaceSheetProps {
+  place: Place;
+  /** Home / Work already saved (choosing it again replaces that one). */
+  hasHome: boolean;
+  hasWork: boolean;
+  onSave: (kind: 'home' | 'work' | 'custom', name: string) => void;
+  onCancel: () => void;
 }
 
 export interface PlaceRowProps {

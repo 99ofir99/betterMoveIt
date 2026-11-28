@@ -21,7 +21,7 @@ export function PlaceRow({ kind, place, label, onSet, onGo, onClear, onEditAddre
   const title =
     label ? t(label) : kind === 'home' ? t('Home') : kind === 'work' ? t('Work') : place?.label ?? t('Place');
   const raw = place?.place.label?.trim() || null;
-  const address = raw && !isPlaceholderAddress(raw) ? raw : null;
+  const address = raw && !isPlaceholderAddress(raw) && raw !== title ? raw : null;
   const icon =
     kind === 'home' ? (
       <HomeIcon size={22} />
@@ -91,7 +91,6 @@ export function PlaceRow({ kind, place, label, onSet, onGo, onClear, onEditAddre
           <span className="fav-row__name">{title}</span>
           {address && <span className="fav-row__meta">{address}</span>}
         </span>
-        <ChevronRightIcon size={16} className="fav-row__chevron" />
       </button>
       {onEditAddress && (
         <button

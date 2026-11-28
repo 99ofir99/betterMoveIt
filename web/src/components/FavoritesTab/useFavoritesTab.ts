@@ -19,7 +19,9 @@ import { fillPlaceAddress, fillSavedPlaceAddresses } from '../../lib/placeAddres
 
 export function useFavoritesTab() {
   const [favs, setFavs] = useState<FavoritesState>(() => loadFavorites());
-  const [settingKind, setSettingKind] = useState<'home' | 'work' | null>(null);
+  const [settingKind, setSettingKind] = useState<'home' | 'work' | 'custom' | null>(null);
+  /** Picked in the Add flow, waiting for a name and type. */
+  const [pendingPlace, setPendingPlace] = useState<Place | null>(null);
 
   useEffect(() => {
     const refresh = () => setFavs(loadFavorites());
@@ -29,7 +31,7 @@ export function useFavoritesTab() {
     return () => window.removeEventListener(FAVORITES_CHANGED_EVENT, refresh);
   }, []);
 
-  const beginSetSlot = useCallback((kind: 'home' | 'work') => {
+  const beginSetSlot = useCallback((kind: 'home' | 'work' | 'custom') => {
     setSettingKind(kind);
   }, []);
 
@@ -40,6 +42,11 @@ export function useFavoritesTab() {
   const confirmPlace = useCallback(
     (place: Place) => {
       if (!settingKind) return;
+      if (settingKind === 'custom') {
+        setPendingPlace(place);
+        setSettingKind(null);
+        return;
+      }
       const labelDefault = settingKind === 'home' ? 'Home' : 'Work';
       setFavs(upsertPlace(settingKind, place, labelDefault));
       fillPlaceAddress(settingKind, place, labelDefault);
@@ -69,12 +76,30 @@ export function useFavoritesTab() {
             lat,
             lon,
           };
-          setFavs(upsertPlace(kind, place, labelDefault));
+          if (kind === 'custom') setPendingPlace(place);
+          else setFavs(upsertPlace(kind, place, labelDefault));
         });
       },
       () => window.alert(t('Could not get your location. Check permissions.'))
     );
   }, [settingKind]);
+
+  /** Add flow, last step: save the picked place as Home, Work or a named place. */
+  const savePending = useCallback(
+    (kind: 'home' | 'work' | 'custom', name: string) => {
+      const place = pendingPlace;
+      setPendingPlace(null);
+      if (!place) return;
+      if (kind === 'custom') {
+        setFavs(upsertPlace('custom', place, name.trim() || place.label));
+      } else {
+        const labelDefault = kind === 'home' ? 'Home' : 'Work';
+        setFavs(upsertPlace(kind, place, labelDefault));
+        fillPlaceAddress(kind, place, labelDefault);
+      }
+    },
+    [pendingPlace]
+  );
 
   /** Hand-typed address for a saved place; the coordinates stay as saved. */
   const editAddress = useCallback((id: string, address: string) => {
@@ -108,6 +133,9 @@ export function useFavoritesTab() {
     confirmCurrentLocation,
     clearPlace,
     editAddress,
+    pendingPlace,
+    savePending,
+    cancelPending: () => setPendingPlace(null),
     removeStop,
     removeLine,
   };

@@ -10520,3 +10520,31 @@ button.home-card-dots__dot {
 .fav-row--set .fav-row__chevron {
   margin-inline-end: 4px;
 }
+
+/* Favourites Add flow: name + type for a picked place. */
+.save-place { display: flex; flex-direction: column; gap: 6px; padding: 20px; }
+.save-place__title { margin: 0; font-size: 1.15rem; }
+.save-place__address { margin: 0 0 8px; color: var(--text-faint); font-size: 0.92rem; }
+.save-place__label { margin: 6px 0 2px; font-size: 0.85rem; color: var(--text-faint); }
+.save-place__kinds { display: flex; gap: 8px; }
+.save-place__kind {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 10px 4px;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: var(--surface-2);
+  color: var(--text);
+  font-size: 0.9rem;
+}
+.save-place__kind.is-on { border-color: var(--accent); background: rgba(var(--accent-rgb), 0.16); }
+.save-place__kind--home svg { color: var(--accent); }
+.save-place__kind--work svg { color: #1cc5a8; }
+.save-place__kind--custom svg { color: var(--warn, #da9c16); }
+.save-place__hint { margin: 4px 0 0; font-size: 0.82rem; color: var(--warn, #da9c16); }
+.save-place__name { display: flex; flex-direction: column; }
+.save-place__name .fav-row__input { margin-top: 2px; }
+.save-place__actions { display: flex; gap: 8px; margin-top: 14px; }

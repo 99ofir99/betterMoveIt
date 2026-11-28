@@ -8,6 +8,7 @@ import { PlaceRow } from './PlaceRow';
 import { StopRow } from './StopRow';
 import { LineFavRow } from './LineFavRow';
 import { SetPlacePicker } from './SetPlacePicker';
+import { SavePlaceSheet } from './SavePlaceSheet';
 import { useFavoritesTab } from './useFavoritesTab';
 import type { FavoritesTabProps } from './types';
 import { t } from '../../lib/i18n';
@@ -16,8 +17,6 @@ export function FavoritesTab({
   onPlanTo,
   onOpenStop,
   onOpenLine,
-  onGoDirections,
-  onAddPlace,
   searchBias = null,
 }: FavoritesTabProps) {
   const s = useFavoritesTab();
@@ -32,7 +31,7 @@ export function FavoritesTab({
         <SectionHeader
           title={t("Places")}
           actionLabel={t("Add")}
-          onAction={onAddPlace ?? onGoDirections}
+          onAction={() => s.beginSetSlot('custom')}
           actionAriaLabel={t("Add favourite place")}
         />
         <div className="fav-list">
@@ -110,6 +109,16 @@ export function FavoritesTab({
           onClose={s.cancelSetSlot}
           onPickPlace={s.confirmPlace}
           onPickCurrentLocation={s.confirmCurrentLocation}
+        />
+      )}
+
+      {s.pendingPlace && (
+        <SavePlaceSheet
+          place={s.pendingPlace}
+          hasHome={Boolean(s.home)}
+          hasWork={Boolean(s.work)}
+          onSave={s.savePending}
+          onCancel={s.cancelPending}
         />
       )}
     </div>

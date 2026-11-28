@@ -12,7 +12,7 @@ export function SetPlacePicker({
   onPickCurrentLocation,
   onChooseOnMap,
 }: SetPlacePickerProps) {
-  const title = kind === 'home' ? t('Set Home') : t('Set Work');
+  const title = kind === 'home' ? t('Set Home') : kind === 'work' ? t('Set Work') : t('Add a place');
 
   return (
     <GlobalSearch
