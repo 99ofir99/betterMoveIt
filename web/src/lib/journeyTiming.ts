@@ -5,7 +5,10 @@
 
 import type { Journey, TransitLeg } from '../types';
 
-/** When the rider should leave for this itinerary (first boarding − access walks). */
+/** Extra minute so floored clocks + rounded walk minutes can't overshoot the bus. */
+const LEAVE_SLACK_SEC = 60;
+
+/** When the rider should leave for this itinerary (first boarding − access walks − slack). */
 export function journeyLeaveSeconds(journey: Journey): number {
   const firstTransit = journey.legs.find((l): l is TransitLeg => l.mode === 'transit');
   if (!firstTransit || firstTransit.departure == null) return journey.departSeconds;
@@ -15,7 +18,9 @@ export function journeyLeaveSeconds(journey: Journey): number {
     if (leg.mode === 'transit') break;
     walkBefore += leg.durationSec || 0;
   }
-  return firstTransit.departure - walkBefore;
+  let leave = firstTransit.departure - walkBefore - LEAVE_SLACK_SEC;
+  if (leave < 0) leave += 86400;
+  return leave;
 }
 
 /** In-trip duration: leave for this trip → arrival. */

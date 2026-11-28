@@ -1064,8 +1064,9 @@ export class JourneyPlanner {
 
   /**
    * When the rider should leave home for this itinerary: first boarding minus
-   * the access walks before it. Never the planner query time ("now") — that
-   * would inflate duration with idle wait until the first bus.
+   * the access walks before it, minus one minute of slack so minute-rounded
+   * walk labels can't push you past the bus (e.g. leave 8:22 + "2 min" walk
+   * must not aim at an 8:23 departure). Never the planner query time ("now").
    */
   journeyDepartSeconds(legs, fallbackDepart) {
     const firstTransit = legs.find((l) => l.mode === 'transit');
@@ -1075,7 +1076,10 @@ export class JourneyPlanner {
       if (l.mode === 'transit') break;
       walkBefore += l.durationSec || 0;
     }
-    return firstTransit.departure - walkBefore;
+    const LEAVE_SLACK_SEC = 60;
+    let leave = firstTransit.departure - walkBefore - LEAVE_SLACK_SEC;
+    if (leave < 0) leave += 86400;
+    return leave;
   }
 
   describe(legs, queryDepartAt, arriveAt) {
