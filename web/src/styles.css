@@ -10501,7 +10501,7 @@ button.home-card-dots__dot {
 
 /* Saved place rows: compact edit / clear buttons so the address keeps the width. */
 .fav-row--place .fav-row__overflow {
-  width: 32px;
+  width: 34px;
   height: 40px;
   font-size: 18px;
 }
@@ -10510,11 +10510,11 @@ button.home-card-dots__dot {
   height: 16px;
 }
 .fav-row--place.fav-row--set {
-  gap: 0;
+  gap: 4px;
 }
 .fav-row--set .fav-row__main {
-  gap: 12px;
+  gap: 10px;
 }
 .fav-row--set .fav-row__chevron {
-  margin-inline-end: 2px;
+  margin-inline-end: 4px;
 }
