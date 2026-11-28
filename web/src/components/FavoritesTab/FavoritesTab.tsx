@@ -42,6 +42,7 @@ export function FavoritesTab({
             onSet={() => s.beginSetSlot('home')}
             onGo={() => s.home && onPlanTo(s.home.place)}
             onClear={() => s.clearPlace('home')}
+            onEditAddress={(a) => s.editAddress('home', a)}
           />
           <PlaceRow
             kind="work"
@@ -49,6 +50,7 @@ export function FavoritesTab({
             onSet={() => s.beginSetSlot('work')}
             onGo={() => s.work && onPlanTo(s.work.place)}
             onClear={() => s.clearPlace('work')}
+            onEditAddress={(a) => s.editAddress('work', a)}
           />
           {s.customPlaces.map((p) => (
             <PlaceRow
@@ -59,6 +61,7 @@ export function FavoritesTab({
               onSet={() => undefined}
               onGo={() => onPlanTo(p.place)}
               onClear={() => s.clearPlace(p.id)}
+              onEditAddress={(a) => s.editAddress(p.id, a)}
             />
           ))}
         </div>

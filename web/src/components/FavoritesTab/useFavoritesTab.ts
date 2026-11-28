@@ -76,6 +76,13 @@ export function useFavoritesTab() {
     );
   }, [settingKind]);
 
+  /** Hand-typed address for a saved place; the coordinates stay as saved. */
+  const editAddress = useCallback((id: string, address: string) => {
+    const fav = loadFavorites().places.find((p) => p.id === id);
+    if (!fav) return;
+    setFavs(upsertPlace(fav.kind, { ...fav.place, label: address }, fav.label));
+  }, []);
+
   const clearPlace = useCallback((id: string) => {
     setFavs(removePlace(id));
   }, []);
@@ -100,6 +107,7 @@ export function useFavoritesTab() {
     confirmPlace,
     confirmCurrentLocation,
     clearPlace,
+    editAddress,
     removeStop,
     removeLine,
   };

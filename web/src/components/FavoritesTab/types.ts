@@ -26,6 +26,8 @@ export interface PlaceRowProps {
   onSet: () => void;
   onGo: () => void;
   onClear: () => void;
+  /** Save a hand-typed address (when the map has no house number). */
+  onEditAddress?: (address: string) => void;
 }
 
 export interface StopRowProps {

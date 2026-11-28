@@ -10448,3 +10448,48 @@ button.home-card-dots__dot {
     box-shadow: 0 0 0 0 rgba(var(--accent-rgb), 0);
   }
 }
+
+/* Favourites: hand-edit a saved place's address. */
+.fav-row--editing {
+  align-items: flex-start;
+  gap: 14px;
+  padding-block: 14px;
+}
+.fav-row__input {
+  margin-top: 8px;
+  width: 100%;
+  min-height: 44px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid var(--border, rgba(255, 255, 255, 0.16));
+  background: var(--surface-2, rgba(255, 255, 255, 0.06));
+  color: var(--text);
+  font: inherit;
+}
+.fav-row__input:focus {
+  outline: none;
+  border-color: var(--accent, #1a73e8);
+}
+.fav-row__edit-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+}
+.fav-row__save,
+.fav-row__cancel {
+  min-height: 40px;
+  padding: 0 18px;
+  border-radius: 999px;
+  font-weight: 600;
+}
+.fav-row__save {
+  background: var(--accent, #1a73e8);
+  color: #fff;
+}
+.fav-row__save:disabled {
+  opacity: 0.5;
+}
+.fav-row__cancel {
+  background: transparent;
+  color: var(--text-muted, var(--text));
+}
