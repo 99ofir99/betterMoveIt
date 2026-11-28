@@ -523,6 +523,10 @@ const GEO_UA = { 'User-Agent': 'BetterMoveIt/1.0 (open-source transit app)' };
 const geocodeCache = new Map(); // key -> { at, results }
 const GEOCODE_TTL_MS = 10 * 60 * 1000;
 let nominatimDownUntil = 0;
+// Nominatim's usage policy: at most 1 request per second. Inside that gap we
+// ask Photon instead of queueing, so typing never waits on the limit.
+const NOMINATIM_MIN_GAP_MS = 1000;
+let nominatimLastAt = 0;
 
 async function fetchJsonTimeout(url, ms = 6000) {
   const r = await fetch(url, { headers: GEO_UA, signal: AbortSignal.timeout(ms) });
@@ -590,7 +594,9 @@ app.get('/api/geocode', async (req, res) => {
 
   let results = null;
   const errors = [];
-  if (Date.now() >= nominatimDownUntil) {
+  const now = Date.now();
+  if (now >= nominatimDownUntil && now - nominatimLastAt >= NOMINATIM_MIN_GAP_MS) {
+    nominatimLastAt = now;
     try {
       results = await nominatimSearch(q, lat, lon);
     } catch (e) {

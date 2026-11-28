@@ -39,10 +39,17 @@ function toggleLocationFavorite(place: Place): void {
   toggleFavoritePlace(place);
 }
 
+/** Debounce for our own stop/line search. */
+const MAIN_SEARCH_DELAY_MS = 160;
+/** Debounce for the place geocoder; stops show first, places join right after. */
+const PLACE_SEARCH_DELAY_MS = 350;
+
 export function useGlobalSearch(bias: LatLon | null, target: SearchTarget) {
   const [q, setQ] = useState('');
-  const [results, setResults] = useState<SearchResult[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [main, setMain] = useState<SearchResult[]>([]);
+  const [places, setPlaces] = useState<SearchResult[]>([]);
+  const [mainLoading, setMainLoading] = useState(false);
+  const [placesLoading, setPlacesLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [favTick, setFavTick] = useState(0);
   // Live GPS updates every ~1s; keep bias stable so ranked stops don't jump.
@@ -76,51 +83,79 @@ export function useGlobalSearch(bias: LatLon | null, target: SearchTarget) {
         ? t('Where to?')
         : t('Search stops, lines, places…');
 
+  const trimmed = q.trim();
+
+  // Stops / lines: our own index, near-instant.
   useEffect(() => {
-    const trimmed = q.trim();
     if (!trimmed) {
-      setResults([]);
-      setLoading(false);
+      setMain([]);
+      setMainLoading(false);
       setError(null);
       return;
     }
     const ctrl = new AbortController();
+    setMainLoading(true);
     const timer = setTimeout(async () => {
-      setLoading(true);
       setError(null);
       try {
-        const [main, places] = await Promise.all([
-          api.search(trimmed, stableBias, ctrl.signal),
-          trimmed.length >= 2
-            ? api.geocodeSearch(trimmed, stableBias, ctrl.signal)
-            : Promise.resolve<SearchResult[]>([]),
-        ]);
-        if (ctrl.signal.aborted) return;
-        const existing = new Set(main.map((r) => `${r.lat?.toFixed(4)},${r.lon?.toFixed(4)}`));
-        const uniquePlaces = places.filter(
-          (p) =>
-            p.lat != null &&
-            p.lon != null &&
-            !existing.has(`${p.lat.toFixed(4)},${p.lon.toFixed(4)}`)
-        );
-        const merged =
-          target === 'any'
-            ? [...main, ...uniquePlaces]
-            : [...main.filter((r) => r.kind !== 'line'), ...uniquePlaces];
-        setResults(dedupeSearchResults(merged));
+        const next = await api.search(trimmed, stableBias, ctrl.signal);
+        if (!ctrl.signal.aborted) setMain(next);
       } catch (e) {
         if (ctrl.signal.aborted || (e as Error).name === 'AbortError') return;
         setError(t('Search failed. Try again.'));
-        setResults([]);
+        setMain([]);
       } finally {
-        if (!ctrl.signal.aborted) setLoading(false);
+        if (!ctrl.signal.aborted) setMainLoading(false);
       }
-    }, 160);
+    }, MAIN_SEARCH_DELAY_MS);
     return () => {
       clearTimeout(timer);
       ctrl.abort();
     };
-  }, [q, stableBias?.lat, stableBias?.lon, target]);
+  }, [trimmed, stableBias?.lat, stableBias?.lon]);
+
+  // Places: external geocoder (Nominatim allows ~1 request/second), so wait for
+  // a short pause in typing. Old places are cleared so they never sit under a
+  // newer query.
+  useEffect(() => {
+    setPlaces([]);
+    if (trimmed.length < 2) {
+      setPlacesLoading(false);
+      return;
+    }
+    const ctrl = new AbortController();
+    setPlacesLoading(true);
+    const timer = setTimeout(async () => {
+      try {
+        const next = await api.geocodeSearch(trimmed, stableBias, ctrl.signal);
+        if (!ctrl.signal.aborted) setPlaces(next);
+      } finally {
+        if (!ctrl.signal.aborted) setPlacesLoading(false);
+      }
+    }, PLACE_SEARCH_DELAY_MS);
+    return () => {
+      clearTimeout(timer);
+      ctrl.abort();
+    };
+  }, [trimmed, stableBias?.lat, stableBias?.lon]);
+
+  const results = useMemo(() => {
+    const existing = new Set(main.map((r) => `${r.lat?.toFixed(4)},${r.lon?.toFixed(4)}`));
+    const uniquePlaces = places.filter(
+      (p) =>
+        p.lat != null &&
+        p.lon != null &&
+        !existing.has(`${p.lat.toFixed(4)},${p.lon.toFixed(4)}`)
+    );
+    const merged =
+      target === 'any'
+        ? [...main, ...uniquePlaces]
+        : [...main.filter((r) => r.kind !== 'line'), ...uniquePlaces];
+    return dedupeSearchResults(merged);
+  }, [main, places, target]);
+
+  // "Searching…" only while there is nothing to show yet; places then join quietly.
+  const loading = mainLoading || (placesLoading && results.length === 0);
 
   const placeIsFavored = useCallback(
     (place: Place) => isLocationFavored(place),
