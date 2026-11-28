@@ -7,6 +7,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { api } from './api';
 import type { DepartureGroup, LatLon, Stop, StopDeparturesResponse } from '../types';
+import { readNearestStop, saveNearestStop, usableNearestStop, type NearestStopSnapshot } from './nearestStopCache';
 
 export interface NearestStopResult {
   stop: Stop;
@@ -34,12 +35,37 @@ export function sortGroupsBySoonest(groups: DepartureGroup[]): DepartureGroup[] 
     .sort((a, b) => a.next[0].minutes - b.next[0].minutes);
 }
 
+function fromSnapshot(snap: NearestStopSnapshot): NearestStopResult {
+  return {
+    stop: snap.stop,
+    distanceM: snap.distanceM,
+    groups: snap.groups,
+    // Saved departures are shown, but fresh ones are still on their way.
+    loading: true,
+  };
+}
+
 /** @param active Only refresh while the home screen shows (coming back refreshes). */
-export function useNearestStop(userLocation: LatLon | null, active = true): NearestStopResult | null {
+/**
+ * `null` while still locating / loading (the card shows a placeholder), `false`
+ * when there is no stop within reach (the card is left out).
+ */
+export function useNearestStop(
+  userLocation: LatLon | null,
+  active = true,
+): NearestStopResult | null | false {
   const [origin, setOrigin] = useState<LatLon | null>(null);
-  const [result, setResult] = useState<NearestStopResult | null>(null);
+  // Reopening the app: the card saved a few minutes ago shows at once.
+  const [initial] = useState(() => usableNearestStop(readNearestStop(), null));
+  const [result, setResult] = useState<NearestStopResult | null | false>(() =>
+    initial ? fromSnapshot(initial) : null,
+  );
   const [tick, setTick] = useState(0);
-  const stopRef = useRef<{ stop: Stop; distanceM: number | null } | null>(null);
+  const stopRef = useRef<{ stop: Stop; distanceM: number | null } | null>(
+    initial ? { stop: initial.stop, distanceM: initial.distanceM } : null,
+  );
+  const originRef = useRef<LatLon | null>(null);
+  originRef.current = origin;
 
   useEffect(() => {
     if (!userLocation) return;
@@ -70,6 +96,14 @@ export function useNearestStop(userLocation: LatLon | null, active = true): Near
   // A new origin looks the nearest stop up again.
   useEffect(() => {
     if (!origin) return;
+    // Same spot as last time: show that stop now and ask for its departures right
+    // away, alongside the nearby lookup instead of after it.
+    const saved = usableNearestStop(readNearestStop(), origin);
+    if (saved && stopRef.current?.stop.id !== saved.stop.id) {
+      stopRef.current = { stop: saved.stop, distanceM: saved.distanceM };
+      setResult(fromSnapshot(saved));
+      setTick((n) => n + 1);
+    }
     const ctrl = new AbortController();
     api
       .nearby(origin.lat, origin.lon, SEARCH_RADIUS_M, ctrl.signal)
@@ -77,16 +111,18 @@ export function useNearestStop(userLocation: LatLon | null, active = true): Near
         const first = stops[0];
         if (!first) {
           stopRef.current = null;
-          setResult(null);
+          setResult(false);
           return;
         }
+        const sameStop = stopRef.current?.stop.id === first.id;
         stopRef.current = { stop: first, distanceM: first.distance ?? null };
         setResult((prev) =>
-          prev?.stop.id === first.id
-            ? prev
+          prev && prev.stop.id === first.id
+            ? { ...prev, distanceM: first.distance ?? null }
             : { stop: first, distanceM: first.distance ?? null, groups: [], loading: true },
         );
-        setTick((n) => n + 1);
+        // Departures for this stop are already on their way when it was the saved one.
+        if (!sameStop || !saved) setTick((n) => n + 1);
       })
       .catch(() => undefined);
     return () => ctrl.abort();
@@ -101,14 +137,25 @@ export function useNearestStop(userLocation: LatLon | null, active = true): Near
       .stopDepartures(current.stop.id, ctrl.signal)
       .then((res) => {
         if (stopRef.current?.stop.id !== current.stop.id) return;
+        const groups = sortGroupsBySoonest(res.departures);
         setResult({
           stop: current.stop,
-          distanceM: current.distanceM,
-          groups: sortGroupsBySoonest(res.departures),
+          distanceM: stopRef.current.distanceM,
+          groups,
           nextDeparture: res.nextDeparture ?? null,
           dow: res.time?.dow,
           loading: false,
         });
+        const at = originRef.current;
+        if (at) {
+          saveNearestStop({
+            origin: at,
+            stop: current.stop,
+            distanceM: stopRef.current.distanceM,
+            groups: groups.slice(0, 6),
+            savedAt: Date.now(),
+          });
+        }
       })
       .catch(() => {
         if (ctrl.signal.aborted) return;

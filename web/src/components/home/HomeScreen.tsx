@@ -9,7 +9,7 @@ import type { Journey, Stop, TransitLeg } from '../../types';
 import { FrequentDestinationCard } from './FrequentDestinationCard';
 import { FavoriteItem } from './FavoriteItem';
 import { HomeCardCarousel } from './HomeCardCarousel';
-import { NearestStopCard } from './NearestStopCard';
+import { NearestStopCard, NearestStopSkeleton } from './NearestStopCard';
 import { LocationOffCard } from './LocationOffCard';
 import { HeroArt } from './HeroArt';
 import { HamburgerIcon, SearchIcon } from '../shared/icons';
@@ -89,6 +89,10 @@ export function HomeScreen({
             />
           ) : locationDenied ? (
             <LocationOffCard key="location-off" onRetry={onRetryLocation} />
+          ) : nearestStop === null && onOpenStop ? (
+            // Keep the card's place while locating / loading, so the carousel
+            // does not gain a card (and change height) a few seconds later.
+            <NearestStopSkeleton key="nearest-loading" />
           ) : null,
         ]}
       />

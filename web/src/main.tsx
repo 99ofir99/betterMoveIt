@@ -3,10 +3,6 @@ import { createRoot } from 'react-dom/client';
 import App from './App';
 import './styles.css';
 import { startPwaAutoUpdate } from './pwaUpdate';
-import { api } from './lib/api';
-
-// Wake the API server before anything waits on it (see api.warmUp).
-api.warmUp();
 
 // Dev/ngrok: drop any leftover production service worker so the phone loads Vite.
 if (import.meta.env.DEV && 'serviceWorker' in navigator) {

@@ -36,7 +36,8 @@ export interface FrequentDestResult {
 export interface HomeScreenProps {
   frequentDest: FrequentDestResult | null;
   /** Home "Nearest station" card; null while locating or when no stop is near. */
-  nearestStop?: NearestStopResult | null;
+  /** null: still locating / loading (placeholder card); false: no stop nearby. */
+  nearestStop?: NearestStopResult | null | false;
   favorites: FavoritePlace[];
   onOpenSearch: () => void;
   /** seed: a trip already planned for this place, shown while the full plan loads. */

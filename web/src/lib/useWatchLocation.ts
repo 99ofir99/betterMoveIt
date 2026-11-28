@@ -15,6 +15,9 @@ export interface WatchLocationResult {
   allowed: boolean;
 }
 
+/** A quick cached fix is used only when at least this precise (metres). */
+const QUICK_FIX_MAX_ACCURACY_M = 150;
+
 export function useWatchLocation(active: boolean): WatchLocationResult {
   const [location, setLocation] = useState<LatLon | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -36,8 +39,23 @@ export function useWatchLocation(active: boolean): WatchLocationResult {
       return;
     }
 
+    // A high-accuracy watch can take several seconds for its first fix. A recent
+    // fix the phone already has (Wi-Fi / last GPS) is usually instant: use it if
+    // it is precise enough to pick the right stop, until the watch reports.
+    let watchReported = false;
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        if (watchReported || pos.coords.accuracy > QUICK_FIX_MAX_ACCURACY_M) return;
+        setLocation((prev) => prev ?? { lat: pos.coords.latitude, lon: pos.coords.longitude });
+        setAllowed(true);
+      },
+      () => undefined,
+      { enableHighAccuracy: false, maximumAge: 120_000, timeout: 4000 }
+    );
+
     watchIdRef.current = navigator.geolocation.watchPosition(
       (pos) => {
+        watchReported = true;
         setLocation({ lat: pos.coords.latitude, lon: pos.coords.longitude });
         setAllowed(true);
         setError(null);

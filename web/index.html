@@ -72,7 +72,8 @@
     <script>
       // Splash: wake the API (Render free tier cold-starts) and rotate status lines on long loads.
       // main.tsx calls window.__bmiAppReady() after the first render; the splash leaves once
-      // the app has rendered AND the API answered (or failed), capped at 20 s.
+      // the app has rendered AND the API answered (or failed), but waits at most 1.5 s for
+      // the API: the home cards show saved data or placeholders while a sleeping server boots.
       (function () {
         var he = false;
         try { he = (JSON.parse(localStorage.getItem('bmi.settings.v1') || '{}').locale === 'he'); } catch (e) {}
@@ -103,6 +104,7 @@
           fetch('/api/health', { headers: { Accept: 'application/json' } })
             .then(function () { apiReady = true; check(); }, function () { apiReady = true; check(); });
         } catch (e) { apiReady = true; }
+        setTimeout(function () { apiReady = true; check(); }, 1500);
         setTimeout(finish, 20000);
       })();
     </script>

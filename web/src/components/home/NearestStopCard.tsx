@@ -159,3 +159,20 @@ export function NearestStopCard({
     </div>
   );
 }
+
+/** Same frame as the real card while the location and nearest stop load. */
+export function NearestStopSkeleton() {
+  return (
+    <div className="fdcard nscard is-loading" aria-busy="true" aria-label={t('Nearest station')}>
+      <div className="fdcard__header">
+        <span className="fdcard__label">{t('Nearest station')}</span>
+      </div>
+      <div className="fdcard__body" aria-hidden="true">
+        <span className="fdcard__skel fdcard__skel--title" />
+        <span className="fdcard__skel fdcard__skel--line" />
+        <span className="fdcard__skel fdcard__skel--legs" />
+        <span className="fdcard__skel fdcard__skel--short" />
+      </div>
+    </div>
+  );
+}

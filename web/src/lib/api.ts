@@ -119,15 +119,6 @@ async function getJson<T>(path: string, signal?: AbortSignal): Promise<T> {
 export const api = {
   health: (signal?: AbortSignal) => getJson<HealthResponse>('/api/health', signal),
 
-  /**
-   * Fire-and-forget at app start. A sleeping free Render instance takes up to a
-   * minute to boot; starting that now overlaps it with the GPS fix instead of
-   * after it, when the home card asks for its trip.
-   */
-  warmUp: (): void => {
-    void fetch(`${BASE}/api/health`, { cache: 'no-store' }).catch(() => {});
-  },
-
   search: async (
     q: string,
     bias?: { lat: number; lon: number } | null,
