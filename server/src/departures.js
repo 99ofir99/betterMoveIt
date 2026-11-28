@@ -4,7 +4,7 @@ import { addDaysDateInt, DAY_SEC } from './store.js';
 /** Yesterday's trips with GTFS times past 24:00 still run until ~05:00. */
 const NIGHT_OVERFLOW_SEC = 6 * 3600;
 
-function collectDepartures(store, stopIdx, dateInt, dow, seconds, horizon, dayOffsetSec, out, dayIndex) {
+function collectDepartures(store, stopIdx, dateInt, dow, seconds, horizon, dayOffsetSec, out, dayIndex, perKey) {
   const day = dayIndex ?? store.ensureDayIndex(dateInt, dow);
   const absNow = seconds;
   const fromSec = Math.max(0, absNow - dayOffsetSec);
@@ -17,6 +17,14 @@ function collectDepartures(store, stopIdx, dateInt, dow, seconds, horizon, dayOf
     if (absDep > absNow + horizon) break;
     const trip = day.trips[idx];
     const routeIdx = store.tripRoute[trip];
+    if (perKey) {
+      // Long horizons (rest of the day) would list every trip of a busy stop; the board only
+      // shows a few per line+destination, so stop counting a group once it has enough.
+      const k = `${routeIdx}|${store.tripHeadsign[trip]}`;
+      const n = perKey.get(k) || 0;
+      if (n >= PER_GROUP) continue;
+      perKey.set(k, n + 1);
+    }
     out.push({
       tripId: trip,
       // Clock-of-day for display; yesterday's 24:30 is today's 00:30.
@@ -28,21 +36,28 @@ function collectDepartures(store, stopIdx, dateInt, dow, seconds, horizon, dayOf
       live: false,
       nextDay: dayOffsetSec > 0,
     });
-    if (out.length > 500) break;
+    if (!perKey && out.length > 500) break;
   }
 }
 
+/** Departures kept per line+destination on a board. */
+const PER_GROUP = 3;
+
 export function departuresAtStop(store, stopIdx, { dateInt, seconds, dow }, horizon = 7200, maxGroups = 40) {
   const out = [];
+  const perKey = new Map();
   // After midnight: yesterday's late trips (24:xx, 25:xx…) are still running.
   if (seconds < NIGHT_OVERFLOW_SEC) {
     const prevDate = addDaysDateInt(dateInt, -1);
     const prevDow = (dow + 6) % 7;
     const night = store.ensureOverflowIndex(prevDate, prevDow);
-    collectDepartures(store, stopIdx, prevDate, prevDow, seconds, horizon, -DAY_SEC, out, night);
+    collectDepartures(store, stopIdx, prevDate, prevDow, seconds, horizon, -DAY_SEC, out, night, perKey);
   }
-  // Today from "now".
-  collectDepartures(store, stopIdx, dateInt, dow, seconds, horizon, 0, out);
+  // Today from "now" through the end of today's service (incl. 24:xx/25:xx trips). A short
+  // horizon hid tonight's buses behind tomorrow morning's peek: on Shabbat afternoon the
+  // board said "tomorrow 05:05" though the line runs again at 19:30 after Shabbat ends.
+  const restOfServiceDay = Math.max(horizon, DAY_SEC + NIGHT_OVERFLOW_SEC - seconds);
+  collectDepartures(store, stopIdx, dateInt, dow, seconds, restOfServiceDay, 0, out, undefined, perKey);
   // Always peek tomorrow morning so late-night UIs still show the next bus.
   const nextDate = addDaysDateInt(dateInt, 1);
   const nextDow = (dow + 1) % 7;
@@ -56,7 +71,9 @@ export function departuresAtStop(store, stopIdx, { dateInt, seconds, dow }, hori
     0,
     Math.max(horizon, 14 * 3600),
     remainToday, // minutes = remainToday + dep
-    out
+    out,
+    undefined,
+    perKey
   );
   out.sort((a, b) => a.minutes - b.minutes);
 
@@ -70,7 +87,7 @@ export function departuresAtStop(store, stopIdx, { dateInt, seconds, dow }, hori
       byKey.set(k, g);
       grouped.push(g);
     }
-    if (g.next.length < 3) g.next.push({ minutes: d.minutes, departure: d.departure, tripId: d.tripId });
+    if (g.next.length < PER_GROUP) g.next.push({ minutes: d.minutes, departure: d.departure, tripId: d.tripId });
   }
   grouped.sort((a, b) => (a.next[0]?.minutes ?? 1e9) - (b.next[0]?.minutes ?? 1e9));
   return { departures: grouped.slice(0, maxGroups), rawCount: out.length };
