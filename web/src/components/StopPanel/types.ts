@@ -11,7 +11,7 @@ export interface StopPanelProps {
   onSetOrigin: () => void;
   onSetDestination: () => void;
   /** Optional: tap a departure to open that line. */
-  onOpenLine?: (lineId: string) => void;
+  onOpenLine?: (lineId: string, direction?: number) => void;
 }
 
 export interface StopHeaderProps {
@@ -28,7 +28,7 @@ export interface StopDepartureListProps {
   nextDeparture?: StopDeparturesResponse['nextDeparture'];
   /** Feed day-of-week (0 = Sunday) the board was computed for. */
   dow?: number;
-  onOpenLine?: (lineId: string) => void;
+  onOpenLine?: (lineId: string, direction?: number) => void;
 }
 
 export interface StopActionsProps {

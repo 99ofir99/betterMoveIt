@@ -10247,6 +10247,22 @@ button.home-card-dots__dot {
   font-weight: 600;
   opacity: 0.8;
 }
+/* A departure row opens its line (in this stop's direction): pressed feedback. */
+.nscard__row--tap {
+  cursor: pointer;
+  margin-inline: -8px;
+  padding-inline: 8px;
+  border-radius: 10px;
+  -webkit-tap-highlight-color: transparent;
+  transition: background-color 0.12s ease;
+}
+.nscard__row--tap:active {
+  background: rgba(255, 255, 255, 0.07);
+}
+.nscard__row--tap:focus-visible {
+  outline: 2px solid var(--accent, #1e88ff);
+  outline-offset: -2px;
+}
 
 /* In-page loading state (components/common/RippleLoader.tsx), same art as the startup splash. */
 /* Shown only when loading takes over 300 ms: a quick load never flashes the loader. */

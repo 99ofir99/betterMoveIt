@@ -3,7 +3,7 @@
  * Global types (Journey, Place, etc.) live in src/types.ts.
  */
 import type { NearestStopResult } from '../../lib/useNearestStop';
-import type { FavoritePlace, Journey, Place, Stop } from '../../types';
+import type { DepartureGroup, FavoritePlace, Journey, Place, Stop } from '../../types';
 
 /** Result returned by useFrequentDestination. */
 export interface FrequentDestResult {
@@ -45,6 +45,8 @@ export interface HomeScreenProps {
   onPlanAtTime?: (place: Place) => void;
   /** Open a stop's live departures board. */
   onOpenStop?: (stop: Stop) => void;
+  /** Nearest station row: open that line in the direction it leaves this stop. */
+  onOpenLineAtStop?: (group: DepartureGroup, stop: Stop) => void;
   onOpenMore: () => void;
   onAddFavorite: () => void;
   onPlanManually: () => void;

@@ -55,7 +55,7 @@ export function StopDepartureList({ departures, nextDeparture, dow, onOpenLine }
             group={group}
             highlighted={i === 0}
             onSelect={
-              onOpenLine ? (route) => onOpenLine(String(route.index)) : undefined
+              onOpenLine ? (route) => onOpenLine(String(route.index), group.direction) : undefined
             }
           />
         </div>

@@ -20,7 +20,14 @@ const MAX_ROWS = 2;
 /** Walking speed used for the "n min walk" hint (same 80 m/min as the planner). */
 const WALK_M_PER_MIN = 80;
 
-function DepartureRow({ group }: { group: DepartureGroup }) {
+function DepartureRow({
+  group,
+  onOpen,
+}: {
+  group: DepartureGroup;
+  /** Open this line in the direction it leaves this stop. */
+  onOpen?: () => void;
+}) {
   const family = modeFamilyForRoute(group.route);
   const mode = family === 'tram' ? 'tram' : family === 'rail' ? 'rail' : 'bus';
   const label =
@@ -33,7 +40,33 @@ function DepartureRow({ group }: { group: DepartureGroup }) {
     .map((n) => formatClock(n.departure))
     .join(', ');
   return (
-    <li className="nscard__row">
+    <li
+      className={`nscard__row${onOpen ? ' nscard__row--tap' : ''}`}
+      role={onOpen ? 'button' : undefined}
+      tabIndex={onOpen ? 0 : undefined}
+      aria-label={
+        onOpen ? t('Line {line} to {headsign}', { line: label, headsign: group.headsign }) : undefined
+      }
+      onClick={
+        onOpen
+          ? (e) => {
+              // The card itself opens the stop board; a row opens its line.
+              e.stopPropagation();
+              onOpen();
+            }
+          : undefined
+      }
+      onKeyDown={
+        onOpen
+          ? (e) => {
+              if (e.key !== 'Enter' && e.key !== ' ') return;
+              e.preventDefault();
+              e.stopPropagation();
+              onOpen();
+            }
+          : undefined
+      }
+    >
       <LineBadge label={label} mode={mode} size="sm" />
       <span className="nscard__headsign" dir="auto">
         {group.headsign}
@@ -52,9 +85,12 @@ function DepartureRow({ group }: { group: DepartureGroup }) {
 export function NearestStopCard({
   data,
   onOpen,
+  onOpenLine,
 }: {
   data: NearestStopResult;
   onOpen: () => void;
+  /** Tap a departure row: that line, in its direction from this stop. */
+  onOpenLine?: (group: DepartureGroup) => void;
 }) {
   const { stop, distanceM, groups, loading } = data;
   const walkMin = distanceM != null ? Math.max(1, Math.round(distanceM / WALK_M_PER_MIN)) : null;
@@ -102,7 +138,11 @@ export function NearestStopCard({
         {groups.length > 0 ? (
           <ul className="nscard__rows">
             {groups.slice(0, MAX_ROWS).map((g) => (
-              <DepartureRow key={`${g.route.index}-${g.direction}-${g.headsign}`} group={g} />
+              <DepartureRow
+                key={`${g.route.index}-${g.direction}-${g.headsign}`}
+                group={g}
+                onOpen={onOpenLine ? () => onOpenLine(g) : undefined}
+              />
             ))}
           </ul>
         ) : loading ? (

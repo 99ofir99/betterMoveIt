@@ -23,6 +23,7 @@ export function HomeScreen({
   onPlanTo,
   onPlanAtTime,
   onOpenStop,
+  onOpenLineAtStop,
   onOpenMore,
   onAddFavorite,
   onPlanManually,
@@ -78,7 +79,14 @@ export function HomeScreen({
             />
           ) : null,
           nearestStop && onOpenStop ? (
-            <NearestStopCard key="nearest" data={nearestStop} onOpen={() => onOpenStop(nearestStop.stop)} />
+            <NearestStopCard
+              key="nearest"
+              data={nearestStop}
+              onOpen={() => onOpenStop(nearestStop.stop)}
+              onOpenLine={
+                onOpenLineAtStop ? (g) => onOpenLineAtStop(g, nearestStop.stop) : undefined
+              }
+            />
           ) : locationDenied ? (
             <LocationOffCard key="location-off" onRetry={onRetryLocation} />
           ) : null,

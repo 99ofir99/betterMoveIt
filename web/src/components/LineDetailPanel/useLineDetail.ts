@@ -12,6 +12,7 @@ import { api } from '../../lib/api';
 import { buildLineRideJourney } from '../../lib/buildLineRideJourney';
 import { isFavoriteLine, toggleFavoriteLine } from '../../lib/favorites';
 import { formatRailFinalCity } from '../../lib/lineCategory';
+import { findAnchorIndex, type AnchorStop } from '../../lib/lineStopAnchor';
 import { isHeavyRailRoute, isRailTrainNumber } from '../../lib/railLabel';
 import type {
   Journey,
@@ -26,12 +27,16 @@ export function useLineDetail(
   lineId: string,
   onGeometryChange?: (geometry: [number, number][] | null) => void,
   onSwitchLine?: (lineId: string) => void,
+  /** Opened from a stop: start in the direction that departs from it… */
+  initialDirection?: number,
+  /** …with that stop's schedule card open (and again after Change direction). */
+  anchorStop?: AnchorStop | null,
 ) {
   const [data, setData] = useState<LineScheduleResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [favTick, setFavTick] = useState(0);
   const [tick, setTick] = useState(0);
-  const [direction, setDirection] = useState<number | undefined>(undefined);
+  const [direction, setDirection] = useState<number | undefined>(initialDirection);
   const [directionOptions, setDirectionOptions] = useState<LineDirectionOption[]>([]);
   const [oppositeLineId, setOppositeLineId] = useState<string | null>(null);
   const [geometry, setGeometry] = useState<[number, number][] | null>(null);
@@ -41,9 +46,14 @@ export function useLineDetail(
   const [pickingDestination, setPickingDestination] = useState(false);
   /** Moovit expands one stop’s schedule card; defaults to the first stop. */
   const [focusedIndex, setFocusedIndex] = useState(0);
+  /** Waiting for stops to focus the anchor stop on. */
+  const [anchorPending, setAnchorPending] = useState(Boolean(anchorStop));
+  /** Bumped when the anchor stop got focus, so the list scrolls it into view. */
+  const [anchorFocusTick, setAnchorFocusTick] = useState(0);
 
   useEffect(() => {
-    setDirection(undefined);
+    setDirection(initialDirection);
+    setAnchorPending(Boolean(anchorStop));
     setDirectionOptions([]);
     setOppositeLineId(null);
     setData(null);
@@ -52,6 +62,8 @@ export function useLineDetail(
     setFocusedIndex(0);
     setGeometry(null);
     setReversed(false);
+    // Opening props are read once per line (the panel is keyed by them in App).
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [lineId]);
 
   useEffect(() => {
@@ -118,6 +130,18 @@ export function useLineDetail(
     return reversed ? [...data.stops].reverse() : data.stops;
   }, [data, reversed]);
 
+  // Focus "this stop" once the stops for the wanted direction are in.
+  const dataDirection = data?.direction;
+  useEffect(() => {
+    if (!anchorPending || displayStops.length === 0) return;
+    if (direction !== undefined && dataDirection !== undefined && dataDirection !== direction) return;
+    setAnchorPending(false);
+    const idx = findAnchorIndex(displayStops, anchorStop);
+    if (idx < 0) return;
+    setFocusedIndex(idx);
+    setAnchorFocusTick((x) => x + 1);
+  }, [anchorPending, displayStops, direction, dataDirection, anchorStop]);
+
   const originName = displayStops[0]?.name ?? '';
   const rawFeedDestination =
     data?.headsign ||
@@ -156,6 +180,8 @@ export function useLineDetail(
     setBoardIndex(null);
     setPickingDestination(false);
     setFocusedIndex(0);
+    // Opened from a stop: the other direction from (across the street of) here.
+    if (anchorStop) setAnchorPending(true);
     if (multiGtfs) {
       const cur = direction ?? directionOptions[0]?.direction;
       const next = directionOptions.find((o) => o.direction !== cur) ?? directionOptions[0];
@@ -170,7 +196,7 @@ export function useLineDetail(
     }
     // Single GTFS direction — flip the pattern locally (Moovit still offers Change).
     setReversed((r) => !r);
-  }, [multiGtfs, direction, directionOptions, oppositeLineId, onSwitchLine]);
+  }, [multiGtfs, direction, directionOptions, oppositeLineId, onSwitchLine, anchorStop]);
 
   const toggleFavourite = useCallback(() => {
     if (!line) return;
@@ -261,6 +287,7 @@ export function useLineDetail(
     toggleFavourite,
     boardIndex,
     focusedIndex,
+    anchorFocusTick,
     pickingDestination,
     cancelPick,
     selectStopForRide,

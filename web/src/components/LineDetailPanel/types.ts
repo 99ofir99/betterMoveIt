@@ -15,6 +15,10 @@ export interface LineDetailPanelProps {
   onLineLoaded?: (line: Line) => void;
   /** "Live location" on a stop card: show this line's buses heading there. */
   onLiveLocation?: (stop: Stop) => void;
+  /** Opened from a stop's departure: the GTFS direction that departs there. */
+  initialDirection?: number;
+  /** Opened from a stop: open its schedule card and scroll to it. */
+  anchorStop?: Stop | null;
 }
 
 export interface LineDirectionHeaderProps {

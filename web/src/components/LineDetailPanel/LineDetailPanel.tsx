@@ -33,8 +33,24 @@ export function LineDetailPanel({
   onSwitchLine,
   onLineLoaded,
   onLiveLocation,
+  initialDirection,
+  anchorStop,
 }: LineDetailPanelProps) {
-  const s = useLineDetail(lineId, onGeometryChange, onSwitchLine);
+  const s = useLineDetail(lineId, onGeometryChange, onSwitchLine, initialDirection, anchorStop);
+  const rootRef = useRef<HTMLDivElement>(null);
+  // Opened from a stop: bring that stop's card into view (it may be far down the list).
+  useEffect(() => {
+    if (!s.anchorFocusTick) return;
+    const id = requestAnimationFrame(() => {
+      // Scroll only the stop list: scrollIntoView would also shift the sheet and map.
+      const list = rootRef.current?.querySelector<HTMLElement>('.lnd-stops');
+      const row = list?.querySelector<HTMLElement>('.lnd-stop.is-focused');
+      if (!list || !row) return;
+      const top = row.getBoundingClientRect().top - list.getBoundingClientRect().top;
+      list.scrollTop += top - Math.max(0, (list.clientHeight - row.offsetHeight) / 3);
+    });
+    return () => cancelAnimationFrame(id);
+  }, [s.anchorFocusTick]);
   const onLineLoadedRef = useRef(onLineLoaded);
   onLineLoadedRef.current = onLineLoaded;
   useEffect(() => {
@@ -56,7 +72,7 @@ export function LineDetailPanel({
   };
 
   return (
-    <div className="line-detail">
+    <div className="line-detail" ref={rootRef}>
       <div className="lnd-header">
         <button type="button" className="lnd-header__back" onClick={onClose} aria-label={t("Back")}>
           <Icon name="arrow-back" size={22} />
