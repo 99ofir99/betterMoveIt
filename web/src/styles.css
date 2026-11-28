@@ -10162,6 +10162,8 @@ button.fdcard__chip:active {
   scroll-snap-type: x mandatory;
   scrollbar-width: none;
   overscroll-behavior-x: contain;
+  overflow-y: hidden;
+  transition: height 0.2s ease;
 }
 .home-card-track::-webkit-scrollbar {
   display: none;
@@ -10170,10 +10172,9 @@ button.fdcard__chip:active {
   flex: 0 0 100%;
   min-width: 0;
   scroll-snap-align: start;
-  display: flex;
-}
-.home-card-slide > .fdcard {
-  flex: 1;
+  /* Each card keeps its own height; the track follows the card in view
+     (HomeCardCarousel) instead of stretching all of them to the tallest. */
+  align-self: flex-start;
 }
 button.home-card-dots__dot {
   border: 0;
