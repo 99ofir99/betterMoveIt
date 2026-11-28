@@ -46,3 +46,58 @@ export function formatAddress(r: NominatimReverse): string | null {
     .filter((s) => s && !ADMIN.test(s));
   return parts.length ? parts.slice(0, 2).join(', ') : null;
 }
+
+/** An OSM address point from Overpass (`out center`). */
+export interface OsmAddressPoint {
+  lat?: number;
+  lon?: number;
+  center?: { lat: number; lon: number };
+  tags?: Record<string, string>;
+}
+
+function metersBetween(aLat: number, aLon: number, bLat: number, bLon: number): number {
+  const k = 111_320;
+  const dx = (bLon - aLon) * k * Math.cos((aLat * Math.PI) / 180);
+  const dy = (bLat - aLat) * k;
+  return Math.hypot(dx, dy);
+}
+
+/**
+ * Nearest mapped house number around a point: on `street` when one is within
+ * `maxM`, else any address within `maxOtherM` (its own street then).
+ */
+export function nearestHouseNumber(
+  points: OsmAddressPoint[],
+  lat: number,
+  lon: number,
+  street: string | undefined,
+  maxM = 60,
+  maxOtherM = 30
+): { street: string; number: string } | null {
+  let same: { d: number; street: string; number: string } | null = null;
+  let other: { d: number; street: string; number: string } | null = null;
+  for (const p of points) {
+    const number = p.tags?.['addr:housenumber'];
+    const pStreet = p.tags?.['addr:street'];
+    const pLat = p.lat ?? p.center?.lat;
+    const pLon = p.lon ?? p.center?.lon;
+    if (!number || !pStreet || pLat == null || pLon == null) continue;
+    const d = metersBetween(lat, lon, pLat, pLon);
+    if (street && pStreet === street) {
+      if (d <= maxM && (!same || d < same.d)) same = { d, street: pStreet, number };
+    } else if (d <= maxOtherM && (!other || d < other.d)) {
+      other = { d, street: pStreet, number };
+    }
+  }
+  const best = same ?? other;
+  return best ? { street: best.street, number: best.number } : null;
+}
+
+/** Fill a missing house number from the nearest mapped address point. */
+export function withHouseNumber(
+  r: NominatimReverse,
+  hit: { street: string; number: string } | null
+): NominatimReverse {
+  if (!hit || r.address?.house_number) return r;
+  return { ...r, address: { ...r.address, road: hit.street, house_number: hit.number } };
+}

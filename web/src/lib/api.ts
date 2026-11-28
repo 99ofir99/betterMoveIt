@@ -19,7 +19,13 @@ import type {
   VehiclesResponse,
 } from '../types';
 
-import { formatAddress, type NominatimReverse } from './formatAddress';
+import {
+  formatAddress,
+  nearestHouseNumber,
+  withHouseNumber,
+  type NominatimReverse,
+  type OsmAddressPoint,
+} from './formatAddress';
 
 // Always same-origin so Vite's `/api` proxy works in dev and Express serves both in prod.
 const BASE = '';
@@ -181,15 +187,44 @@ export const api = {
   },
 
 
-  reverseGeocode: async (lat: number, lon: number, signal?: AbortSignal): Promise<string> => {
+  reverseGeocode: async (lat: number, lon: number, signal?: AbortSignal): Promise<string> =>
+    (await api.reverseGeocodeDetail(lat, lon, signal)).full,
+
+  /**
+   * Reverse geocode, plus the nearest mapped house number when Nominatim gives a
+   * street without one (common on long boulevards). `plain` is the Nominatim-only
+   * label, so a label saved before this can be recognised and upgraded.
+   */
+  reverseGeocodeDetail: async (
+    lat: number,
+    lon: number,
+    signal?: AbortSignal
+  ): Promise<{ plain: string; full: string }> => {
+    const coords = `${lat.toFixed(4)}, ${lon.toFixed(4)}`;
     try {
       // zoom=18 = building level, so a mapped house number comes back in `address`.
       const url = `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=jsonv2&addressdetails=1&zoom=18&accept-language=he,en`;
       const res = await fetch(url, { signal, headers: { Accept: 'application/json' } });
       const j = (await res.json()) as NominatimReverse;
-      return formatAddress(j) ?? `${lat.toFixed(4)}, ${lon.toFixed(4)}`;
+      const plain = formatAddress(j) ?? coords;
+      const a = j.address ?? {};
+      const street = a.road || a.pedestrian || a.square;
+      if (!street || a.house_number) return { plain, full: plain };
+      try {
+        const q = `[out:json][timeout:8];nwr(around:60,${lat},${lon})["addr:housenumber"]["addr:street"];out center 60;`;
+        const ov = await fetch('https://overpass-api.de/api/interpreter', {
+          method: 'POST',
+          body: new URLSearchParams({ data: q }),
+          signal,
+        });
+        const data = (await ov.json()) as { elements?: OsmAddressPoint[] };
+        const hit = nearestHouseNumber(data.elements ?? [], lat, lon, street);
+        return { plain, full: formatAddress(withHouseNumber(j, hit)) ?? plain };
+      } catch {
+        return { plain, full: plain };
+      }
     } catch {
-      return `${lat.toFixed(4)}, ${lon.toFixed(4)}`;
+      return { plain: coords, full: coords };
     }
   },
 

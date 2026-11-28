@@ -18,15 +18,23 @@ export function isPlaceholderAddress(label: string | null | undefined): boolean 
 
 const COORDS = /^-?\d+\.\d+,\s*-?\d+\.\d+$/;
 
-/** Reverse-geocode a saved Home / Work whose subtitle is a placeholder, and store it. */
+/**
+ * Reverse-geocode a saved Home / Work whose subtitle is a placeholder, or a
+ * street without a house number that came from an earlier reverse geocode.
+ */
 export function fillPlaceAddress(kind: 'home' | 'work' | 'custom', place: Place, label?: string): void {
-  if (kind === 'custom' || !isPlaceholderAddress(place.label)) return;
-  void api.reverseGeocode(place.lat, place.lon).then((address) => {
+  if (kind === 'custom') return;
+  const placeholder = isPlaceholderAddress(place.label);
+  const noNumber = !placeholder && !/\d/.test(place.label ?? '');
+  if (!placeholder && !noNumber) return;
+  void api.reverseGeocodeDetail(place.lat, place.lon).then(({ plain, full }) => {
     // reverseGeocode falls back to raw coordinates when offline: keep trying later.
-    if (!address || COORDS.test(address)) return;
+    if (!full || COORDS.test(full)) return;
+    // A name the user picked (e.g. a building) stays; only our own street label upgrades.
+    if (noNumber && (place.label !== plain || full === plain)) return;
     const current = loadFavorites().places.find((p) => p.id === kind);
     if (!current || current.place.lat !== place.lat || current.place.lon !== place.lon) return;
-    upsertPlace(kind, { ...current.place, label: address }, label ?? current.label);
+    upsertPlace(kind, { ...current.place, label: full }, label ?? current.label);
   });
 }
 
