@@ -391,6 +391,98 @@ export default function App() {
     setShowSearch(true);
   }, []);
 
+  const closeLine = useCallback(() => {
+    setSelectedLineId(null);
+    setFocusedLineKeys([]);
+    setLineGeometry(null);
+    setLineSheetPeek(false);
+  }, []);
+
+  // ── Screen history (stop ⇄ line ⇄ journey detail) ─────────────────────────
+  /**
+   * Each time a stop or line opens from another screen, the screen it covered is
+   * saved here. Back (in-app ← or the phone's Back) restores exactly that screen,
+   * so Stations → stop → line → Back lands on the stop in Stations, not on the
+   * Lines tab.
+   */
+  type ScreenSnapshot = {
+    tab: TabName;
+    lineId: string | null;
+    stop: Stop | null;
+    journeyDetail: boolean;
+    tabHistory: TabName[];
+  };
+  const screenStackRef = useRef<ScreenSnapshot[]>([]);
+  const currentScreenRef = useRef<Omit<ScreenSnapshot, "tabHistory">>({
+    tab: activeTab,
+    lineId: null,
+    stop: null,
+    journeyDetail: false,
+  });
+  currentScreenRef.current = {
+    tab: activeTab,
+    lineId: selectedLineId,
+    stop: state.panel === "stop" ? state.selectedStop : null,
+    journeyDetail: showJourneyDetail,
+  };
+  const pushScreen = useCallback(() => {
+    screenStackRef.current = [
+      ...screenStackRef.current,
+      { ...currentScreenRef.current, tabHistory: [...tabHistoryRef.current] },
+    ].slice(-20);
+  }, []);
+
+  /** Show a line in the Lines tab without touching the screen history. */
+  const showLine = useCallback(async (line: Line | string) => {
+    const id = typeof line === "string" ? line : line.id;
+    // Never match by route index / bare name: R1 is GTFS "1" and would pull in bus 1.
+    setSelectedLineId(id);
+    setFocusedLineKeys(typeof line === "string" ? [] : liveKeysForRoute(line));
+    setLineSheetPeek(false);
+    setActiveTab("lines");
+    setShowSearch(false);
+    // Ensure live buses are on while inspecting a line on the map.
+    setLiveBuses(true);
+    saveSettings({ showLiveBuses: true });
+    try {
+      const detail = await api.lineDetail(id);
+      setLineGeometry(detail.geometry ?? null);
+      if (detail.line) setFocusedLineKeys(liveKeysForRoute(detail.line));
+    } catch {
+      setLineGeometry(null);
+    }
+  }, []);
+
+  /** Back from a stop / line: return to the screen it was opened from. */
+  const screenBack = useCallback(
+    (fallback: () => void) => {
+      const snap = screenStackRef.current.pop();
+      if (!snap) {
+        fallback();
+        return;
+      }
+      if (snap.tab !== currentScreenRef.current.tab) {
+        poppingTabRef.current = true;
+        setActiveTab(snap.tab);
+      }
+      tabHistoryRef.current = snap.tabHistory;
+      if (snap.lineId) void showLine(snap.lineId);
+      else closeLine();
+      if (snap.stop) state.openStop(snap.stop);
+      else if (state.panel === "stop") state.clearStop();
+      if (snap.journeyDetail) setShowJourneyDetail(true);
+    },
+    [showLine, closeLine, state],
+  );
+
+  // Back at a top-level screen: older saved screens no longer apply.
+  useEffect(() => {
+    if (!selectedLineId && state.panel !== "stop") screenStackRef.current = [];
+  }, [selectedLineId, state.panel]);
+
+  const closeStopScreen = useCallback(() => screenBack(state.clearStop), [screenBack, state.clearStop]);
+  const closeLineScreen = useCallback(() => screenBack(closeLine), [screenBack, closeLine]);
+
   /** ← returns to the previous screen in the trip flow. */
   const goBack = useCallback(() => {
     if (showDepartSheet) {
@@ -420,7 +512,7 @@ export default function App() {
       return;
     }
     if (state.panel === "stop") {
-      state.clearStop();
+      closeStopScreen();
       return;
     }
     if (state.panel === "journeys") {
@@ -442,6 +534,7 @@ export default function App() {
     showPlanForm,
     setMinimized,
     restoreLiveReturn,
+    closeStopScreen,
   ]);
 
   // ── System Back (Android button / gesture) ────────────────────────────────
@@ -461,13 +554,6 @@ export default function App() {
     stack.push(prev);
     tabHistoryRef.current = stack.slice(-8);
   }, [activeTab]);
-
-  const closeLine = useCallback(() => {
-    setSelectedLineId(null);
-    setFocusedLineKeys([]);
-    setLineGeometry(null);
-    setLineSheetPeek(false);
-  }, []);
 
   const inFlowBack =
     showDepartSheet ||
@@ -505,7 +591,7 @@ export default function App() {
       return;
     }
     if (selectedLineId) {
-      closeLine();
+      closeLineScreen();
       return;
     }
     if (activeTab !== "directions") {
@@ -515,7 +601,7 @@ export default function App() {
       if (prev !== "nearby") state.clearStop();
       if (prev === "directions") setShowPlanForm(false);
     }
-  }, [homeTimePlace, mapPickSlot, showTripConfirm, inFlowBack, goBack, selectedLineId, closeLine, activeTab, state]);
+  }, [homeTimePlace, mapPickSlot, showTripConfirm, inFlowBack, goBack, selectedLineId, closeLineScreen, activeTab, state]);
 
   useBackTrap(canGoBack, systemBack);
 
@@ -770,6 +856,7 @@ export default function App() {
 
   const openStop = useCallback(
     (stop: Stop) => {
+      pushScreen();
       state.openStop(stop);
       setActiveTab(activeTab === "nearby" ? "nearby" : "directions");
       setSelectedLineId(null);
@@ -777,28 +864,18 @@ export default function App() {
       setLineGeometry(null);
       setShowSearch(false);
     },
-    [state, activeTab],
+    [state, activeTab, pushScreen],
   );
 
-  const openLine = useCallback(async (line: Line | string) => {
-    const id = typeof line === "string" ? line : line.id;
-    // Never match by route index / bare name: R1 is GTFS "1" and would pull in bus 1.
-    setSelectedLineId(id);
-    setFocusedLineKeys(typeof line === "string" ? [] : liveKeysForRoute(line));
-    setLineSheetPeek(false);
-    setActiveTab("lines");
-    setShowSearch(false);
-    // Ensure live buses are on while inspecting a line on the map.
-    setLiveBuses(true);
-    saveSettings({ showLiveBuses: true });
-    try {
-      const detail = await api.lineDetail(id);
-      setLineGeometry(detail.geometry ?? null);
-      if (detail.line) setFocusedLineKeys(liveKeysForRoute(detail.line));
-    } catch {
-      setLineGeometry(null);
-    }
-  }, []);
+  const openLine = useCallback(
+    (line: Line | string, opts?: { replace?: boolean }) => {
+      if (!opts?.replace) pushScreen();
+      // The stop sheet is now behind the line; Back brings it back from history.
+      if (state.panel === "stop") state.clearStop();
+      void showLine(line);
+    },
+    [pushScreen, showLine, state],
+  );
 
   /** Stop sheet "Route from here / to here": fill that end and open the planner or results. */
   const planFromStop = useCallback(
@@ -1108,7 +1185,9 @@ export default function App() {
               onShare={() => void shareTrip()}
               onStopClick={async (stopId) => {
                 const detail = await api.stopDetail(stopId).catch(() => null);
-                if (detail) state.openStop(detail.stop);
+                if (!detail) return;
+                pushScreen();
+                state.openStop(detail.stop);
               }}
             />
           </DraggableSheet>
@@ -1242,7 +1321,7 @@ export default function App() {
                 stopId={state.selectedStop.id}
                 stopName={state.selectedStop.name}
                 stop={state.selectedStop}
-                onClose={state.clearStop}
+                onClose={closeStopScreen}
                 onOpenLine={(id) => void openLine(id)}
                 onSetOrigin={() => planFromStop("from")}
                 onSetDestination={() => planFromStop("to")}
@@ -1310,7 +1389,7 @@ export default function App() {
             stopId={state.selectedStop.id}
             stopName={state.selectedStop.name}
             stop={state.selectedStop}
-            onClose={state.clearStop}
+            onClose={closeStopScreen}
             onOpenLine={(id) => void openLine(id)}
             onSetOrigin={() => planFromStop("from")}
             onSetDestination={() => planFromStop("to")}
@@ -1327,15 +1406,10 @@ export default function App() {
         >
           <LineDetailPanel
             lineId={selectedLineId}
-            onClose={() => {
-              setSelectedLineId(null);
-              setFocusedLineKeys([]);
-              setLineGeometry(null);
-              setLineSheetPeek(false);
-            }}
+            onClose={closeLineScreen}
             onOpenStop={openStop}
             onGeometryChange={setLineGeometry}
-            onSwitchLine={(id) => void openLine(id)}
+            onSwitchLine={(id) => openLine(id, { replace: true })}
             onLineLoaded={(line) => setFocusedLineKeys(liveKeysForRoute(line))}
             onLiveLocation={(stop) => {
               // Lower the sheet so the buses heading to this stop are visible.
@@ -1367,6 +1441,7 @@ export default function App() {
         <BottomNavigation
           activeTab={activeTab}
           onTabChange={(tab) => {
+            screenStackRef.current = [];
             setActiveTab(tab);
             if (tab !== "lines") {
               setSelectedLineId(null);
