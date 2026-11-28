@@ -250,19 +250,27 @@ export class TransitStore {
     }
 
     // Sort each stop's slice by departure time so we can break early.
+    const POS_SPAN = 2 ** 24; // > any stop's visit count
+    let keyBuf = new Float64Array(1 << 16);
     for (let i = 0; i < this.stopCount; i++) {
       const a = start[i];
       const b = start[i + 1];
       const n = b - a;
       if (n < 2) continue;
-      const order = new Array(n);
-      for (let k = 0; k < n; k++) order[k] = k;
-      order.sort((x, y) => depAt(a + x) - depAt(a + y));
+      // Pack (departure, position) into one float and sort natively: ties keep
+      // trip order like a stable sort, and no comparator closure runs per pair.
+      // This loop dominated boot on Render's slow CPU (~11 s with Array#sort).
+      if (n > keyBuf.length) keyBuf = new Float64Array(n * 2);
+      const keys = keyBuf.subarray(0, n);
+      for (let k = 0; k < n; k++) keys[k] = depAt(a + k) * POS_SPAN + k;
+      keys.sort();
       const t2 = new Int32Array(n);
       const r2 = new Int32Array(n);
       for (let k = 0; k < n; k++) {
-        t2[k] = entryTrip[a + order[k]];
-        r2[k] = entryRow[a + order[k]];
+        const key = keys[k];
+        const pos = key - Math.floor(key / POS_SPAN) * POS_SPAN;
+        t2[k] = entryTrip[a + pos];
+        r2[k] = entryRow[a + pos];
       }
       entryTrip.set(t2, a);
       entryRow.set(r2, a);

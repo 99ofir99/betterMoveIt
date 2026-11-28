@@ -414,6 +414,19 @@ app.get('/api/stop/:id', (req, res) => {
 
 // ------------------------------------------------------------------ plan
 
+const PLAN_CACHE_MS = 60_000;
+const PLAN_CACHE_MAX = 200;
+/** @type {Map<string, {at:number, body:object}>} */
+const planCache = new Map();
+function rememberPlan(key, body) {
+  const now = Date.now();
+  for (const [k, v] of planCache) {
+    if (planCache.size < PLAN_CACHE_MAX && now - v.at < PLAN_CACHE_MS) break;
+    planCache.delete(k); // oldest first (Map keeps insertion order)
+  }
+  planCache.set(key, { at: now, body });
+}
+
 app.post('/api/plan', (req, res) => {
   const { from, to, date, time } = req.body || {};
   // Same range as the Settings slider; an unbounded value makes every search crawl.
@@ -440,6 +453,19 @@ app.post('/api/plan', (req, res) => {
   const a = resolve(from);
   const b = resolve(to);
   if (!a || !b) return res.status(400).json({ error: 'unresolvable endpoints' });
+
+  // Same trip asked again within the minute (home card, then tapping it to open the
+  // results; a reload after a slow cold start): answer from memory. One search is
+  // ~15 RAPTOR passes, which take seconds on Render's free CPU.
+  const cacheKey = [
+    a.lat.toFixed(4), a.lon.toFixed(4), a.name ?? '',
+    b.lat.toFixed(4), b.lon.toFixed(4), b.name ?? '',
+    dateInt, Math.floor(seconds / 60), maxWalk, time ? 1 : 0,
+  ].join('|');
+  const cached = planCache.get(cacheKey);
+  if (cached && Date.now() - cached.at < PLAN_CACHE_MS) {
+    return res.json({ ...cached.body, elapsedMs: 0, cached: true });
+  }
 
   const t0 = Date.now();
   let result = planner.plan({
@@ -479,13 +505,14 @@ app.post('/api/plan', (req, res) => {
     if (usedNextDay) serviceDateInt = nextDateInt;
   }
 
-  res.json({
+  const body = {
     ...result,
     nextDay: usedNextDay,
     serviceDate: serviceDateInt,
     query: { from: a, to: b, dateInt, seconds, dow, maxWalk: Number(maxWalk) || 1200 },
-    elapsedMs: Date.now() - t0,
-  });
+  };
+  rememberPlan(cacheKey, body);
+  res.json({ ...body, elapsedMs: Date.now() - t0 });
 });
 
 /** Forward geocoding proxy — avoids browser CORS with Nominatim. */

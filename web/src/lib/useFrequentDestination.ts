@@ -19,6 +19,7 @@ import type { Journey, LatLon, Place, TransitLeg } from '../types';
 import type { FrequentDestResult } from '../components/home/types';
 import { getLocale } from './i18n';
 import { isAtDestination, pickFrequentDestination } from './atDestination';
+import { loadHomeCardTrip, saveHomeCardTrip } from './homeCardCache';
 
 /** How long the card waits for a GPS fix before falling back to the first saved place. */
 const LOCATION_WAIT_MS = 8000;
@@ -197,9 +198,16 @@ export function useFrequentDestination(
 
     // Soft refresh: keep showing the last journey instead of flipping to
     // "Planning route…" when we already have a plan for this destination.
+    // Reopening the app at the same spot: show the trip planned last time (its bus
+    // has not left yet) right away; the fresh plan below replaces it.
+    const remembered = loadHomeCardTrip(destSnap, planOrigin);
     setResult((prev) => {
       if (prev && samePlace(prev.place, destSnap) && prev.journey) {
         return prev;
+      }
+      if (remembered) {
+        journeyRef.current = remembered;
+        return { place: destSnap, journey: remembered, loading: false, ...deriveDisplay(remembered) };
       }
       return prev
         ? { ...prev, place: destSnap, loading: true }
@@ -229,29 +237,33 @@ export function useFrequentDestination(
           return;
         }
         journeyRef.current = journey;
-
-        let boardLeave: BoardLeave = null;
-        const firstTransit = journey?.legs.find((l): l is TransitLeg => l.mode === 'transit');
-        if (firstTransit?.from.stopId) {
-          try {
-            const board = await api.stopDepartures(firstTransit.from.stopId, ctrl.signal);
-            if (!ctrl.signal.aborted) {
-              const best = bestBoardingMinutes(
-                board.departures,
-                firstTransit,
-                undefined,
-                plannedRideMinMinutes(firstTransit.departure, undefined, dayOffsetOf(firstTransit))
-              );
-              if (best) boardLeave = best;
-            }
-          } catch {
-            /* schedule fallback */
-          }
+        if (journey) {
+          saveHomeCardTrip({ place: destSnap, origin: planOrigin, journey, savedAt: Date.now() });
         }
 
-        if (ctrl.signal.aborted) return;
-        const derived = journey ? deriveDisplay(journey, boardLeave) : { ...emptyDerived };
+        // Show the scheduled time now; the live board (SIRI / GPS overlay, up to
+        // several seconds) only refines "leaves in" when it lands.
+        const derived = journey ? deriveDisplay(journey) : { ...emptyDerived };
         setResult({ place: destSnap, journey, loading: false, ...derived });
+
+        const firstTransit = journey?.legs.find((l): l is TransitLeg => l.mode === 'transit');
+        if (!journey || !firstTransit?.from.stopId) return;
+        try {
+          const board = await api.stopDepartures(firstTransit.from.stopId, ctrl.signal);
+          if (ctrl.signal.aborted) return;
+          const best = bestBoardingMinutes(
+            board.departures,
+            firstTransit,
+            undefined,
+            plannedRideMinMinutes(firstTransit.departure, undefined, dayOffsetOf(firstTransit))
+          );
+          if (!best) return;
+          setResult((prev) =>
+            prev && prev.journey === journey ? { ...prev, ...deriveDisplay(journey, best) } : prev
+          );
+        } catch {
+          /* schedule fallback */
+        }
       })
       .catch(() => {
         if (!ctrl.signal.aborted) {
