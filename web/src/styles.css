@@ -10498,3 +10498,23 @@ button.home-card-dots__dot {
 /* Skeleton blocks wait 300 ms too, so a fast load does not flicker. */
 .fdcard__skel { animation: bmi-delayed-reveal .2s ease .3s both; }
 @keyframes bmi-delayed-reveal { from { opacity: 0; } to { opacity: 1; } }
+
+/* Saved place rows: compact edit / clear buttons so the address keeps the width. */
+.fav-row--place .fav-row__overflow {
+  width: 32px;
+  height: 40px;
+  font-size: 18px;
+}
+.fav-row--place .fav-row__overflow svg {
+  width: 16px;
+  height: 16px;
+}
+.fav-row--place.fav-row--set {
+  gap: 0;
+}
+.fav-row--set .fav-row__main {
+  gap: 12px;
+}
+.fav-row--set .fav-row__chevron {
+  margin-inline-end: 2px;
+}
