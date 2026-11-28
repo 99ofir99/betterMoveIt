@@ -1096,6 +1096,7 @@ export default function App() {
                 journeys[state.selectedJourney]?.transitAlternatives ??
                 journeys[0]?.transitAlternatives
               }
+              departNow={state.when === "now"}
               onEarlier={() => shiftPlanByMinutes(-20)}
               onLater={() => shiftPlanByMinutes(20)}
               onStartTrip={handleStartTrip}

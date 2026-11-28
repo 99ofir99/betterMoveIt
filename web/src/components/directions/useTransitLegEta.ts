@@ -1,6 +1,11 @@
 /**
  * Logic — live/scheduled boarding ETA for one transit leg in the trip preview.
  * Visuals live in TransitLegEtaBadge.tsx.
+ *
+ * Live stop-board overlays are only used for "Depart now". Leave-at / arrive-by
+ * plans keep the RAPTOR leg clocks — the board is always "from now" and would
+ * otherwise surface the day's first matching bus (e.g. 5:03) instead of the
+ * planned connection.
  */
 
 import { useMemo } from 'react';
@@ -12,9 +17,11 @@ import { dayOffsetOf, departureHasPassed, plannedRideMinMinutes } from '../../li
 
 export function useTransitLegEta(
   leg: TransitLeg,
-  alternatives?: RouteInfo[]
+  alternatives?: RouteInfo[],
+  departNow = false
 ): LeaveEtaEntry {
-  const stopId = leg.from.stopId;
+  // Skip polling the live board when planning a future leave time.
+  const stopId = departNow ? leg.from.stopId : null;
   const board = useStopDepartures(stopId);
   const routesKey = (alternatives ?? [leg.route])
     .map((r) => `${r.index ?? ''}:${r.shortName}`)
@@ -24,6 +31,7 @@ export function useTransitLegEta(
     const day = dayOffsetOf(leg);
     const routes =
       alternatives && alternatives.length > 0 ? alternatives : [leg.route];
+
     // The planned bus already left: say so instead of showing the next one as "now".
     if (departureHasPassed(leg.departure, undefined, day)) {
       return {
@@ -35,11 +43,19 @@ export function useTransitLegEta(
         departed: true,
       };
     }
-    // Only buses from the planned one on; an earlier bus belongs to another itinerary.
-    const fromBoard = bestBoardingMinutes(board, leg, routes, plannedRideMinMinutes(leg.departure, undefined, day));
-    if (fromBoard) return fromBoard;
 
-    // Schedule fallback from the planned leg clock (black / based on schedule).
+    if (departNow) {
+      // Only buses from the planned one on; an earlier bus belongs to another itinerary.
+      const fromBoard = bestBoardingMinutes(
+        board,
+        leg,
+        routes,
+        plannedRideMinMinutes(leg.departure, undefined, day)
+      );
+      if (fromBoard) return fromBoard;
+    }
+
+    // Planned leg clock from RAPTOR (leave-at / arrive-by, or board miss).
     const { minutes, nextDay } = minutesUntilDepart(
       leg.departure,
       secondsSinceLocalMidnight(),
@@ -55,5 +71,15 @@ export function useTransitLegEta(
     };
     // routesKey captures alternatives + primary route identity.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [board, leg.departure, leg.from.stopId, leg.nextDay, leg.serviceDate, leg.route.index, leg.route.shortName, routesKey]);
+  }, [
+    board,
+    departNow,
+    leg.departure,
+    leg.from.stopId,
+    leg.nextDay,
+    leg.serviceDate,
+    leg.route.index,
+    leg.route.shortName,
+    routesKey,
+  ]);
 }

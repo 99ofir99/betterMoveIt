@@ -73,10 +73,16 @@ function WalkRow({ leg }: ItineraryWalkRowProps) {
   );
 }
 
-function TransitRow({ leg, hideBoardStop, onStopClick, alternatives }: ItineraryTransitRowProps) {
+function TransitRow({
+  leg,
+  hideBoardStop,
+  onStopClick,
+  alternatives,
+  departNow,
+}: ItineraryTransitRowProps) {
   const middle = leg.intermediateStops.slice(1, -1);
   const routes = alternatives && alternatives.length > 0 ? alternatives : [leg.route];
-  const eta = useTransitLegEta(leg, alternatives);
+  const eta = useTransitLegEta(leg, alternatives, departNow);
   const destination = transitDestinationLabel(leg.route, leg.headsign);
 
   return (
@@ -139,7 +145,12 @@ function TransitRow({ leg, hideBoardStop, onStopClick, alternatives }: Itinerary
   );
 }
 
-export function ItineraryTimeline({ journey, transitAlternatives, onStopClick }: ItineraryTimelineProps) {
+export function ItineraryTimeline({
+  journey,
+  transitAlternatives,
+  departNow = false,
+  onStopClick,
+}: ItineraryTimelineProps) {
   const { legs } = journey;
   const first = legs[0];
   const last = legs[legs.length - 1];
@@ -180,6 +191,7 @@ export function ItineraryTimeline({ journey, transitAlternatives, onStopClick }:
               hideBoardStop={i === 0}
               onStopClick={onStopClick}
               alternatives={alts}
+              departNow={departNow}
             />
           </ItineraryRow>
         );

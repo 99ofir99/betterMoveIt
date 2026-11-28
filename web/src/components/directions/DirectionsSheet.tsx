@@ -19,6 +19,7 @@ function formatFare(fareIls: number | undefined): string | undefined {
 export function DirectionsSheet({
   journey,
   transitAlternatives,
+  departNow = false,
   onEarlier,
   onLater,
   onStartTrip,
@@ -69,6 +70,7 @@ export function DirectionsSheet({
         <ItineraryTimeline
           journey={journey}
           transitAlternatives={transitAlternatives}
+          departNow={departNow}
           onStopClick={onStopClick}
         />
       </div>

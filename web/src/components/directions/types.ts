@@ -5,6 +5,11 @@ export interface DirectionsSheetProps {
   journey: Journey;
   /** Moovit alternative lines per transit-leg index (from journey clamping). */
   transitAlternatives?: RouteInfo[][];
+  /**
+   * When true, overlay live stop-board ETAs on transit legs.
+   * Leave-at / arrive-by must be false so planned RAPTOR clocks are shown.
+   */
+  departNow?: boolean;
   onEarlier: () => void;
   onLater: () => void;
   onStartTrip: () => void;
@@ -48,6 +53,8 @@ export interface ItineraryTimelineProps {
   journey: Journey;
   /** Alternative lines per transit-leg index (from Moovit clamping). */
   transitAlternatives?: RouteInfo[][];
+  /** Live board overlay only for "Depart now" (see DirectionsSheetProps). */
+  departNow?: boolean;
   onStopClick: (stopId: string) => void;
 }
 
@@ -81,6 +88,8 @@ export interface ItineraryTransitRowProps {
    * When length > 1, the row shows slash-joined badges + a user tip.
    */
   alternatives?: RouteInfo[];
+  /** Live board overlay only for "Depart now". */
+  departNow?: boolean;
 }
 
 export interface ItineraryWalkRowProps {
