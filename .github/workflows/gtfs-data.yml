@@ -1,0 +1,91 @@
+# Nightly transit data: download the Ministry of Transport GTFS feed, build the
+# binary store for the next N days (CSV-safe reader), publish it as a release
+# asset and redeploy the Render services that load it via GTFS_DIST_URL.
+#
+#   asset:  https://github.com/<owner>/<repo>/releases/download/gtfs-data/gtfs-dist.tgz
+#   window: repo variable GTFS_DAYS (default 7). Rebuilt nightly, so 7 days is plenty;
+#           10 days ran at ~495 MB on Render free tier (512 MB), too close.
+#   deploy: repo secret RENDER_DEPLOY_HOOKS = one or more Render deploy-hook URLs
+#           (space or newline separated). Without it the asset is still published.
+#
+# GitHub runs `schedule` only from the default branch; until this file is there,
+# a push to feat/riko that touches the ingest code (or this file) runs it.
+name: GTFS data
+
+on:
+  schedule:
+    - cron: '30 0 * * *' # 02:30 Israel (winter), 03:30 (summer)
+  workflow_dispatch:
+    inputs:
+      days:
+        description: 'Days of service to keep (blank = GTFS_DAYS or 7)'
+        required: false
+  push:
+    branches: [feat/riko]
+    paths:
+      - .github/workflows/gtfs-data.yml
+      - tools/ingest/**
+      - tools/lib/csv.mjs
+
+permissions:
+  contents: write
+
+concurrency:
+  group: gtfs-data
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      DAYS: ${{ inputs.days || vars.GTFS_DAYS || '7' }}
+      TAG: gtfs-data
+      FEED_URL: https://gtfs.mot.gov.il/gtfsfiles/israel-public-transportation.zip
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          lfs: false
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Download MOT feed
+        run: |
+          curl -fsSL --retry 5 --retry-delay 30 --retry-all-errors -o gtfs.zip "$FEED_URL"
+          ls -l gtfs.zip
+          mkdir -p raw && unzip -q -o gtfs.zip -d raw
+
+      - name: Build store (${{ env.DAYS }} days)
+        run: |
+          node --max-old-space-size=12000 tools/ingest/ingest.mjs raw dist --days="$DAYS"
+          node -e '
+            const m = require("./dist/meta.json");
+            console.log(JSON.stringify({ counts: m.counts, serviceWindow: m.serviceWindow }));
+            if (!(m.counts.trips > 50000 && m.counts.stops > 10000)) {
+              console.error("store looks too small, not publishing"); process.exit(1);
+            }'
+          tar -czf gtfs-dist.tgz -C dist .
+          cp dist/meta.json gtfs-meta.json
+          ls -l gtfs-dist.tgz
+
+      - name: Publish release asset
+        run: |
+          if ! gh release view "$TAG" >/dev/null 2>&1; then
+            gh release create "$TAG" --prerelease --latest=false --target "$GITHUB_SHA" \
+              --title "Transit data (nightly)" --notes "Built nightly by .github/workflows/gtfs-data.yml."
+          fi
+          gh release upload "$TAG" gtfs-dist.tgz gtfs-meta.json --clobber
+          WINDOW=$(node -p 'const w=require("./dist/meta.json").serviceWindow; w ? w.from+" +"+w.days+" days" : "full feed"')
+          gh release edit "$TAG" --notes "Built nightly by .github/workflows/gtfs-data.yml. Last build: $(date -u +%FT%TZ), service window $WINDOW, commit $GITHUB_SHA."
+
+      - name: Redeploy Render services
+        env:
+          HOOKS: ${{ secrets.RENDER_DEPLOY_HOOKS }}
+        run: |
+          if [ -z "$HOOKS" ]; then echo "RENDER_DEPLOY_HOOKS not set; skipping redeploy"; exit 0; fi
+          for url in $HOOKS; do
+            curl -fsS -X POST "$url" >/dev/null && echo "deploy hook OK" || { echo "deploy hook failed"; exit 1; }
+          done
