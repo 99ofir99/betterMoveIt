@@ -64,6 +64,15 @@ function isLfsPointer(file) {
   return fs.readFileSync(file, 'utf8').startsWith('version https://git-lfs');
 }
 
+// GTFS_DIST_URL wins when set: it points at the nightly build (see
+// .github/workflows/gtfs-data.yml), which is fresher than the archive in the repo.
+if (distUrl) {
+  await download(distUrl, archivePath);
+  await extractArchive(archivePath);
+  fs.rmSync(archivePath, { force: true });
+  process.exit(0);
+}
+
 if (fs.existsSync(bundledArchive) && isLfsPointer(bundledArchive)) {
   console.warn(
     `[prepare-data] ${path.relative(root, bundledArchive)} is a Git LFS pointer, not the archive.\n` +
@@ -72,13 +81,6 @@ if (fs.existsSync(bundledArchive) && isLfsPointer(bundledArchive)) {
 } else if (fs.existsSync(bundledArchive)) {
   console.log(`[prepare-data] using bundled ${bundledArchive}`);
   await extractArchive(bundledArchive);
-  process.exit(0);
-}
-
-if (distUrl) {
-  await download(distUrl, archivePath);
-  await extractArchive(archivePath);
-  fs.rmSync(archivePath, { force: true });
   process.exit(0);
 }
 

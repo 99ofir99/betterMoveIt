@@ -16,7 +16,7 @@ tools (`tools/`). Node 20 (`.node-version` = 20.19), ESM everywhere. No lint con
 | `npm run verify` | check + test + production build |
 | `npm run smoke` | Boot API on :8797 and hit every endpoint; `SMOKE_URL=…` to target a running server |
 | `npm run routes` / `bench` | RAPTOR sample trips / timing (coordinates assume the real national feed) |
-| `npm run data` | Real store → `data/gtfs-dist` (LFS archive `deploy/gtfs-dist.tgz`, else `GTFS_DIST_URL`, else MOT download + ingest, ~8 GB RAM) |
+| `npm run data` | Real store → `data/gtfs-dist` (`GTFS_DIST_URL` if set, else LFS archive `deploy/gtfs-dist.tgz`, else MOT download + ingest, ~8 GB RAM) |
 | `npm run data:sample` | Rebuild synthetic feed → `data/gtfs-sample` (26 stops, 4 lines, <1 s) |
 
 Single test file: `cd web && npx vitest run src/lib/sort.test.ts`.
@@ -31,7 +31,7 @@ run current tool script, and a "Full stack" compound.
   ~130-byte pointer; `tools/prepare-data.mjs` detects this and moves on to the next source.
 - GTFS CSV is parsed by `tools/lib/csv.mjs` (ingest + filter-gtfs). MOT writes Hebrew abbreviations with a bare `"` (e.g. `ת"א`) in unquoted fields; a quote only opens a quoted field at the start of a field. The old per-line quote counting merged/dropped ~3.4% of trips.
 - `ingest.mjs --days=N [--from=YYYYMMDD]` (or `INGEST_DAYS`) keeps only trips running in that window. Measured server RSS on the 2026-11-26 MOT feed: whole feed ~800 MB peak, 14 days ~620 MB, 7 days ~495 MB (Render free tier is 512 MB). A windowed store must be rebuilt before the window runs out (`meta.json` → `serviceWindow`).
-- Nightly data: `.github/workflows/gtfs-data.yml` builds a `GTFS_DAYS`-day store (default 7; 10 days ran at ~495 MB on Render free, too close to 512) and publishes it as release asset `gtfs-data/gtfs-dist.tgz`, then POSTs every URL in secret `RENDER_DEPLOY_HOOKS`. A Render service picks it up with `GTFS_DIST_URL=https://github.com/99ofir99/betterMoveIt/releases/download/gtfs-data/gtfs-dist.tgz` and a build that removes `deploy/gtfs-dist.tgz` first (the bundled archive wins otherwise). `schedule` only runs from the default branch.
+- Nightly data: `.github/workflows/gtfs-data.yml` builds a `GTFS_DAYS`-day store (default 7; 10 days ran at ~495 MB on Render free, too close to 512) and publishes it as release asset `gtfs-data/gtfs-dist.tgz`, then POSTs every URL in secret `RENDER_DEPLOY_HOOKS`. A Render service picks it up with `GTFS_DIST_URL=https://github.com/99ofir99/betterMoveIt/releases/download/gtfs-data/gtfs-dist.tgz` (it wins over the bundled `deploy/gtfs-dist.tgz`; without it the bundle is used as before). `schedule` only runs from the default branch.
 - Binary format is written by `tools/ingest/ingest.mjs` and read by `TransitStore` in
   `store.js` — change both together. `stop_times.bin` is unpadded typed-array columns: an odd
   stop_times row count misaligns the Float32 column; `TransitStore` then copies that one column
