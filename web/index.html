@@ -21,7 +21,10 @@
         align-items: center; justify-content: center; gap: 10px; transition: opacity .35s ease;
         font-family: "Heebo", "Segoe UI", system-ui, -apple-system, Arial, sans-serif; color: #f2f2f4; }
       #splash.splash-out { opacity: 0; pointer-events: none; }
-      #splash .splash-art { width: min(62vw, 260px); animation: splash-pop .35s cubic-bezier(.3,1.5,.5,1) both; }
+      /* Character + name appear only if loading passes 300 ms (no flash on a fast start). */
+      #splash .splash-art { width: min(62vw, 260px); animation: splash-pop .35s cubic-bezier(.3,1.5,.5,1) .3s both; }
+      #splash .splash-word { animation: splash-in .25s ease .3s both; }
+      @keyframes splash-in { from { opacity: 0; } }
       #splash svg { display: block; width: 100%; height: auto; overflow: visible; }
       #splash .splash-word { font-weight: 800; font-size: 1.25rem; letter-spacing: .01em; direction: ltr; }
       #splash .splash-word span { color: #ffb27a; }
