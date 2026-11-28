@@ -19,6 +19,10 @@ export interface LineDetailPanelProps {
   initialDirection?: number;
   /** Opened from a stop: open its schedule card and scroll to it. */
   anchorStop?: Stop | null;
+  /** The stop whose timetable is showing (App owns it so phone Back closes it). */
+  timetableStop?: Stop | null;
+  onOpenTimetable?: (stop: Stop) => void;
+  onCloseTimetable?: () => void;
 }
 
 export interface LineDirectionHeaderProps {
@@ -45,6 +49,8 @@ export interface LineStopRowProps {
   onSelect: (index: number) => void;
   /** Present only for bus lines (light rail / trains have no live location). */
   onLiveLocation?: (stop: Stop) => void;
+  /** Open this line's timetable at this stop. */
+  onTimetable?: (stop: Stop) => void;
 }
 
 export interface LineStopListProps {
@@ -54,6 +60,7 @@ export interface LineStopListProps {
   pickingDestination: boolean;
   onSelectStop: (index: number) => void;
   onLiveLocation?: (stop: Stop) => void;
+  onTimetable?: (stop: Stop) => void;
 }
 
 export interface LineDetailActionsProps {

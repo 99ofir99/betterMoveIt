@@ -9,6 +9,7 @@ import type {
   Line,
   LineDetailResponse,
   LineScheduleResponse,
+  LineTimetableResponse,
   NearbyStopBoard,
   PlanResponse,
   SearchResult,
@@ -299,6 +300,20 @@ export const api = {
     const q = params.toString();
     return getJson<LineScheduleResponse>(
       `/api/lines/${encodeURIComponent(lineId)}/schedule${q ? `?${q}` : ''}`,
+      signal
+    );
+  },
+
+  /** A line's departures at one stop for one day (day 0 = today from now, … 6). */
+  lineTimetable: (
+    lineId: string,
+    opts: { stopId: string; direction?: number; day?: number },
+    signal?: AbortSignal
+  ) => {
+    const params = new URLSearchParams({ stop: opts.stopId, day: String(opts.day ?? 0) });
+    if (opts.direction !== undefined) params.set('direction', String(opts.direction));
+    return getJson<LineTimetableResponse>(
+      `/api/lines/${encodeURIComponent(lineId)}/timetable?${params}`,
       signal
     );
   },

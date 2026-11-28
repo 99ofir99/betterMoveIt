@@ -176,3 +176,49 @@ export function nextDepartureAtStop(store, stopIdx, { dateInt, seconds, dow }, m
   }
   return null;
 }
+
+/**
+ * A line's whole-day timetable at one stop (Moovit "Timetable" screen).
+ * `dayOffset` 0 = today from now on, 1 = tomorrow, … (whole day).
+ * Scans only this stop's trip slice, so it never builds or evicts day indexes.
+ * A 25:10 trip of the service day is listed as 01:10 with `nextDay`.
+ */
+export function routeTimetableAtStop(store, stopIdx, routeIdx, { dateInt, seconds, dow }, dayOffset = 0, direction) {
+  const a = store.stopTripStart[stopIdx];
+  const b = store.stopTripStart[stopIdx + 1];
+  const date = addDaysDateInt(dateInt, dayOffset);
+  const dDow = (((dow + dayOffset) % 7) + 7) % 7;
+  const fromSec = dayOffset === 0 ? seconds : 0;
+  const dirFilter = direction !== undefined && Number.isFinite(Number(direction)) ? Number(direction) : null;
+  const active = new Map();
+  const isOn = (svc, dInt, dw) => {
+    const key = svc * 100000000 + dInt * 10 + dw;
+    let on = active.get(key);
+    if (on === undefined) {
+      on = Boolean(store.serviceActive(svc, dInt, dw));
+      active.set(key, on);
+    }
+    return on;
+  };
+  const out = [];
+  const push = (dep, trip, shownDep, nextDay) => {
+    out.push({ departure: shownDep, sort: dep, headsign: store.tripHeadsign[trip], tripId: trip, nextDay });
+  };
+  for (let idx = a; idx < b; idx++) {
+    const trip = store.stopTripTrip[idx];
+    if (store.tripRoute[trip] !== routeIdx) continue;
+    if (dirFilter !== null && store.tripDirection[trip] !== dirFilter) continue;
+    const dep = store.stDeparture[store.stopTripRow[idx]];
+    // Today: yesterday's after-midnight trips (24:xx+) that are still ahead.
+    if (dayOffset === 0 && dep >= DAY_SEC && dep - DAY_SEC >= fromSec && dep - DAY_SEC < 6 * 3600) {
+      if (isOn(store.tripService[trip], addDaysDateInt(dateInt, -1), (dow + 6) % 7)) {
+        push(dep - DAY_SEC, trip, dep - DAY_SEC, false);
+      }
+    }
+    if (dep < fromSec) continue;
+    if (!isOn(store.tripService[trip], date, dDow)) continue;
+    push(dep, trip, dep % DAY_SEC, dep >= DAY_SEC);
+  }
+  out.sort((x, y) => x.sort - y.sort);
+  return out.map(({ sort: _s, ...rest }) => rest);
+}

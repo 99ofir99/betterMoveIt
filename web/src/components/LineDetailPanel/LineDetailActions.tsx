@@ -2,8 +2,7 @@
 
 import type { LineDetailActionsProps } from './types';
 import { t } from '../../lib/i18n';
-import { StarIcon } from '../shared/icons';
-import { PlayIcon } from '../icons';
+import { NavigateIcon, StarIcon } from '../shared/icons';
 
 export function LineDetailActions({
   canStart,
@@ -22,18 +21,20 @@ export function LineDetailActions({
         onClick={onStart}
       >
         <span className="lnd-actions__start-icon" aria-hidden>
-          <PlayIcon size={18} />
+          {/* Points the way you read: left in Hebrew. */}
+          <NavigateIcon size={18} className="rtl-flip" />
         </span>
-        {t("Start")}
+        {t("Start ride")}
       </button>
       <button
         type="button"
         className={`lnd-actions__fav${favored ? ' is-on' : ''}`}
         onClick={onToggleFavourite}
-        aria-label={favored ? t('Unfavorite') : t('Favorite')}
+        aria-pressed={favored}
+        aria-label={favored ? t('Remove from saved lines') : t('Save line')}
       >
         <StarIcon size={18} filled={favored} />
-        {t("Favorite")}
+        {favored ? t('Saved') : t('Save line')}
       </button>
     </div>
   );

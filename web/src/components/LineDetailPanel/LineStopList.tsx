@@ -11,6 +11,7 @@ export function LineStopList({
   pickingDestination,
   onSelectStop,
   onLiveLocation,
+  onTimetable,
 }: LineStopListProps) {
   return (
     <ol className="lnd-stops" aria-label={t("Stops along this line")}>
@@ -33,6 +34,8 @@ export function LineStopList({
             disabled={disabled}
             onSelect={onSelectStop}
             onLiveLocation={onLiveLocation}
+            // Nobody departs from the last stop.
+            onTimetable={isLast ? undefined : onTimetable}
           />
         );
       })}

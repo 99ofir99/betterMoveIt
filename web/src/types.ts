@@ -256,6 +256,17 @@ export interface LineScheduleStop extends Stop {
   next: Array<{ departure: number; minutes: number; headsign: string; tripId: number }>;
 }
 
+/** GET /api/lines/:id/timetable — one stop, one day. */
+export interface LineTimetableResponse {
+  line: Line;
+  stop: Stop;
+  /** 0 = today (from now on), 1 = tomorrow, … */
+  day: number;
+  /** Day of week of that day (0 = Sunday). */
+  dow: number;
+  departures: Array<{ departure: number; headsign: string; tripId: number; nextDay: boolean }>;
+}
+
 export interface LineScheduleResponse {
   line: Line;
   headsign?: string;

@@ -3,7 +3,7 @@
  * expanded schedule card, Start → onboard ride.
  */
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { isLiveTrackableRoute } from '../../lib/prioritizeVehicles';
 import { isHeavyRailRoute, railTrainNumber } from '../../lib/railLabel';
 import { RouteBadge } from '../common/RouteBadge';
@@ -12,6 +12,7 @@ import { LineDestinationBar } from './LineDestinationBar';
 import { LineDetailActions } from './LineDetailActions';
 import { LineDirectionHeader } from './LineDirectionHeader';
 import { LineStopList } from './LineStopList';
+import { LineTimetable } from './LineTimetable';
 import type { LineDetailPanelProps } from './types';
 import { useLineDetail } from './useLineDetail';
 import { t } from '../../lib/i18n';
@@ -35,12 +36,23 @@ export function LineDetailPanel({
   onLiveLocation,
   initialDirection,
   anchorStop,
+  timetableStop,
+  onOpenTimetable,
+  onCloseTimetable,
 }: LineDetailPanelProps) {
   const s = useLineDetail(lineId, onGeometryChange, onSwitchLine, initialDirection, anchorStop);
   const rootRef = useRef<HTMLDivElement>(null);
   // Opened from a stop: bring that stop's card into view (it may be far down the list).
+  const showTimetable = Boolean(timetableStop && s.line);
+  /** Bumped when leaving the timetable: the stop list remounts at the top. */
+  const [backFromTimetable, setBackFromTimetable] = useState(0);
+  const wasTimetable = useRef(false);
   useEffect(() => {
-    if (!s.anchorFocusTick) return;
+    if (wasTimetable.current && !showTimetable) setBackFromTimetable((n) => n + 1);
+    wasTimetable.current = showTimetable;
+  }, [showTimetable]);
+  useEffect(() => {
+    if (!s.anchorFocusTick && !backFromTimetable) return;
     const id = requestAnimationFrame(() => {
       // Scroll only the stop list: scrollIntoView would also shift the sheet and map.
       const list = rootRef.current?.querySelector<HTMLElement>('.lnd-stops');
@@ -50,7 +62,7 @@ export function LineDetailPanel({
       list.scrollTop += top - Math.max(0, (list.clientHeight - row.offsetHeight) / 3);
     });
     return () => cancelAnimationFrame(id);
-  }, [s.anchorFocusTick]);
+  }, [s.anchorFocusTick, backFromTimetable]);
   const onLineLoadedRef = useRef(onLineLoaded);
   onLineLoadedRef.current = onLineLoaded;
   useEffect(() => {
@@ -61,6 +73,11 @@ export function LineDetailPanel({
   const boardStop =
     s.boardIndex != null && s.data ? s.data.stops[s.boardIndex] : null;
   const agency = agencyLabel(s.line?.agency);
+  const badgeLabel = s.line
+    ? isHeavyRailRoute(s.line)
+      ? railTrainNumber(s.line)
+      : s.line.displayName || s.line.shortName
+    : '';
 
   const handleSelectStop = (index: number) => {
     if (s.pickingDestination) {
@@ -74,13 +91,18 @@ export function LineDetailPanel({
   return (
     <div className="line-detail" ref={rootRef}>
       <div className="lnd-header">
-        <button type="button" className="lnd-header__back" onClick={onClose} aria-label={t("Back")}>
+        <button
+          type="button"
+          className="lnd-header__back"
+          onClick={showTimetable && onCloseTimetable ? onCloseTimetable : onClose}
+          aria-label={t("Back")}
+        >
           <Icon name="arrow-back" size={22} />
         </button>
         {s.line && (
           <RouteBadge
             className="lnd-header__badge"
-            label={isHeavyRailRoute(s.line) ? railTrainNumber(s.line) : s.line.displayName || s.line.shortName}
+            label={badgeLabel}
             typeName={s.line.typeName}
             color={s.line.color}
           />
@@ -92,11 +114,22 @@ export function LineDetailPanel({
         </div>
       </div>
 
-      {s.pickingDestination && boardStop && (
+      {showTimetable && s.line && timetableStop && (
+        <LineTimetable
+          line={s.line}
+          badgeLabel={badgeLabel}
+          stop={timetableStop}
+          direction={s.direction}
+          todayDow={s.data?.time?.dow}
+          onLiveLocation={liveHandler}
+        />
+      )}
+
+      {!showTimetable && s.pickingDestination && boardStop && (
         <LineDestinationBar boardName={boardStop.name} onCancel={s.cancelPick} />
       )}
 
-      {!s.pickingDestination && (
+      {!showTimetable && !s.pickingDestination && (
         <LineDirectionHeader
           label={s.directionLabel}
           canChange={s.canChangeDirection}
@@ -107,7 +140,7 @@ export function LineDetailPanel({
       {s.error && !s.data && <p className="error-text">{s.error}</p>}
       {!s.data && !s.error && <RippleLoader compact label={t("Loading line…")} />}
 
-      {s.data && (
+      {!showTimetable && s.data && (
         <LineStopList
           stops={s.data.stops}
           focusedIndex={s.focusedIndex}
@@ -115,10 +148,11 @@ export function LineDetailPanel({
           pickingDestination={s.pickingDestination}
           onSelectStop={handleSelectStop}
           onLiveLocation={liveHandler}
+          onTimetable={onOpenTimetable}
         />
       )}
 
-      {onStartLineRide && s.data && s.data.stops.length > 1 && (
+      {!showTimetable && onStartLineRide && s.data && s.data.stops.length > 1 && (
         <LineDetailActions
           canStart
           pickingDestination={s.pickingDestination}

@@ -123,6 +123,8 @@ export default function App() {
    * that leaves that stop, and the stop whose schedule card opens first.
    */
   const [lineContext, setLineContext] = useState<LineContext | null>(null);
+  /** Line screen showing one stop's timetable (phone Back closes it first). */
+  const [lineTimetableStop, setLineTimetableStop] = useState<Stop | null>(null);
   /** Match tokens for the line currently open in Line Detail (shown even before favourite). */
   const [focusedLineKeys, setFocusedLineKeys] = useState<string[]>([]);
   const [lineGeometry, setLineGeometry] = useState<[number, number][] | null>(null);
@@ -401,6 +403,7 @@ export default function App() {
 
   const closeLine = useCallback(() => {
     setLineContext(null);
+    setLineTimetableStop(null);
     setSelectedLineId(null);
     setFocusedLineKeys([]);
     setLineGeometry(null);
@@ -448,6 +451,7 @@ export default function App() {
   const showLine = useCallback(async (line: Line | string, ctx?: LineContext | null) => {
     const id = typeof line === "string" ? line : line.id;
     setLineContext(ctx ?? null);
+    setLineTimetableStop(null);
     // Never match by route index / bare name: R1 is GTFS "1" and would pull in bus 1.
     setSelectedLineId(id);
     setFocusedLineKeys(typeof line === "string" ? [] : liveKeysForRoute(line));
@@ -602,6 +606,10 @@ export default function App() {
       setPendingLineRide(null);
       return;
     }
+    if (lineTimetableStop && selectedLineId && activeTab === "lines" && !inFlowBack) {
+      setLineTimetableStop(null);
+      return;
+    }
     if (inFlowBack) {
       goBack();
       return;
@@ -617,7 +625,7 @@ export default function App() {
       if (prev !== "nearby") state.clearStop();
       if (prev === "directions") setShowPlanForm(false);
     }
-  }, [homeTimePlace, mapPickSlot, showTripConfirm, inFlowBack, goBack, selectedLineId, closeLineScreen, activeTab, state]);
+  }, [homeTimePlace, mapPickSlot, showTripConfirm, lineTimetableStop, inFlowBack, goBack, selectedLineId, closeLineScreen, activeTab, state]);
 
   useBackTrap(canGoBack, systemBack);
 
@@ -1438,6 +1446,9 @@ export default function App() {
             lineId={selectedLineId}
             initialDirection={lineContext?.direction}
             anchorStop={lineContext?.stop}
+            timetableStop={lineTimetableStop}
+            onOpenTimetable={setLineTimetableStop}
+            onCloseTimetable={() => setLineTimetableStop(null)}
             onClose={closeLineScreen}
             onOpenStop={openStop}
             onGeometryChange={setLineGeometry}

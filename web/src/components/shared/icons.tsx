@@ -216,3 +216,27 @@ export function BrandMarkIcon({ size = 28, className }: IconProps) {
     </svg>
   );
 }
+
+/** Calendar with a clock: a line's timetable at a stop. */
+export function TimetableIcon({ size = 22, className }: IconProps) {
+  return (
+    <svg {...base(size)} className={className} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M11 20H6a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v3" />
+      <path d="M4 10h16M8 3v4M16 3v4" />
+      <circle cx="17" cy="17" r="4.2" />
+      <path d="M17 15.2V17l1.2.9" />
+    </svg>
+  );
+}
+
+/**
+ * Navigation arrow (Moovit "Start navigation"), pointing in the reading
+ * direction. Add `.rtl-flip` so it points left in Hebrew.
+ */
+export function NavigateIcon({ size = 18, className }: IconProps) {
+  return (
+    <svg {...base(size)} className={className} fill="currentColor">
+      <path d="M21.4 11.1 4.3 3.3a1 1 0 0 0-1.35 1.25L5.9 12l-2.95 7.45a1 1 0 0 0 1.35 1.25l17.1-7.8a1 1 0 0 0 0-1.8z" />
+    </svg>
+  );
+}

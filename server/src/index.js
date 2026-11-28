@@ -6,7 +6,7 @@ import fs from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { getStore, haversine } from './store.js';
 import { JourneyPlanner } from './raptor.js';
-import { departuresAtStop, nextDepartureAtStop, nextForRouteAtStop } from './departures.js';
+import { departuresAtStop, nextDepartureAtStop, nextForRouteAtStop, routeTimetableAtStop } from './departures.js';
 import { fetchActiveVehicles, fetchStopMonitoring, siriConfigured } from './siri.js';
 import { applyVehicleEtas } from './vehicleEta.js';
 import { isLightRailOperator } from './lightRailBrand.js';
@@ -360,6 +360,27 @@ app.get('/api/lines/:id/schedule', (req, res) => {
     oppositeLineId: detail.oppositeLineId ?? null,
     stops,
     time: clock,
+  });
+});
+
+/** A line's timetable at one stop for one day (`day` = 0 today … 6). */
+app.get('/api/lines/:id/timetable', (req, res) => {
+  const routeIdx = Number(req.params.id);
+  if (!Number.isInteger(routeIdx) || !store.routeObject(routeIdx)) {
+    return res.status(404).json({ error: 'unknown line' });
+  }
+  const stopIdx = store.stopIndexByGtfsId.get(String(req.query.stop ?? ''));
+  if (stopIdx === undefined) return res.status(404).json({ error: 'unknown stop' });
+  const day = Math.max(0, Math.min(6, Number(req.query.day) || 0));
+  const direction = req.query.direction !== undefined ? Number(req.query.direction) : undefined;
+  const clock = feedClock();
+  res.json({
+    line: store.routeObject(routeIdx),
+    stop: store.stopObject(stopIdx),
+    day,
+    dow: (clock.dow + day) % 7,
+    time: clock,
+    departures: routeTimetableAtStop(store, stopIdx, routeIdx, clock, day, direction),
   });
 });
 

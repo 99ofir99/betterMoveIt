@@ -6,7 +6,7 @@
 import { departsTomorrow, formatClock12h } from '../../lib/format';
 import type { LineStopRowProps } from './types';
 import { t } from '../../lib/i18n';
-import { BusIcon } from '../shared/icons';
+import { BusIcon, ClockIcon, TimetableIcon } from '../shared/icons';
 
 export function LineStopRow({
   stop,
@@ -18,6 +18,7 @@ export function LineStopRow({
   onSelect,
   index,
   onLiveLocation,
+  onTimetable,
 }: LineStopRowProps) {
   const times = stop.next.slice(0, 3);
   const primary = times[0];
@@ -67,7 +68,9 @@ export function LineStopRow({
               </span>
               {primary && (
                 <span className="lnd-stop__clock">
+                  {/* Clock = timetable time (no live GPS for this departure). */}
                   <span className="lnd-stop__clock-main">
+                    <ClockIcon size={15} className="lnd-stop__clock-icon" />
                     {departsTomorrow(primary.minutes)
                       ? t('Tomorrow {time}', { time: formatClock12h(primary.departure) })
                       : formatClock12h(primary.departure)}
@@ -80,9 +83,10 @@ export function LineStopRow({
                 </span>
               )}
             </span>
-            {onLiveLocation && (
+            {(onLiveLocation || onTimetable) && (
               <span className="lnd-stop__card-actions">
                 {/* span, not button: the whole row is already a button */}
+                {onLiveLocation && (
                 <span
                   className="lnd-stop__live"
                   role="button"
@@ -101,6 +105,28 @@ export function LineStopRow({
                   <BusIcon size={14} />
                   {t("Live location")}
                 </span>
+                )}
+                {onTimetable && (
+                  <span
+                    className="lnd-stop__tt"
+                    role="button"
+                    tabIndex={0}
+                    aria-label={t('Timetable')}
+                    title={t('Timetable')}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onTimetable(stop);
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key !== 'Enter' && e.key !== ' ') return;
+                      e.preventDefault();
+                      e.stopPropagation();
+                      onTimetable(stop);
+                    }}
+                  >
+                    <TimetableIcon size={24} />
+                  </span>
+                )}
               </span>
             )}
           </span>
