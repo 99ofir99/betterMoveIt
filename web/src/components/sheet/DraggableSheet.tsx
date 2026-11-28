@@ -18,6 +18,8 @@ interface DraggableSheetProps {
   snap?: SheetSnap;
   /** Keep bottom-sheet + drag behavior even on wide screens (map peek). */
   overlay?: boolean;
+  /** Only the grabber / `[data-sheet-drag]` header resizes; body only scrolls. */
+  grabberOnly?: boolean;
 }
 
 export function DraggableSheet({
@@ -32,6 +34,7 @@ export function DraggableSheet({
   onHeightChange,
   snap: controlledSnap,
   overlay = true,
+  grabberOnly = false,
 }: DraggableSheetProps) {
   const { bind, snap, forceSnap, dragging } = useSheetDrag({
     initialSnap: controlledSnap ?? initialSnap,
@@ -40,6 +43,7 @@ export function DraggableSheet({
     behavior,
     onSnapChange,
     onHeightChange,
+    grabberOnly,
   });
 
   useEffect(() => {

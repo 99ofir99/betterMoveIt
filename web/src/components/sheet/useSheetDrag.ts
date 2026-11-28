@@ -8,6 +8,7 @@
  * - Finger up → sheet grows.
  * - Grabber / grey strip always resize the sheet.
  * - Body / stop list: scroll first; pull-down collapses only when scrolled to top.
+ * - `grabberOnly`: body gestures never resize the sheet; only the top does.
  * - Never fight the user by resetting height after they drag.
  */
 
@@ -160,6 +161,7 @@ export function useSheetDrag(options: UseSheetDragOptions = {}): {
     behavior = 'snap',
     onSnapChange,
     onHeightChange,
+    grabberOnly = false,
   } = options;
 
   const free = behavior === 'free';
@@ -308,6 +310,8 @@ export function useSheetDrag(options: UseSheetDragOptions = {}): {
       );
 
       if (!fromGrabber && isInteractiveTarget(e.target)) return;
+      // Body gestures belong to the list's own scroll (Directions sheet).
+      if (grabberOnly && !fromGrabber) return;
 
       const fromStage = Boolean(
         target?.closest('.ld-stage, .ld-stage__page, .ld-stage__track, .ld-stops, .ld-ride')
@@ -336,7 +340,7 @@ export function useSheetDrag(options: UseSheetDragOptions = {}): {
         }
       }
     },
-    [canDrag]
+    [canDrag, grabberOnly]
   );
 
   useEffect(() => {

@@ -7909,6 +7909,8 @@ button.ld-option {
   align-items: center;
   justify-content: space-between;
   gap: 10px;
+  /* Breathing room between the star row and the leg chips below it. */
+  margin-bottom: 12px;
 }
 
 .directions__summary-text {

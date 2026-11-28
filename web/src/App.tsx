@@ -1089,6 +1089,7 @@ export default function App() {
             initialSnap="peek"
             snap={detailSnap}
             onSnapChange={setDetailSnap}
+            grabberOnly
           >
             <DirectionsSheet
               journey={activeJourney}

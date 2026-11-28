@@ -27,6 +27,11 @@ export interface UseSheetDragOptions {
   onSnapChange?: (snap: SheetSnap) => void;
   /** Continuous height updates (px) — useful for map floats above the sheet. */
   onHeightChange?: (heightPx: number) => void;
+  /**
+   * Only the grabber / `[data-sheet-drag]` header resizes the sheet. Gestures in the
+   * body just scroll the list and never collapse or expand the sheet.
+   */
+  grabberOnly?: boolean;
 }
 
 export interface SheetDragBind {
