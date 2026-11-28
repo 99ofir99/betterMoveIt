@@ -81,6 +81,17 @@ jobs:
           WINDOW=$(node -p 'const w=require("./dist/meta.json").serviceWindow; w ? w.from+" +"+w.days+" days" : "full feed"')
           gh release edit "$TAG" --notes "Built nightly by .github/workflows/gtfs-data.yml. Last build: $(date -u +%FT%TZ), service window $WINDOW, commit $GITHUB_SHA."
 
+      - name: Wait until the public URL serves the new file
+        run: |
+          want=$(sha256sum gtfs-dist.tgz | cut -d' ' -f1)
+          url="https://github.com/${GITHUB_REPOSITORY}/releases/download/${TAG}/gtfs-dist.tgz"
+          for i in $(seq 1 30); do
+            got=$(curl -fsSL -H 'Cache-Control: no-cache' "$url" | sha256sum | cut -d' ' -f1)
+            if [ "$got" = "$want" ]; then echo "public asset is up to date"; exit 0; fi
+            echo "still serving the previous file ($i)"; sleep 10
+          done
+          echo "public URL never served the new file"; exit 1
+
       - name: Redeploy Render services
         env:
           HOOKS: ${{ secrets.RENDER_DEPLOY_HOOKS }}
