@@ -5,7 +5,7 @@
  *
  * Ambient motion (CSS, see `.home-hero__art-svg` in styles.css):
  * windows breathe and now and then switch off and on again, stars twinkle,
- * and a rare shooting star crosses the sky. All of it stops under
+ * and a shooting star crosses the sky every ~10 s. All of it stops under
  * prefers-reduced-motion.
  */
 import type { CSSProperties } from 'react';

@@ -7170,7 +7170,7 @@ button.ld-option {
 }
 
 /* Ambient motion: breathing windows (some switch off now and then),
-   twinkling stars and a rare shooting star (every ~28 s). */
+   twinkling stars and a shooting star every ~10 s. */
 .home-hero__art-svg .hero-win {
   animation: hero-win-breath var(--d, 4s) ease-in-out var(--dl, 0s) infinite;
 }
@@ -7182,7 +7182,7 @@ button.ld-option {
 }
 .home-hero__art-svg .hero-shooting-star {
   opacity: 0;
-  animation: hero-shoot 28s cubic-bezier(0.3, 0.1, 0.5, 1) 6s infinite;
+  animation: hero-shoot 10s cubic-bezier(0.3, 0.1, 0.5, 1) 3s infinite;
 }
 @keyframes hero-win-breath {
   0%, 100% { opacity: 1; }
@@ -7198,9 +7198,9 @@ button.ld-option {
   50% { opacity: 1; }
 }
 @keyframes hero-shoot {
-  0%, 94% { transform: translate(0, 0); opacity: 0; }
-  94.6% { opacity: 0.9; }
-  97.5% { transform: translate(-120px, 40px); opacity: 0; }
+  0%, 88% { transform: translate(0, 0); opacity: 0; }
+  89.5% { opacity: 0.9; }
+  97% { transform: translate(-120px, 40px); opacity: 0; }
   100% { transform: translate(-120px, 40px); opacity: 0; }
 }
 @media (prefers-reduced-motion: reduce) {
