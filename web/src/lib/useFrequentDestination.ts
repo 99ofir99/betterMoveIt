@@ -107,6 +107,10 @@ const emptyDerived = {
   boardingStop: null,
 };
 
+function placeKey(p: Place): string {
+  return `${p.lat},${p.lon}`;
+}
+
 function samePlace(a: Place, b: Place): boolean {
   return a.lat === b.lat && a.lon === b.lon && a.label === b.label;
 }
@@ -124,6 +128,9 @@ export function useFrequentDestination(
   /** Origin used for planning — only advances when GPS moves ~50m+. */
   const [planOrigin, setPlanOrigin] = useState<LatLon | null>(null);
   const abortRef = useRef<AbortController | null>(null);
+  /** Saved places a short walk from `origin` (see the "already there" check). */
+  const walkableRef = useRef<{ origin: string; keys: Set<string> }>({ origin: '', keys: new Set() });
+  const [skipTick, setSkipTick] = useState(0);
   const journeyRef = useRef<Journey | null>(null);
   /** Bumped when the planned bus has left, so the card plans again from now. */
   const [replan, setReplan] = useState(0);
@@ -170,7 +177,15 @@ export function useFrequentDestination(
       ...favs.places.map((f) => ({ label: f.label, lat: f.place.lat, lon: f.place.lon })),
       ...loadHistory().map((h) => h.to),
     ];
-    const dest: Place | null = pickFrequentDestination(candidates, planOrigin);
+    // Places a plan showed to be a short walk from here count as "already there":
+    // move on to the next saved place instead of dropping the card.
+    const originKey = planOrigin ? `${planOrigin.lat},${planOrigin.lon}` : '';
+    if (walkableRef.current.origin !== originKey) walkableRef.current = { origin: originKey, keys: new Set() };
+    const walkable = walkableRef.current.keys;
+    const dest: Place | null = pickFrequentDestination(
+      candidates.filter((c) => !walkable.has(placeKey(c))),
+      planOrigin,
+    );
 
     if (!dest) {
       setResult(null);
@@ -233,7 +248,8 @@ export function useFrequentDestination(
         const journey: Journey | null = ranked[0] ?? null;
         if (isAtDestination(planOrigin, destSnap, journey)) {
           journeyRef.current = null;
-          setResult(null);
+          walkable.add(placeKey(destSnap));
+          setSkipTick((n) => n + 1);
           return;
         }
         journeyRef.current = journey;
@@ -312,7 +328,7 @@ export function useFrequentDestination(
       document.removeEventListener('visibilitychange', onVisible);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [planOrigin?.lat, planOrigin?.lon, tick, replan, locationWaitOver]);
+  }, [planOrigin?.lat, planOrigin?.lon, tick, replan, locationWaitOver, skipTick]);
 
   return result;
 }
