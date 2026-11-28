@@ -8558,6 +8558,79 @@ button.ld-option {
   display: none;
 }
 
+/* Route details bar, same language as the line screen (.lnd-actions):
+   green primary takes the free width, secondary actions are quiet outlines. */
+.directions__actions {
+  overflow: hidden;
+  gap: 6px;
+  padding-inline: 12px;
+}
+.directions__actions .action-pill {
+  height: 46px;
+  min-height: 46px;
+  font-weight: 700;
+  line-height: 1;
+  transform: none;
+}
+.directions__actions .action-pill--primary {
+  flex: 1 0 auto;
+  max-width: 280px;
+  padding-inline: 16px;
+  gap: 7px;
+  background: #16a05a;
+  box-shadow: 0 3px 10px rgba(22, 160, 90, 0.3);
+}
+.directions__actions .action-pill--primary .action-pill__label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.directions__actions .action-pill--quiet:not(.action-pill--live-on) {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  color: var(--text);
+  box-shadow: none;
+}
+.directions__actions .action-pill--quiet:not(.action-pill--live-on) .action-pill__icon {
+  color: #4a9eff;
+}
+.directions__actions .action-pill--quiet {
+  flex: 0 1 auto;
+  min-width: 46px;
+  padding-inline: 12px;
+  gap: 5px;
+}
+.directions__actions .action-pill--quiet .action-pill__label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.directions__actions .action-pill--icon-only,
+.directions__actions.is-compact .action-pill--quiet {
+  flex: 0 0 auto;
+  width: 46px;
+  padding: 0;
+}
+.directions__actions .action-pill--icon-only .action-pill__label,
+.directions__actions.is-compact .action-pill--quiet .action-pill__label {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+/* Journey list "Start ride": the same green as everywhere else. */
+.trip-start__btn {
+  min-height: 46px;
+  border-radius: 999px;
+  background: #16a05a;
+  font-weight: 700;
+  box-shadow: 0 3px 10px rgba(22, 160, 90, 0.3);
+}
+.trip-start__icon {
+  display: inline-flex;
+}
+
 /* -- Preferences sheet ----------------------------------------------------- */
 
 .prefs-sheet {
